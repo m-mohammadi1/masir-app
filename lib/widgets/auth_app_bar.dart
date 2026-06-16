@@ -1,0 +1,55 @@
+import '/core/helper/assets.dart';
+import '/core/helper/custom_colors.dart';
+import 'package:easy_helper/easy_helper.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'custom_text.dart';
+
+class AuthAppBar extends StatelessWidget {
+  final String title;
+  final VoidCallback? onTap;
+
+  const AuthAppBar({
+    super.key,
+    required this.title,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // OnClick(
+        //   onTap: onTap ?? () => CustomNavigator.pop(),
+        //   child: Container(
+        //     width: 44,
+        //     height: 44,
+        //     decoration: BoxDecoration(
+        //       border: Border.all(width: 1.5, color: AppColor.border),
+        //       shape: BoxShape.circle,
+        //       color: AppColor.background,
+        //     ),
+        //     child: Padding(
+        //       padding: const EdgeInsets.all(12),
+        //       // child: SvgPicture.asset(
+        //       //   Assets.,
+        //       //   colorFilter: ColorFilter.mode(
+        //       //     AppColor.iconColor,
+        //       //     BlendMode.srcIn,
+        //       //   ),
+        //       // ),
+        //     ),
+        //   ),
+        // ),
+        CustomText(
+          title,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        // 44.w,
+      ],
+    );
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "201394482989",
+    "project_id": "masir-819ca",
+    "storage_bucket": "masir-819ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:201394482989:android:79cda6ef41a24dbd17eda4",
+        "android_client_info": {
+          "package_name": "app.masir"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATOZ8lHRYUDQ8zN-LptN-sLv_moHe5pwQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
