@@ -23,9 +23,9 @@ typedef RResult<T extends BaseResult> = ({
 });
 
 extension ResultExtension on BaseResult {
-  TResult get toResult => (model: this, isList: false, maps: ['result']);
+  TResult get toResult => (model: this, isList: false, maps: ['data']);
 
-  TResult get toResults => (model: this, isList: true, maps: ['result']);
+  TResult get toResults => (model: this, isList: true, maps: ['data']);
 
   TResult setResult(List<String> maps) =>
       (model: this, isList: false, maps: maps);

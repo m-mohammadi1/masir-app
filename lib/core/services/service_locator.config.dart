@@ -26,7 +26,13 @@ import '../../features/auth/data/datasource/auth_remote_data_source.dart'
 import '../../features/auth/data/repository/auth_repository_impl.dart' as _i409;
 import '../../features/auth/domain/repository/auth_repository.dart' as _i961;
 import '../../features/auth/domain/usecases/auth_usecase.dart' as _i436;
+import '../../features/auth/domain/usecases/login_usecase.dart' as _i188;
+import '../../features/auth/domain/usecases/submit_register_usecase.dart'
+    as _i804;
 import '../../features/auth/presentation/bloc/auth_bloc.dart' as _i797;
+import '../../features/auth/presentation/bloc/login/login_bloc.dart' as _i208;
+import '../../features/auth/presentation/bloc/submit_register/submit_register_bloc.dart'
+    as _i369;
 import '../../features/edit_profile/data/datasource/edit_profile_remote_data_source.dart'
     as _i687;
 import '../../features/edit_profile/data/repository/edit_profile_repository_impl.dart'
@@ -135,6 +141,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i436.AuthUseCase>(
       () => _i436.AuthUseCase(repository: gh<_i961.AuthRepository>()),
     );
+    gh.factory<_i188.LoginUseCase>(
+      () => _i188.LoginUseCase(repository: gh<_i961.AuthRepository>()),
+    );
+    gh.factory<_i804.SubmitRegisterUseCase>(
+      () => _i804.SubmitRegisterUseCase(repository: gh<_i961.AuthRepository>()),
+    );
     gh.factory<_i177.QuizUseCase>(
       () => _i177.QuizUseCase(repository: gh<_i488.QuizRepository>()),
     );
@@ -155,8 +167,16 @@ extension GetItInjectableX on _i174.GetIt {
         repository: gh<_i119.EditProfileRepository>(),
       ),
     );
+    gh.factory<_i369.SubmitRegisterBloc>(
+      () => _i369.SubmitRegisterBloc(
+        submitRegisterUseCase: gh<_i804.SubmitRegisterUseCase>(),
+      ),
+    );
     gh.factory<_i797.AuthBloc>(
       () => _i797.AuthBloc(authUseCase: gh<_i436.AuthUseCase>()),
+    );
+    gh.factory<_i208.LoginBloc>(
+      () => _i208.LoginBloc(loginUseCase: gh<_i188.LoginUseCase>()),
     );
     gh.singleton<_i505.QuizBloc>(
       () => _i505.QuizBloc(quizUseCase: gh<_i177.QuizUseCase>()),

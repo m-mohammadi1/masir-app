@@ -44,7 +44,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: OtpScreen.routeName,
       builder: (context, state) {
-        return OtpScreen(phoneNumber: state.extra as String);
+        return OtpScreen(
+          phoneNumber: (state.extra as Map<String, String>)['phoneNumber']!,
+          inviteCode: (state.extra as Map<String, String>)['inviteCode']!,
+        );
       },
     ),
 

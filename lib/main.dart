@@ -29,8 +29,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await HiveService.init();
-
   await setup();
+
 
   FirebaseMessaging.onBackgroundMessage(background);
 

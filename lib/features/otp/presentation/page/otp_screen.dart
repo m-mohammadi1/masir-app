@@ -19,9 +19,14 @@ import '../bloc/otp_form/otp_form_bloc.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phoneNumber;
+  final String inviteCode;
   static const routeName = "/otp";
 
-  const OtpScreen({super.key, required this.phoneNumber});
+  const OtpScreen({
+    super.key,
+    required this.phoneNumber,
+    required this.inviteCode,
+  });
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -168,7 +173,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   CustomToast.toast(context, message);
                 },
                 success: (isLoading, data) {
-                    CustomNavigator.go(MainPage.routeName);
+                  CustomNavigator.go(MainPage.routeName);
                 },
               );
             },

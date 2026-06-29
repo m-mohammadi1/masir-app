@@ -13,7 +13,7 @@ T inject<T extends Object>() => _getIt.call();
 @InjectableInit(initializerName: 'initial', preferRelativeImports: true)
 Future<void> setup() async => _getIt.initial();
 
-const String _baseUrl = "https://test.com";
+const String _baseUrl = "https://api.getmasir.com/v1/app/";
 
 bool _haveFormData = false;
 
