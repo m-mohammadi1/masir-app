@@ -8,7 +8,8 @@ import 'service_locator.config.dart';
 
 final _getIt = GetIt.instance;
 
-T inject<T extends Object>() => _getIt.call();
+T inject<T extends Object>({String? instanceName}) =>
+    _getIt.get<T>(instanceName: instanceName);
 
 @InjectableInit(initializerName: 'initial', preferRelativeImports: true)
 Future<void> setup() async => _getIt.initial();
@@ -45,8 +46,9 @@ void updateFormDataHeader(bool isHave) {
 abstract class AppModule {
   @Singleton(signalsReady: true, order: 0)
   @preResolve
-  Future<WebService> get webService => Future.value(
-    WebService()..initial(
+  Future<WebService> webService() async {
+    final service = WebService();
+    await service.initial(
       baseUrl: _baseUrl,
       header: _header(_haveFormData),
       refreshToken: () async {
@@ -93,7 +95,6 @@ abstract class AppModule {
           }
         } on Exception catch (e) {
           HiveService.logout();
-          // CustomNavigator.pushNamedAndRemoveUntil(WelcomePage.routeName);
 
           return RefreshTokenResult(
             status: false,
@@ -103,17 +104,11 @@ abstract class AppModule {
           );
         }
       },
-    ),
-  );
+    );
+    return service;
+  }
 
-  @Singleton(signalsReady: true, order: 1)
-  @preResolve
-  Future<IRestfulApi> get restfulApi =>
-      Future.value(DioRestfulApi(webService: inject()));
-
-  @Named('Http')
-  @Singleton(signalsReady: true, order: 1)
-  @preResolve
-  Future<IRestfulApi> get httpRestfulApi =>
-      Future.value(DioRestfulApi(webService: inject()));
+  @Singleton(order: 1)
+  IRestfulApi restfulApi(WebService webService) =>
+      DioRestfulApi(webService: webService);
 }

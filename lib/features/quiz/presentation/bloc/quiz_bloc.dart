@@ -13,7 +13,7 @@ part 'quiz_state.dart';
 
 part 'quiz_bloc.freezed.dart';
 
-@singleton
+@injectable
 class QuizBloc extends Bloc<QuizEvent, QuizState> {
   final QuizUseCase quizUseCase;
 

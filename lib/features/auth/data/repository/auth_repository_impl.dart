@@ -2,7 +2,10 @@ import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 
 
+
 import 'package:easy_helper/easy_helper.dart';
+import '../../domain/entities/submit_username.dart';
+import '../models/request_submit_username_model.dart';
 import '../../domain/entities/submit_register.dart';
 import '../models/request_submit_register_model.dart';
 import '../../domain/entities/login.dart';
@@ -18,6 +21,20 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
 
   const AuthRepositoryImpl({required this.remoteDataSource});
+
+  @override
+  Future<Either<Failure, UserEntity>> submitUsername({RequestSubmitUsernameModel? params}) async {
+    try {
+      return Right(await remoteDataSource.submitUsername(params: params));
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return Left(ServerFailure().fromJson(e.response?.data));
+      }
+      return Left(DefaultFailure(message: e.message.toString()));
+    } catch (e) {
+      return Left(DefaultFailure(message: e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, SubmitRegisterEntity>> submitRegister({RequestSubmitRegisterModel? params}) async {

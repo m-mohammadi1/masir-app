@@ -29,10 +29,14 @@ import '../../features/auth/domain/usecases/auth_usecase.dart' as _i436;
 import '../../features/auth/domain/usecases/login_usecase.dart' as _i188;
 import '../../features/auth/domain/usecases/submit_register_usecase.dart'
     as _i804;
+import '../../features/auth/domain/usecases/submit_username_usecase.dart'
+    as _i672;
 import '../../features/auth/presentation/bloc/auth_bloc.dart' as _i797;
 import '../../features/auth/presentation/bloc/login/login_bloc.dart' as _i208;
 import '../../features/auth/presentation/bloc/submit_register/submit_register_bloc.dart'
     as _i369;
+import '../../features/auth/presentation/bloc/submit_username/submit_username_bloc.dart'
+    as _i386;
 import '../../features/edit_profile/data/datasource/edit_profile_remote_data_source.dart'
     as _i687;
 import '../../features/edit_profile/data/repository/edit_profile_repository_impl.dart'
@@ -43,6 +47,13 @@ import '../../features/edit_profile/domain/usecases/edit_profile_usecase.dart'
     as _i894;
 import '../../features/edit_profile/presentation/bloc/edit_profile_bloc.dart'
     as _i84;
+import '../../features/main/data/datasource/main_remote_data_source.dart'
+    as _i551;
+import '../../features/main/data/repository/main_repository_impl.dart'
+    as _i1026;
+import '../../features/main/domain/repository/main_repository.dart' as _i1055;
+import '../../features/main/domain/usecases/main_usecase.dart' as _i47;
+import '../../features/main/presentation/bloc/main_bloc.dart' as _i1014;
 import '../../features/otp/data/datasource/otp_remote_data_source.dart'
     as _i476;
 import '../../features/otp/data/repository/otp_repository_impl.dart' as _i653;
@@ -77,7 +88,7 @@ extension GetItInjectableX on _i174.GetIt {
     final appModule = _$AppModule();
     gh.factory<_i1022.OtpFormBloc>(() => _i1022.OtpFormBloc());
     await gh.singletonAsync<_i669.WebService>(
-      () => appModule.webService,
+      () => appModule.webService(),
       signalsReady: true,
       preResolve: true,
     );
@@ -86,6 +97,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i476.OtpRemoteDataSource>(
       () => _i476.OtpRemoteDataSourceImpl(restfulApi: gh<_i669.IRestfulApi>()),
+    );
+    gh.factory<_i551.MainRemoteDataSource>(
+      () => _i551.MainRemoteDataSourceImpl(restfulApi: gh<_i669.IRestfulApi>()),
     );
     gh.factory<_i425.QuizRemoteDataSource>(
       () => _i425.QuizRemoteDataSourceImpl(restfulApi: gh<_i669.IRestfulApi>()),
@@ -113,6 +127,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i670.AboutUsRemoteDataSource>(
       () => _i670.AboutUsRemoteDataSourceImpl(
         restfulApi: gh<_i669.IRestfulApi>(),
+      ),
+    );
+    gh.factory<_i1055.MainRepository>(
+      () => _i1026.MainRepositoryImpl(
+        remoteDataSource: gh<_i551.MainRemoteDataSource>(),
       ),
     );
     gh.factory<_i929.OtpRepository>(
@@ -147,8 +166,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i804.SubmitRegisterUseCase>(
       () => _i804.SubmitRegisterUseCase(repository: gh<_i961.AuthRepository>()),
     );
+    gh.factory<_i672.SubmitUsernameUseCase>(
+      () => _i672.SubmitUsernameUseCase(repository: gh<_i961.AuthRepository>()),
+    );
     gh.factory<_i177.QuizUseCase>(
       () => _i177.QuizUseCase(repository: gh<_i488.QuizRepository>()),
+    );
+    gh.factory<_i47.MainUseCase>(
+      () => _i47.MainUseCase(repository: gh<_i1055.MainRepository>()),
     );
     gh.factory<_i771.RegisterBloc>(
       () => _i771.RegisterBloc(registerUseCase: gh<_i73.RegisterUseCase>()),
@@ -167,6 +192,11 @@ extension GetItInjectableX on _i174.GetIt {
         repository: gh<_i119.EditProfileRepository>(),
       ),
     );
+    gh.factory<_i386.SubmitUsernameBloc>(
+      () => _i386.SubmitUsernameBloc(
+        submitUsernameUseCase: gh<_i672.SubmitUsernameUseCase>(),
+      ),
+    );
     gh.factory<_i369.SubmitRegisterBloc>(
       () => _i369.SubmitRegisterBloc(
         submitRegisterUseCase: gh<_i804.SubmitRegisterUseCase>(),
@@ -178,7 +208,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i208.LoginBloc>(
       () => _i208.LoginBloc(loginUseCase: gh<_i188.LoginUseCase>()),
     );
-    gh.singleton<_i505.QuizBloc>(
+    gh.factory<_i1014.MainBloc>(
+      () => _i1014.MainBloc(mainUseCase: gh<_i47.MainUseCase>()),
+    );
+    gh.factory<_i505.QuizBloc>(
       () => _i505.QuizBloc(quizUseCase: gh<_i177.QuizUseCase>()),
     );
     gh.factory<_i1015.OtpBloc>(
@@ -189,16 +222,8 @@ extension GetItInjectableX on _i174.GetIt {
         editProfileUseCase: gh<_i894.EditProfileUseCase>(),
       ),
     );
-    await gh.singletonAsync<_i669.IRestfulApi>(
-      () => appModule.restfulApi,
-      signalsReady: true,
-      preResolve: true,
-    );
-    await gh.singletonAsync<_i669.IRestfulApi>(
-      () => appModule.httpRestfulApi,
-      instanceName: 'Http',
-      signalsReady: true,
-      preResolve: true,
+    gh.singleton<_i669.IRestfulApi>(
+      () => appModule.restfulApi(gh<_i669.WebService>()),
     );
     return this;
   }

@@ -1,7 +1,11 @@
 import 'package:injectable/injectable.dart';
 
 
+
 import 'package:easy_helper/easy_helper.dart';
+import '../../domain/entities/submit_username.dart';
+import '../models/submit_username_model.dart';
+import '../models/request_submit_username_model.dart';
 import '../../domain/entities/submit_register.dart';
 import '../models/submit_register_model.dart';
 import '../models/request_submit_register_model.dart';
@@ -15,6 +19,9 @@ import '../../domain/entities/auth.dart';
 sealed class AuthRemoteDataSource {
   final IRestfulApi restfulApi;
   const AuthRemoteDataSource({required this.restfulApi});
+
+  @factoryMethod
+  Future<UserEntity> submitUsername({RequestSubmitUsernameModel? params});
 
   @factoryMethod
   Future<SubmitRegisterEntity> submitRegister({RequestSubmitRegisterModel? params});
@@ -31,6 +38,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final IRestfulApi restfulApi;
 
   const AuthRemoteDataSourceImpl({required this.restfulApi});
+
+@override
+Future<UserEntity> submitUsername({RequestSubmitUsernameModel? params}) async {
+  var response = await restfulApi.post(
+    path: 'auth/username',
+    result: const UserModel().toResult,
+    request: params,
+  );
+  return response.result as UserModel;
+}
 
 @override
 Future<SubmitRegisterEntity> submitRegister({RequestSubmitRegisterModel? params}) async {

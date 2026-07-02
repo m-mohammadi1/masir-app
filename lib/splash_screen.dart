@@ -1,10 +1,12 @@
-import 'package:mohammad/features/main/presentaion/page/main_page.dart';
+
+import 'package:mohammad/core/services/hive_service.dart';
 
 import '/core/helper/custom_colors.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'core/helper/assets.dart';
 import 'features/auth/presentation/page/auth_screen.dart';
+import 'features/main/presentation/page/main_page.dart';
 
 class SplashScreen extends StatefulWidget {
   static const String routeName = "/splash";
@@ -20,8 +22,13 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Future.delayed(Duration(seconds: 1), () {
-      CustomNavigator.pushNamed(AuthScreen.routeName);
-      // CustomNavigator.pushNamed(MainPage.routeName);
+      if(HiveService.isLogged){
+        CustomNavigator.pushNamed(MainPage.routeName);
+
+      }else{
+        CustomNavigator.pushNamed(AuthScreen.routeName);
+
+      }
     });
   }
 

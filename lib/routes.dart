@@ -9,7 +9,7 @@ import 'features/auth/presentation/page/auth_screen.dart';
 import 'features/edit_profile/presentation/page/edit_profile_page.dart';
 import 'features/home/page/route_map_page.dart';
 import 'features/intro/presentation/page/intro_screen.dart';
-import 'features/main/presentaion/page/main_page.dart';
+import 'features/main/presentation/page/main_page.dart';
 import 'features/otp/presentation/page/otp_screen.dart';
 import 'features/quiz/presentation/page/end_quiz_page.dart';
 import 'features/quiz/presentation/page/main_quiz_page.dart';

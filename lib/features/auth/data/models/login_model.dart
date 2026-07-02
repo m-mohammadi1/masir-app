@@ -1,16 +1,16 @@
+import 'package:mohammad/core/services/hive_service.dart';
+import 'package:mohammad/core/services/service_locator.dart';
+import 'package:mohammad/features/auth/data/models/submit_username_model.dart';
+
 import '/features/auth/domain/entities/login.dart';
 
 class LoginModel extends LoginEntity {
-  const LoginModel({super.id});
+  const LoginModel({super.token, super.user});
 
   @override
   LoginModel fromJson(Map<String, dynamic> json) {
-    return LoginModel(id: json['id']);
-  }
-
-  Map<String, dynamic> toJson() => {"id": id};
-
-  LoginModel copyWith(String? id) {
-    return LoginModel(id: id ?? this.id);
+    HiveService.token = json['access_token'];
+    updateHeader();
+    return LoginModel(token: json['access_token'] , user: UserModel.fromJson(json['student']));
   }
 }

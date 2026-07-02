@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/home/page/home_page.dart';
+import 'package:mohammad/features/main/presentation/bloc/main_bloc.dart';
 import 'package:mohammad/features/profile/presentation/page/profile_page.dart';
 import '../../../home/page/courses_page.dart';
 import '/core/helper/assets.dart';
@@ -21,12 +23,16 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int index = 1;
 
+
+  final bloc = inject<MainBloc>();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusManager.instance.primaryFocus?.unfocus();
     });
+    bloc.add(MainEvent.main());
   }
 
   @override

@@ -7,6 +7,7 @@ import '../../domain/entities/quiz.dart';
 sealed class QuizRemoteDataSource {
   final IRestfulApi restfulApi;
   const QuizRemoteDataSource({required this.restfulApi});
+
   @factoryMethod
   Future<QuizEntity> call({RequestQuizModel? params});
 }

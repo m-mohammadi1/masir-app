@@ -2,11 +2,12 @@ import 'dart:async';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mohammad/features/auth/data/models/request_submit_register_model.dart';
+import 'package:mohammad/features/auth/presentation/bloc/submit_register/submit_register_bloc.dart';
 import 'package:mohammad/features/register/presentation/page/register_page.dart';
+import '../../../../widgets/custom_text_field.dart';
 import '/core/helper/assets.dart';
 import '/core/helper/custom_colors.dart';
-import '/features/main/presentaion/page/main_page.dart';
-import '/features/otp/data/models/request_otp_model.dart';
 import '/widgets/back_button.dart';
 import '/widgets/base_screen.dart';
 import '/widgets/custom_button.dart';
@@ -14,7 +15,6 @@ import '/widgets/custom_text.dart';
 import 'package:otp_text_field_v2/otp_field_style_v2.dart';
 import 'package:otp_text_field_v2/otp_field_v2.dart';
 import '../../../../core/services/service_locator.dart';
-import '../bloc/otp_bloc.dart';
 import '../bloc/otp_form/otp_form_bloc.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -37,7 +37,7 @@ class _OtpScreenState extends State<OtpScreen> {
   int _remainingTime = _initialTime;
   Timer? _timer;
   final _otpForm = inject<OtpFormBloc>();
-  final otpBloc = inject<OtpBloc>();
+
   String otp = '';
 
   @override
@@ -86,6 +86,9 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   final controller = OtpFieldControllerV2();
+  final pass = TextEditingController();
+
+  final bloc = inject<SubmitRegisterBloc>();
 
   @override
   void dispose() {
@@ -163,9 +166,19 @@ class _OtpScreenState extends State<OtpScreen> {
               ],
             ),
           ),
+
+          16.h,
+          _AuthTextField(
+            label: "رمز عبور",
+            controller: pass,
+            focusNode: FocusNode(),
+            isPassword: true,
+            action: TextInputAction.next,
+            // onChanged: (_) => setState(() {}),
+          ),
           40.h,
-          BlocConsumer<OtpBloc, OtpState>(
-            bloc: otpBloc,
+          BlocConsumer<SubmitRegisterBloc, SubmitRegisterState>(
+            bloc: bloc,
             listener: (context, state) {
               state.whenOrNull(
                 error: (isLoading, message) {
@@ -173,7 +186,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   CustomToast.toast(context, message);
                 },
                 success: (isLoading, data) {
-                  CustomNavigator.go(MainPage.routeName);
+                  CustomNavigator.go(RegisterPage.routeName);
                 },
               );
             },
@@ -182,13 +195,13 @@ class _OtpScreenState extends State<OtpScreen> {
                 Directionality(
                   textDirection: TextDirection.ltr,
                   child: SizedBox(
-                    // height: 60,
+                    height: 55,
                     child: OTPTextFieldV2(
                       controller: controller,
-                      length: 4,
+                      length: 6,
                       width: MediaQuery.of(context).size.width,
                       textFieldAlignment: MainAxisAlignment.spaceBetween,
-                      fieldWidth: 60,
+                      fieldWidth: 55,
                       cursorColor: AppColor.primary,
                       contentPadding: EdgeInsets.symmetric(vertical: 16),
                       otpFieldStyle: OtpFieldStyle(
@@ -200,23 +213,15 @@ class _OtpScreenState extends State<OtpScreen> {
                       fieldStyle: FieldStyle.box,
                       textDirection: TextDirection.ltr,
                       outlineBorderRadius: 8,
-                      autoFocus: true,
+                      autoFocus: false,
                       style: TextStyle(fontSize: 17),
                       onChanged: (pin) {
                         _otpForm.add(OtpFormEvent.refreshEvent());
                       },
                       onCompleted: (pin) {
-                        CustomNavigator.go(RegisterPage.routeName);
+                        // CustomNavigator.go(RegisterPage.routeName);
                         // CustomNavigator.go(MainPage.routeName);
                         otp = pin;
-                        otpBloc.add(
-                          OtpEvent.otp(
-                            params: RequestOtpModel(
-                              code: otp,
-                              identifier: widget.phoneNumber,
-                            ),
-                          ),
-                        );
                       },
                     ),
                   ),
@@ -267,8 +272,90 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
             ],
           ),
+
+          24.h,
+          BlocBuilder<SubmitRegisterBloc, SubmitRegisterState>(
+            bloc: bloc,
+            builder: (context, state) {
+              return CustomButton(
+                title: "تایید",
+                loading: state.isLoading,
+                onTap: () {
+                  bloc.add(
+                    SubmitRegisterEvent.submitRegister(
+                      params: RequestSubmitRegisterModel(
+                        phone: widget.phoneNumber,
+                        inviteCode: widget.inviteCode,
+                        smsCode: otp,
+                        password: pass.text,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
   }
+}
+
+class _AuthTextField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool isPassword;
+  final TextInputType? type;
+  final TextDirection? textDirection;
+  final int? maxLength;
+  final TextInputAction action;
+  final ValueChanged<String>? onChanged;
+
+  const _AuthTextField({
+    required this.label,
+    required this.controller,
+    required this.focusNode,
+    this.isPassword = false,
+    this.type,
+    this.textDirection,
+    this.maxLength,
+    this.action = TextInputAction.next,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isFocused = focusNode.hasFocus;
+
+    return CustomTextField(
+      controller: controller,
+      currentFocus: focusNode,
+      labelText: label,
+      isPassword: isPassword,
+      type: type,
+      textDirection: textDirection,
+      maxLength: maxLength,
+      action: action,
+      onChanged: onChanged,
+      textFieldRadius: 10,
+      borderColor: isFocused ? _AuthColors.purple : _AuthColors.border,
+      backgroundColor: isFocused ? _AuthColors.focusFill : Colors.white,
+      labelStyle: customTextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: const Color(0xFF252525),
+      ),
+    );
+  }
+}
+
+class _AuthColors {
+  static const purple = Color(0xFF7E42C5);
+  static const background = Color(0xFFF8F6FC);
+  static const subtitle = Color(0xFF929292);
+  static const border = Color(0xFFE9E9E9);
+  static const focusFill = Color(0xFFF3EDFA);
+
+  _AuthColors._();
 }

@@ -2,8 +2,10 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/features/auth/data/models/request_auth_model.dart';
+import 'package:mohammad/features/auth/data/models/request_login_model.dart';
+import 'package:mohammad/features/auth/presentation/bloc/login/login_bloc.dart';
+import '../../../main/presentation/page/main_page.dart';
 import '/core/services/service_locator.dart';
-import '/features/main/presentaion/page/main_page.dart';
 import '/features/otp/presentation/page/otp_screen.dart';
 import '/widgets/base_modal.dart';
 import '/widgets/base_screen.dart';
@@ -49,6 +51,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _phoneFocus = FocusNode();
 
   final authBloc = inject<AuthBloc>();
+  final loginBloc = inject<LoginBloc>();
 
   bool get _isLoginValid =>
       _usernameController.text.trim().isNotEmpty &&
@@ -109,7 +112,14 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _onLogin() {
-    CustomNavigator.go(MainPage.routeName);
+    loginBloc.add(
+      LoginEvent.login(
+        params: RequestLoginModel(
+          username: _usernameController.text,
+          password: _passwordController.text,
+        ),
+      ),
+    );
   }
 
   @override
@@ -188,13 +198,29 @@ class _AuthScreenState extends State<AuthScreen> {
           onChanged: (_) => setState(() {}),
         ),
         28.h,
-        CustomButton(
-          title: "ورود",
-          enable: _isLoginValid,
-          backgroundColor: _AuthColors.purple,
-          enableColor: _AuthColors.purple.withValues(alpha: 0.45),
-          buttonSizeRadius: 10,
-          onTap: _onLogin,
+        BlocConsumer<LoginBloc, LoginState>(
+          bloc: loginBloc,
+          listener: (context, state) {
+            state.whenOrNull(
+              error: (isLoading, message) {
+                CustomToast.toast(context, message);
+              },
+              success: (isLoading, data) {
+                CustomNavigator.go(MainPage.routeName);
+              },
+            );
+          },
+          builder: (context, state) {
+            return CustomButton(
+              title: "ورود",
+              enable: _isLoginValid,
+              loading: state.isLoading,
+              backgroundColor: _AuthColors.purple,
+              enableColor: _AuthColors.purple.withValues(alpha: 0.45),
+              buttonSizeRadius: 10,
+              onTap: _onLogin,
+            );
+          },
         ),
         20.h,
         _AuthLink(
@@ -263,8 +289,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 CustomNavigator.pushNamed(
                   OtpScreen.routeName,
                   arguments: {
-                    "phoneNumber" : _phoneController.text,
-                    "inviteCode" : _inviteCodeController.text,
+                    "phoneNumber": _phoneController.text,
+                    "inviteCode": _inviteCodeController.text,
                   },
                 );
               },

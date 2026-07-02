@@ -1,10 +1,13 @@
 import 'package:easy_helper/easy_helper.dart';
 
-abstract class SubmitRegisterEntity extends BaseResult {
-   final String? id;
+import '../../data/models/submit_username_model.dart';
 
-   const SubmitRegisterEntity({this.id});
+abstract class SubmitRegisterEntity extends BaseResult {
+  final String? token;
+  final UserModel? user;
+
+   const SubmitRegisterEntity({this.token , this.user});
 
    @override
-   List<Object?> get props => [id];
+   List<Object?> get props => [token, user];
  }
