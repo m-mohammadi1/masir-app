@@ -52,8 +52,22 @@ import '../../features/main/data/datasource/main_remote_data_source.dart'
 import '../../features/main/data/repository/main_repository_impl.dart'
     as _i1026;
 import '../../features/main/domain/repository/main_repository.dart' as _i1055;
+import '../../features/main/domain/usecases/courses_usecase.dart' as _i617;
+import '../../features/main/domain/usecases/institutes_usecase.dart' as _i80;
 import '../../features/main/domain/usecases/main_usecase.dart' as _i47;
+import '../../features/main/domain/usecases/my_institutes_usecase.dart'
+    as _i919;
+import '../../features/main/domain/usecases/my_subscriptions_usecase.dart'
+    as _i671;
+import '../../features/main/presentation/bloc/courses/courses_bloc.dart'
+    as _i953;
+import '../../features/main/presentation/bloc/institutes/institutes_bloc.dart'
+    as _i1061;
 import '../../features/main/presentation/bloc/main_bloc.dart' as _i1014;
+import '../../features/main/presentation/bloc/my_institutes/my_institutes_bloc.dart'
+    as _i279;
+import '../../features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart'
+    as _i1032;
 import '../../features/otp/presentation/bloc/otp_form/otp_form_bloc.dart'
     as _i1022;
 import '../../features/quiz/data/datasource/quiz_remote_data_source.dart'
@@ -158,11 +172,29 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i177.QuizUseCase>(
       () => _i177.QuizUseCase(repository: gh<_i488.QuizRepository>()),
     );
+    gh.factory<_i617.CoursesUseCase>(
+      () => _i617.CoursesUseCase(repository: gh<_i1055.MainRepository>()),
+    );
+    gh.factory<_i80.InstitutesUseCase>(
+      () => _i80.InstitutesUseCase(repository: gh<_i1055.MainRepository>()),
+    );
     gh.factory<_i47.MainUseCase>(
       () => _i47.MainUseCase(repository: gh<_i1055.MainRepository>()),
     );
+    gh.factory<_i919.MyInstitutesUseCase>(
+      () => _i919.MyInstitutesUseCase(repository: gh<_i1055.MainRepository>()),
+    );
+    gh.factory<_i671.MySubscriptionsUseCase>(
+      () =>
+          _i671.MySubscriptionsUseCase(repository: gh<_i1055.MainRepository>()),
+    );
     gh.factory<_i771.RegisterBloc>(
       () => _i771.RegisterBloc(registerUseCase: gh<_i73.RegisterUseCase>()),
+    );
+    gh.factory<_i1061.InstitutesBloc>(
+      () => _i1061.InstitutesBloc(
+        institutesUseCase: gh<_i80.InstitutesUseCase>(),
+      ),
     );
     gh.factory<_i280.AboutUsUseCase>(
       () => _i280.AboutUsUseCase(repository: gh<_i511.AboutUsRepository>()),
@@ -170,10 +202,18 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i240.AboutUsBloc>(
       () => _i240.AboutUsBloc(aboutUsUseCase: gh<_i280.AboutUsUseCase>()),
     );
+    gh.factory<_i279.MyInstitutesBloc>(
+      () => _i279.MyInstitutesBloc(
+        myInstitutesUseCase: gh<_i919.MyInstitutesUseCase>(),
+      ),
+    );
     gh.factory<_i894.EditProfileUseCase>(
       () => _i894.EditProfileUseCase(
         repository: gh<_i119.EditProfileRepository>(),
       ),
+    );
+    gh.factory<_i953.CoursesBloc>(
+      () => _i953.CoursesBloc(coursesUseCase: gh<_i617.CoursesUseCase>()),
     );
     gh.factory<_i386.SubmitUsernameBloc>(
       () => _i386.SubmitUsernameBloc(
@@ -196,6 +236,11 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i505.QuizBloc>(
       () => _i505.QuizBloc(quizUseCase: gh<_i177.QuizUseCase>()),
+    );
+    gh.factory<_i1032.MySubscriptionsBloc>(
+      () => _i1032.MySubscriptionsBloc(
+        mySubscriptionsUseCase: gh<_i671.MySubscriptionsUseCase>(),
+      ),
     );
     gh.factory<_i84.EditProfileBloc>(
       () => _i84.EditProfileBloc(

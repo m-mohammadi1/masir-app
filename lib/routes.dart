@@ -9,7 +9,9 @@ import 'features/auth/presentation/page/auth_screen.dart';
 import 'features/edit_profile/presentation/page/edit_profile_page.dart';
 import 'features/home/page/route_map_page.dart';
 import 'features/intro/presentation/page/intro_screen.dart';
+import 'features/main/presentation/page/institutes_page.dart';
 import 'features/main/presentation/page/main_page.dart';
+import 'features/main/presentation/page/my_institutes_page.dart';
 import 'features/otp/presentation/page/otp_screen.dart';
 import 'features/quiz/presentation/page/end_quiz_page.dart';
 import 'features/quiz/presentation/page/main_quiz_page.dart';
@@ -55,7 +57,20 @@ final GoRouter router = GoRouter(
       path: RegisterPage.routeName,
       builder: (context, state) => RegisterPage(),
     ),
-    GoRoute(path: MainPage.routeName, builder: (context, state) => MainPage()),
+    GoRoute(
+      path: MainPage.routeName,
+      builder: (context, state) => MainPage(),
+      routes: [
+        GoRoute(
+          path: InstitutesPage.routeName,
+          builder: (context, state) => InstitutesPage(),
+        ),
+        GoRoute(
+          path: MyInstitutesPage.routeName,
+          builder: (context, state) => MyInstitutesPage(),
+        ),
+      ],
+    ),
     GoRoute(
       path: MainQuizPage.routeName,
       builder: (context, state) => MainQuizPage(),

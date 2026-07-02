@@ -6,14 +6,14 @@ import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_sub
 import 'package:mohammad/widgets/custom_text.dart';
 import '../widgets/home_item.dart';
 
-class CoursesPage extends StatefulWidget {
-  const CoursesPage({super.key});
+class CoursesScreen extends StatefulWidget {
+  const CoursesScreen({super.key});
 
   @override
-  State<CoursesPage> createState() => _CoursesPageState();
+  State<CoursesScreen> createState() => _CoursesScreenState();
 }
 
-class _CoursesPageState extends State<CoursesPage> {
+class _CoursesScreenState extends State<CoursesScreen> {
   final mySubscriptionsBloc = inject<MySubscriptionsBloc>();
 
   @override

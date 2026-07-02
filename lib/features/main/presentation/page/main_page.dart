@@ -97,7 +97,7 @@ class _MainPageState extends State<MainPage> {
                         ),
                         2.h,
                         CustomText(
-                          'ویترین',
+                          'کاوش',
                           color: index == 2
                               ? AppColor.primary
                               : AppColor.secondary,
