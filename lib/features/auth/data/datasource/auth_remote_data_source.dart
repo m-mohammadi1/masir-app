@@ -21,7 +21,7 @@ sealed class AuthRemoteDataSource {
   const AuthRemoteDataSource({required this.restfulApi});
 
   @factoryMethod
-  Future<UserEntity> submitUsername({RequestSubmitUsernameModel? params});
+  Future<User> submitUsername({RequestSubmitUsernameModel? params});
 
   @factoryMethod
   Future<SubmitRegisterEntity> submitRegister({RequestSubmitRegisterModel? params});
@@ -40,7 +40,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   const AuthRemoteDataSourceImpl({required this.restfulApi});
 
 @override
-Future<UserEntity> submitUsername({RequestSubmitUsernameModel? params}) async {
+Future<User> submitUsername({RequestSubmitUsernameModel? params}) async {
   var response = await restfulApi.post(
     path: 'auth/username',
     result: const UserModel().toResult,

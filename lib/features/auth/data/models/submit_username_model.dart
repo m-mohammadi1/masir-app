@@ -1,6 +1,7 @@
+import '../../../../core/services/hive_service.dart';
 import '/features/auth/domain/entities/submit_username.dart';
 
-class UserModel extends UserEntity {
+class UserModel extends User {
   const UserModel({super.id, super.phone, super.username, super.name});
 
   @override
@@ -14,11 +15,13 @@ class UserModel extends UserEntity {
   }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
+    final user= UserModel(
       id: json['id'],
       phone: json['phone'],
       name: json['name'],
       username: json['username'],
     );
+    HiveService.setUser(user);
+    return user;
   }
 }

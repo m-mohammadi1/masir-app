@@ -3,7 +3,7 @@
 // Check in to version control
 
 import 'package:hive_ce/hive_ce.dart';
-import 'package:mohammad/features/otp/domain/entities/otp.dart';
+import 'package:mohammad/features/auth/domain/entities/submit_username.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {

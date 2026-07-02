@@ -54,12 +54,6 @@ import '../../features/main/data/repository/main_repository_impl.dart'
 import '../../features/main/domain/repository/main_repository.dart' as _i1055;
 import '../../features/main/domain/usecases/main_usecase.dart' as _i47;
 import '../../features/main/presentation/bloc/main_bloc.dart' as _i1014;
-import '../../features/otp/data/datasource/otp_remote_data_source.dart'
-    as _i476;
-import '../../features/otp/data/repository/otp_repository_impl.dart' as _i653;
-import '../../features/otp/domain/repository/otp_repository.dart' as _i929;
-import '../../features/otp/domain/usecases/otp_usecase.dart' as _i635;
-import '../../features/otp/presentation/bloc/otp_bloc.dart' as _i1015;
 import '../../features/otp/presentation/bloc/otp_form/otp_form_bloc.dart'
     as _i1022;
 import '../../features/quiz/data/datasource/quiz_remote_data_source.dart'
@@ -95,9 +89,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i24.AuthRemoteDataSource>(
       () => _i24.AuthRemoteDataSourceImpl(restfulApi: gh<_i669.IRestfulApi>()),
     );
-    gh.factory<_i476.OtpRemoteDataSource>(
-      () => _i476.OtpRemoteDataSourceImpl(restfulApi: gh<_i669.IRestfulApi>()),
-    );
     gh.factory<_i551.MainRemoteDataSource>(
       () => _i551.MainRemoteDataSourceImpl(restfulApi: gh<_i669.IRestfulApi>()),
     );
@@ -132,11 +123,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1055.MainRepository>(
       () => _i1026.MainRepositoryImpl(
         remoteDataSource: gh<_i551.MainRemoteDataSource>(),
-      ),
-    );
-    gh.factory<_i929.OtpRepository>(
-      () => _i653.OtpRepositoryImpl(
-        remoteDataSource: gh<_i476.OtpRemoteDataSource>(),
       ),
     );
     gh.factory<_i73.RegisterUseCase>(
@@ -181,9 +167,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i280.AboutUsUseCase>(
       () => _i280.AboutUsUseCase(repository: gh<_i511.AboutUsRepository>()),
     );
-    gh.factory<_i635.OtpUseCase>(
-      () => _i635.OtpUseCase(repository: gh<_i929.OtpRepository>()),
-    );
     gh.factory<_i240.AboutUsBloc>(
       () => _i240.AboutUsBloc(aboutUsUseCase: gh<_i280.AboutUsUseCase>()),
     );
@@ -213,9 +196,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i505.QuizBloc>(
       () => _i505.QuizBloc(quizUseCase: gh<_i177.QuizUseCase>()),
-    );
-    gh.factory<_i1015.OtpBloc>(
-      () => _i1015.OtpBloc(otpUseCase: gh<_i635.OtpUseCase>()),
     );
     gh.factory<_i84.EditProfileBloc>(
       () => _i84.EditProfileBloc(

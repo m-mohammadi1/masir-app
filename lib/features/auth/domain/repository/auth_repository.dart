@@ -20,7 +20,7 @@ abstract class AuthRepository {
   const AuthRepository({required this.remoteDataSource});
 
   @factoryMethod
-  Future<Either<Failure, UserEntity>> submitUsername({RequestSubmitUsernameModel? params});
+  Future<Either<Failure, User>> submitUsername({RequestSubmitUsernameModel? params});
 
 
   @factoryMethod

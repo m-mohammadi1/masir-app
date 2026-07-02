@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'otp.dart';
+part of 'submit_username.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
@@ -8,7 +8,7 @@ part of 'otp.dart';
 
 class UserAdapter extends TypeAdapter<User> {
   @override
-  final typeId = 0;
+  final typeId = 1;
 
   @override
   User read(BinaryReader reader) {
@@ -17,34 +17,25 @@ class UserAdapter extends TypeAdapter<User> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return User(
-      uuid: fields[0] as String?,
-      firstName: fields[1] as String?,
-      lastName: fields[2] as String?,
-      email: fields[3] as String?,
-      mobile: fields[4] as String?,
-      gender: fields[5] as String?,
-      avatar: fields[6] as String?,
+      id: fields[0] as String?,
+      phone: fields[1] as String?,
+      username: fields[2] as String?,
+      name: fields[3] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, User obj) {
     writer
-      ..writeByte(7)
-      ..writeByte(0)
-      ..write(obj.uuid)
-      ..writeByte(1)
-      ..write(obj.firstName)
-      ..writeByte(2)
-      ..write(obj.lastName)
-      ..writeByte(3)
-      ..write(obj.email)
       ..writeByte(4)
-      ..write(obj.mobile)
-      ..writeByte(5)
-      ..write(obj.gender)
-      ..writeByte(6)
-      ..write(obj.avatar);
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.phone)
+      ..writeByte(2)
+      ..write(obj.username)
+      ..writeByte(3)
+      ..write(obj.name);
   }
 
   @override

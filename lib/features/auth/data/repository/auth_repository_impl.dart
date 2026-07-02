@@ -23,7 +23,7 @@ class AuthRepositoryImpl implements AuthRepository {
   const AuthRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, UserEntity>> submitUsername({RequestSubmitUsernameModel? params}) async {
+  Future<Either<Failure, User>> submitUsername({RequestSubmitUsernameModel? params}) async {
     try {
       return Right(await remoteDataSource.submitUsername(params: params));
     } on DioException catch (e) {

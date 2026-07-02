@@ -7,13 +7,13 @@ import '../repository/auth_repository.dart';
 
 
 @injectable
-class SubmitUsernameUseCase implements UseCase<UserEntity, RequestSubmitUsernameModel?> {
+class SubmitUsernameUseCase implements UseCase<User, RequestSubmitUsernameModel?> {
   final AuthRepository repository;
 
   const SubmitUsernameUseCase({required this.repository});
 
   @override
-  Future<Either<Failure, UserEntity>> call({RequestSubmitUsernameModel? params}) {
+  Future<Either<Failure, User>> call({RequestSubmitUsernameModel? params}) {
     return repository.submitUsername(params: params);
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:hive_ce_flutter/adapters.dart';
-import '../../features/otp/domain/entities/otp.dart';
+import '../../features/auth/domain/entities/submit_username.dart';
 import '/core/services/service_locator.dart';
 
 class HiveService {
@@ -24,9 +24,11 @@ class HiveService {
   static Future<void> init() async {
     await Hive.initFlutter();
 
+    Hive.registerAdapter<User?>(UserAdapter());
+
     _safeBox = await Hive.openBox("safeDB");
     _myDB = await Hive.openBox('myDB');
-    // _userBox = await Hive.openBox<User>(_userKey);
+    _userBox = await Hive.openBox<User>(_userKey);
   }
 
   /// User detail
