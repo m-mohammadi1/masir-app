@@ -21,6 +21,7 @@ class MySubscriptionsBloc extends Bloc<MySubscriptionsEvent, MySubscriptionsStat
     on<MySubscriptionsEvent>(_onMySubscriptionsEvent);
   }
 
+  List<MySubscriptionsModel> data = [];
   void _onMySubscriptionsEvent(MySubscriptionsEvent event, emit) async {
     await event.when(
       mySubscriptions: (params) async{
@@ -32,6 +33,7 @@ class MySubscriptionsBloc extends Bloc<MySubscriptionsEvent, MySubscriptionsStat
            GEasyHelper.retry(failure.message, () => add(event));
          },
          (data) {
+           data = data.cast<MySubscriptionsModel>();
            emit(MySubscriptionsState.success(false, data.cast<MySubscriptionsModel>()));
          },
         );

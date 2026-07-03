@@ -4,6 +4,7 @@ import 'package:mohammad/widgets/custom_text.dart';
 import '../../main/presentation/page/institutes_page.dart';
 import '../../main/presentation/page/my_institutes_page.dart';
 import '../widgets/course_widget.dart';
+import 'courses_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -53,7 +54,7 @@ class HomePage extends StatelessWidget {
               description: "همه دوره‌های منتشرشده",
               icon: Icons.school_outlined,
               onTap: () {
-                CustomNavigator.pushNamed(InstitutesPage.routeName);
+                CustomNavigator.pushNamed(CoursesScreen.routeName);
 
               },
             ),

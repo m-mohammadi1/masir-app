@@ -13,17 +13,22 @@ class CustomAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.start,
+    return Column(
       children: [
-        CustomBackButton(backAction: backAction),
-        8.w,
-        CustomText(title, fontWeight: FontWeight.w500),
-        if (icon != null) ...[
-          Spacer(),
-          icon!
-        ],
+        20.h,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            CustomBackButton(backAction: backAction),
+            8.w,
+            CustomText(title, fontWeight: FontWeight.w500),
+            if (icon != null) ...[
+              Spacer(),
+              icon!
+            ],
+          ],
+        ),
       ],
     );
   }

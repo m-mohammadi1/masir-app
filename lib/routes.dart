@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'features/about_us/presentation/page/about_us_page.dart';
 import 'features/auth/presentation/page/auth_screen.dart';
 import 'features/edit_profile/presentation/page/edit_profile_page.dart';
+import 'features/home/page/courses_screen.dart';
+import 'features/home/page/detail_course_page.dart';
 import 'features/home/page/route_map_page.dart';
 import 'features/intro/presentation/page/intro_screen.dart';
 import 'features/main/presentation/page/institutes_page.dart';
@@ -68,6 +70,16 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: MyInstitutesPage.routeName,
           builder: (context, state) => MyInstitutesPage(),
+        ),
+        GoRoute(
+          path: CoursesScreen.routeName,
+          builder: (context, state) => CoursesScreen(),
+        ),
+        GoRoute(
+          path: DetailCoursePage.routeName,
+          builder: (context, state) => DetailCoursePage(
+            id: state.extra as String,
+          ),
         ),
       ],
     ),

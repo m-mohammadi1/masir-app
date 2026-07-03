@@ -4,7 +4,15 @@ import 'package:injectable/injectable.dart';
 
 
 
+
 import 'package:easy_helper/easy_helper.dart';
+import '../../domain/entities/outline_course.dart';
+import '../models/request_outline_course_model.dart';
+import '../../domain/entities/subscribe_course.dart';
+import '../models/request_subscribe_course_model.dart';
+import '../../domain/entities/course_detail.dart';
+import '../models/request_course_detail_model.dart';
+import '../models/request_my_sbuscriptions_model.dart';
 import '../../domain/entities/my_institutes.dart';
 import '../models/request_my_institutes_model.dart';
 import '../../domain/entities/courses.dart';
@@ -24,6 +32,49 @@ class MainRepositoryImpl implements MainRepository {
   final MainRemoteDataSource remoteDataSource;
 
   const MainRepositoryImpl({required this.remoteDataSource});
+
+  @override
+  Future<Either<Failure, OutlineCourseEntity>> outlineCourse({RequestOutlineCourseModel? params}) async {
+    try {
+      return Right(await remoteDataSource.outlineCourse(params: params));
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return Left(ServerFailure().fromJson(e.response?.data));
+      }
+      return Left(DefaultFailure(message: e.message.toString()));
+    } catch (e) {
+      return Left(DefaultFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, SubscribeCourseEntity>> subscribeCourse({RequestSubscribeCourseModel? params}) async {
+    try {
+      return Right(await remoteDataSource.subscribeCourse(params: params));
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return Left(ServerFailure().fromJson(e.response?.data));
+      }
+      return Left(DefaultFailure(message: e.message.toString()));
+    } catch (e) {
+      return Left(DefaultFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, CourseDetailEntity>> courseDetail({RequestCourseDetailModel? params}) async {
+    try {
+      return Right(await remoteDataSource.courseDetail(params: params));
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return Left(ServerFailure().fromJson(e.response?.data));
+      }
+      return Left(DefaultFailure(message: e.message.toString()));
+    } catch (e) {
+      return Left(DefaultFailure(message: e.toString()));
+    }
+  }
+
 
   @override
   Future<Either<Failure, List<MyInstitutesEntity>>> myInstitutes({RequestMyInstitutesModel? params}) async {

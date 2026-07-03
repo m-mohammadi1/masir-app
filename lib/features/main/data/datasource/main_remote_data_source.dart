@@ -1,9 +1,16 @@
 import 'package:injectable/injectable.dart';
 
 
-
-
 import 'package:easy_helper/easy_helper.dart';
+import '../../domain/entities/outline_course.dart';
+import '../models/outline_course_model.dart';
+import '../models/request_outline_course_model.dart';
+import '../../domain/entities/subscribe_course.dart';
+import '../models/subscribe_course_model.dart';
+import '../models/request_subscribe_course_model.dart';
+import '../../domain/entities/course_detail.dart';
+import '../models/course_detail_model.dart';
+import '../models/request_course_detail_model.dart';
 import '../../domain/entities/my_institutes.dart';
 import '../models/my_institutes_model.dart';
 import '../models/request_my_institutes_model.dart';
@@ -23,6 +30,16 @@ import '../../domain/entities/main.dart';
 sealed class MainRemoteDataSource {
   final IRestfulApi restfulApi;
   const MainRemoteDataSource({required this.restfulApi});
+
+  @factoryMethod
+  Future<OutlineCourseEntity> outlineCourse({RequestOutlineCourseModel? params});
+
+  @factoryMethod
+  Future<SubscribeCourseEntity> subscribeCourse({RequestSubscribeCourseModel? params});
+
+  @factoryMethod
+  Future<CourseDetailEntity> courseDetail({RequestCourseDetailModel? params});
+
 
   @factoryMethod
   Future<List<MyInstitutesEntity>> myInstitutes({RequestMyInstitutesModel? params});
@@ -47,6 +64,36 @@ class MainRemoteDataSourceImpl implements MainRemoteDataSource {
   const MainRemoteDataSourceImpl({required this.restfulApi});
 
 @override
+Future<OutlineCourseEntity> outlineCourse({RequestOutlineCourseModel? params}) async {
+  var response = await restfulApi.post(
+    path: '/',
+    result: const OutlineCourseModel().toResult,
+    request: params,
+  );
+  return response.result as OutlineCourseModel;
+}
+
+@override
+Future<SubscribeCourseEntity> subscribeCourse({RequestSubscribeCourseModel? params}) async {
+  var response = await restfulApi.post(
+    path: 'courses/${params?.id}/subscribe',
+    result: const SubscribeCourseModel().toResult,
+    // request: params,
+  );
+  return response.result as SubscribeCourseModel;
+}
+
+@override
+Future<CourseDetailEntity> courseDetail({RequestCourseDetailModel? params}) async {
+  var response = await restfulApi.get(
+    path: 'courses/${params?.id}',
+    result: const CourseDetailModel().toResult,
+    // request: params,
+  );
+  return response.result as CourseDetailModel;
+}
+
+@override
 Future<List<MyInstitutesEntity>> myInstitutes({RequestMyInstitutesModel? params}) async {
   var response = await restfulApi.get(
     path: 'me',
@@ -58,10 +105,10 @@ Future<List<MyInstitutesEntity>> myInstitutes({RequestMyInstitutesModel? params}
 
 @override
 Future<List<CoursesEntity>> courses({RequestCoursesModel? params}) async {
-  var response = await restfulApi.post(
-    path: '/',
-    result: const CoursesModel().toResults,
-    request: params,
+  var response = await restfulApi.get(
+    path: 'courses?page=1&per_page=200',
+    result: const CoursesModel().setResults(['data','items']),
+    // request: params,
   );
   return response.results!.cast<CoursesModel>();
 }
