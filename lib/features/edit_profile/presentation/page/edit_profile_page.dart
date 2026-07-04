@@ -1,14 +1,17 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mohammad/core/services/service_locator.dart';
+import 'package:mohammad/features/edit_profile/presentation/bloc/edit_profile_bloc.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_button.dart';
+import 'package:mohammad/widgets/custom_text.dart';
 import 'package:mohammad/widgets/custom_text_field.dart';
 
-import '../../../../core/helper/assets.dart';
-import '../../../../core/helper/custom_colors.dart';
-import '../../../../widgets/date_picker.dart';
-import '../../../profile/presentation/widgets/choose_avatar_bottom_sheet.dart';
+import '../../../../core/services/hive_service.dart';
+import '../../../auth/domain/entities/submit_username.dart';
+import '../../data/models/request_edit_profile_model.dart';
 
 class EditProfilePage extends StatefulWidget {
   static const String routeName = "/edit-profile";
@@ -20,83 +23,232 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
+  final editProfileBloc = inject<EditProfileBloc>();
+
   final _nameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _phoneNumberController = TextEditingController();
-  final _btdController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _usernameController = TextEditingController();
+
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final user = HiveService.user;
+    _nameController.text = user?.name ?? "";
+    _phoneController.text = user?.phone ?? "";
+    _usernameController.text = user?.username ?? "";
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _usernameController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CustomAppBar(title: "ویرایش اطلاعات"),
+          12.h,
+          CustomText(
+            "نام و رمز عبور خود را مدیریت کنید",
+            fontSize: 13,
+            color: Color(0xff6E6884),
+          ),
           20.h,
-          Center(
-            child: OnClick(
-              onTap: () {
-                ChooseAvatarBottomSheet.show(context);
-              },
-              child: SizedBox(
-                width: 70,
-                height: 70,
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    CustomImage(
-                      assets: Assets.banner,
-                      radius: 90,
-                      height: 60,
-                      width: 60,
-                      color: AppColor.primary,
-                      fit: BoxFit.cover,
-                    ),
-                    CustomImage(assets: Assets.edit, color: AppColor.secondary),
-                  ],
-                ),
-              ),
+          Expanded(
+            child: ListView(
+              children: [
+                _buildProfileSection(),
+                16.h,
+                _buildSecuritySection(),
+                40.h,
+              ],
             ),
           ),
-          16.h,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Icon(Icons.person_outline, color: Color(0xff7C3AED), size: 22),
+              8.w,
+              CustomText(
+                "پروفایل",
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ],
+          ),
+          Divider(height: 30, color: Color(0xffE7DEF8)),
+          CustomText(
+            "نام",
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xff6E6884),
+          ),
+          8.h,
           CustomTextField(
             controller: _nameController,
-            labelText: "نام",
             hint: "نام خود را وارد کنید",
+            textDirection: TextDirection.rtl,
+          ),
+          16.h,
+          CustomText(
+            "شماره موبایل",
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xff6E6884),
           ),
           8.h,
           CustomTextField(
-            controller: _lastNameController,
-            labelText: "نام خانوادگی",
-            hint: "نام خانوادگی خود را وارد کنید",
-          ),
-          8.h,
-
-          CustomTextField(
-            controller: _btdController,
+            controller: _phoneController,
             enabled: false,
-            onTap: () {
-              CustomDatePicker.show(
-                context: context,
-                onChange: (v) {
-                  setState(() {
-                    _btdController.text = v;
-                  });
-                },
-                initialValue: _btdController.text,
-              );
-            },
-            labelText: "تاریخ تولد",
-            hint: "1380/05/17",
+            backgroundColor: Color(0xffF5F3F8),
+            textDirection: TextDirection.ltr,
+          ),
+          16.h,
+          CustomText(
+            "نام کاربری",
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xff6E6884),
           ),
           8.h,
           CustomTextField(
-            controller: _phoneNumberController,
-            enabled: false,
-            labelText: "شماره تلفن",
-            hint: "09135280019",
+            controller: _usernameController,
+            hint: "نام کاربری خود را وارد کنید",
+            textDirection: TextDirection.ltr,
           ),
           20.h,
-          CustomButton(title: "ذخیره تغیرات"),
+          BlocBuilder<EditProfileBloc, EditProfileState>(
+            bloc: editProfileBloc,
+            builder: (context, state) {
+              final isLoading = state.whenOrNull(loading: (isLoading) => isLoading) ?? false;
+              return CustomButton(
+                title: "ذخیره",
+                loading: isLoading,
+                onTap: () {
+                  editProfileBloc.add(
+                    EditProfileEvent.editProfile(
+                      params: RequestEditProfileModel(),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecuritySection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Icon(Icons.lock_outline, color: Color(0xff7C3AED), size: 22),
+              8.w,
+              CustomText(
+                "امنیت",
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ],
+          ),
+          Divider(height: 30, color: Color(0xffE7DEF8)),
+          CustomText(
+            "رمز عبور فعلی",
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xff6E6884),
+          ),
+          8.h,
+          CustomTextField(
+            controller: _currentPasswordController,
+            isPassword: true,
+            hint: "رمز عبور فعلی را وارد کنید",
+          ),
+          16.h,
+          CustomText(
+            "رمز عبور جدید",
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xff6E6884),
+          ),
+          8.h,
+          CustomTextField(
+            controller: _newPasswordController,
+            isPassword: true,
+            hint: "رمز عبور جدید را وارد کنید",
+          ),
+          16.h,
+          CustomText(
+            "تکرار رمز عبور",
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xff6E6884),
+          ),
+          8.h,
+          CustomTextField(
+            controller: _confirmPasswordController,
+            isPassword: true,
+            hint: "رمز عبور جدید را تکرار کنید",
+          ),
+          20.h,
+          CustomButton(
+            title: "ذخیره",
+            onTap: () {},
+          ),
         ],
       ),
     );

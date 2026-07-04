@@ -1,17 +1,17 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:mohammad/features/profile/presentation/widgets/choose_avatar_bottom_sheet.dart';
-import 'package:mohammad/widgets/base_modal.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mohammad/core/services/service_locator.dart';
+import 'package:mohammad/features/main/data/models/request_my_institutes_model.dart';
+import 'package:mohammad/features/main/presentation/bloc/my_institutes/my_institutes_bloc.dart';
 
-import '../../../../core/helper/assets.dart';
-import '../../../../core/helper/custom_colors.dart';
 import '../../../../core/services/hive_service.dart';
 import '../../../../widgets/custom_text.dart';
-import '../../../../widgets/exit_modal.dart';
-import '../../../about_us/presentation/page/about_us_page.dart';
+import '../../../auth/domain/entities/submit_username.dart';
 import '../../../auth/presentation/page/auth_screen.dart';
 import '../../../edit_profile/presentation/page/edit_profile_page.dart';
-import '../widgets/contact_us_bottom_sheet.dart';
+import '../../../../widgets/exit_modal.dart';
+import '../../../../widgets/base_modal.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,116 +21,107 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late final List<_MenuModel> _menus = [
-    _MenuModel(
-      title: "ویرایش اطلاعات",
-      icon: Assets.mediumEdit,
-      onTap: () => CustomNavigator.pushNamed(EditProfilePage.routeName),
-    ),
-    _MenuModel(
-      title: "درباره ما",
-      icon: Assets.aboutUs,
-      onTap: () => CustomNavigator.pushNamed(AboutUsPage.routeName),
-    ),
-    _MenuModel(
-      title: "ارتباط با ما",
-      icon: Assets.aboutUs,
-      onTap: () =>
-          showCustomModal(context: context, child: ContactUsBottomSheet()),
-    ),
-    _MenuModel(
-      title: "خروج از حساب كاربرى",
-      icon: Assets.exit,
-      onTap: () => showCustomModal(
-        context: context,
-        scrollControlDisabledMaxHeightRatio: .4,
-        callBack: (_) {},
-        child: ExitModal(
-          text: "میخواهید از حساب کاربری خود خارج شوید؟",
-          exitAction: () {
-            HiveService.logout();
-            CustomNavigator.go(AuthScreen.routeName);
-          },
-        ),
-      ),
-    ),
-  ];
+  final myInstitutesBloc = inject<MyInstitutesBloc>();
+
+  @override
+  void initState() {
+    super.initState();
+    myInstitutesBloc.add(MyInstitutesEvent.myInstitutes());
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          60.h,
-          Center(
-            child: OnClick(
-              onTap: () {
-                ChooseAvatarBottomSheet.show(context);
-              },
-              child: SizedBox(
-                width: 70,
-                height: 70,
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 5, right: 5),
-                      child: CustomImage(
-                        assets: Assets.banner,
-                        radius: 90,
-                        height: 60,
-                        width: 60,
-                        color: AppColor.primary,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    CustomImage(assets: Assets.edit, color: AppColor.secondary),
-                  ],
-                ),
+    final user = HiveService.user;
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            context.appSize.width.w,
+            60.h,
+            CustomText("پروفایل", fontWeight: FontWeight.bold, fontSize: 20),
+            Expanded(
+              child: ListView(
+                children: [
+                  _buildProfileCard(user),
+                  16.h,
+                  _buildInstitutesSection(),
+                  16.h,
+                  _buildLogoutButton(),
+                  40.h,
+                ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(User? user) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
-          8.h,
-          CustomText("مسعود رشیدی زاده"),
-
-          // CustomTextField(controller: _firstNameController, labelText: "نام"),
-          20.h,
-
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColor.borderF9.withValues(alpha: .8),
-                borderRadius: BorderRadius.circular(8),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            user?.name ?? "نام تنظیم نشده",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xff2F2146),
+            ),
+          ),
+          SizedBox(height: 20),
+          _buildInfoRow(
+            label: "شماره موبایل",
+            value: user?.phone ?? "---",
+          ),
+          SizedBox(height: 12),
+          _buildInfoRow(
+            label: "نام کاربری",
+            value: user?.username ?? "---",
+          ),
+          SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () => CustomNavigator.pushNamed(EditProfilePage.routeName),
+              icon: Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: Color(0xff2F2146),
               ),
-              margin: EdgeInsets.only(bottom: 16),
-              child: ListView.builder(
-                itemCount: _menus.length,
-                padding: EdgeInsets.only(top: 8, bottom: 8),
-                itemBuilder: (context, index) {
-                  return OnClick(
-                    onTap: () => _menus[index].onTap(),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: [
-                          8.w,
-                          CustomImage(
-                            assets: _menus[index].icon,
-                            color: AppColor.secondary,
-                            width: 24,
-                            height: 24,
-                          ),
-                          8.w,
-                          CustomText(
-                            _menus[index].title,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+              label: Text(
+                "ویرایش پروفایل",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xff2F2146),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Color(0xffE7DEF8), width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -138,11 +129,171 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-}
 
-class _MenuModel {
-  final String title, icon;
-  final Function onTap;
+  Widget _buildInfoRow({required String label, required String value}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xff2F2146),
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xff6E6884),
+          ),
+        ),
+      ],
+    );
+  }
 
-  _MenuModel({required this.title, required this.icon, required this.onTap});
+  Widget _buildInstitutesSection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            "مؤسسات من",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xff2F2146),
+            ),
+          ),
+          SizedBox(height: 16),
+          BlocBuilder<MyInstitutesBloc, MyInstitutesState>(
+            bloc: myInstitutesBloc,
+            builder: (context, state) {
+              return state.when(
+                loading: (_) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: CircularProgressIndicator(color: Color(0xff7C3AED)),
+                  ),
+                ),
+                error: (_, message) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(
+                      message,
+                      style: TextStyle(color: Colors.red, fontSize: 13),
+                    ),
+                  ),
+                ),
+                success: (isLoading, data) {
+                  if (data.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          " مؤسسه‌ای یافت نشد",
+                          style: TextStyle(
+                            color: Color(0xff6E6884),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: data.map((institute) {
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Color(0xffF9F7FD),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              institute.slug ?? "",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xff6E6884),
+                              ),
+                            ),
+                            Text(
+                              institute.name ?? "",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xff2F2146),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: OutlinedButton.icon(
+          onPressed: () => showCustomModal(
+            context: context,
+            scrollControlDisabledMaxHeightRatio: .4,
+            callBack: (_) {},
+            child: ExitModal(
+              text: "میخواهید از حساب کاربری خود خارج شوید؟",
+              exitAction: () {
+                HiveService.logout();
+                CustomNavigator.go(AuthScreen.routeName);
+              },
+            ),
+          ),
+          icon: Icon(
+            Icons.logout_rounded,
+            size: 20,
+            color: Color(0xff2F2146),
+          ),
+          label: Text(
+            "خروج",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Color(0xff2F2146),
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: Color(0xffE7DEF8), width: 1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

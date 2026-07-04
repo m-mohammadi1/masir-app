@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/helper/custom_colors.dart';
 import 'package:mohammad/core/services/service_locator.dart';
+import 'package:mohammad/features/main/data/models/course_detail_model.dart';
 import 'package:mohammad/features/main/data/models/request_course_detail_model.dart';
 import 'package:mohammad/features/main/data/models/request_subscribe_course_model.dart';
 import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import 'package:mohammad/features/main/presentation/bloc/subscribe_course/subscribe_course_bloc.dart';
+import 'package:mohammad/features/main/presentation/page/outline_page.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_button.dart';
@@ -40,6 +42,8 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
     );
   }
 
+  late CourseDetailModel dataModel;
+
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
@@ -59,9 +63,10 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                 loading: (_) => CustomLoading(),
                 error: (_, message) => CustomError(message: message),
                 success: (isLoading, data) {
+                  dataModel = data;
                   final isFree =
                       data.coursesModel?.price == null ||
-                          data.coursesModel?.price == 0;
+                      data.coursesModel?.price == 0;
                   return Column(
                     children: [
                       Directionality(
@@ -89,20 +94,19 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                 height: 160,
                                 color: Color(0xff9B8FD8),
                                 child:
-                                data.coursesModel?.coverUrl != null &&
-                                    data.coursesModel!.coverUrl!.isNotEmpty
+                                    data.coursesModel?.coverUrl != null &&
+                                        data.coursesModel!.coverUrl!.isNotEmpty
                                     ? Image.network(
-                                  data.coursesModel!.coverUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
-                                      Center(
-                                        child: Icon(
-                                          Icons.play_circle_fill,
-                                          size: 48,
-                                          color: Colors.white70,
+                                        data.coursesModel!.coverUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Center(
+                                          child: Icon(
+                                            Icons.play_circle_fill,
+                                            size: 48,
+                                            color: Colors.white70,
+                                          ),
                                         ),
-                                      ),
-                                )
+                                      )
                                     : SizedBox(),
                               ),
                               Padding(
@@ -120,7 +124,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                       textAlign: TextAlign.right,
                                     ),
                                     if (data.coursesModel?.description !=
-                                        null &&
+                                            null &&
                                         data
                                             .coursesModel!
                                             .description!
@@ -154,8 +158,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                         child: Text(
                                           isFree
                                               ? "رایگان"
-                                              : "${data.coursesModel
-                                              ?.price} تومان",
+                                              : "${data.coursesModel?.price} تومان",
                                           style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
@@ -183,7 +186,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                   padding: const EdgeInsets.all(8.0),
                                   child: Row(
                                     mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
+                                        MainAxisAlignment.spaceAround,
                                     children: [
                                       Column(
                                         children: [
@@ -241,8 +244,8 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                 bloc: mySubsBloc,
                 builder: (context, subState) {
                   return BlocConsumer<
-                      SubscribeCourseBloc,
-                      SubscribeCourseState
+                    SubscribeCourseBloc,
+                    SubscribeCourseState
                   >(
                     bloc: subscribeCourseBloc,
                     listener: (context, state) {
@@ -251,19 +254,23 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                           CustomToast.toast(context, message);
                         },
                         success: (isLoading, data) {
-                          mySubsBloc.data.add(
-                              MySubscriptionsModel(id: widget.id));
+                          mySubsBloc.values.add(
+                            MySubscriptionsModel(id: widget.id),
+                          );
                         },
                       );
                     },
                     builder: (context, state) {
                       return CustomButton(
-                        title: mySubsBloc.data.isEmpty
+                        title: mySubsBloc.values.isEmpty
                             ? "ثبت نام دوره"
-                            : mySubsBloc.data.any((element) =>
-                        element.id == widget.id,) ? "شروع یادگیری" : "خطای ناشناخته",
+                            : mySubsBloc.values.any(
+                                (element) => element.courseId == widget.id,
+                              )
+                            ? "شروع یادگیری"
+                            : "خطای ناشناخته",
                         onTap: () {
-                          if (mySubsBloc.data.isEmpty) {
+                          if (mySubsBloc.values.isEmpty) {
                             subscribeCourseBloc.add(
                               SubscribeCourseEvent.subscribeCourse(
                                 params: RequestSubscribeCourseModel(
@@ -271,10 +278,20 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                 ),
                               ),
                             );
+                          } else if (mySubsBloc.values.any(
+                            (element) => element.courseId == widget.id,
+                          )) {
+                            CustomNavigator.pushNamed(
+                              OutlinePage.routeName,
+                              arguments: {
+                                "id": dataModel.coursesModel?.id ?? "",
+                                "title": dataModel.coursesModel?.title ?? "",
+                              },
+                            );
                           }
                         },
                         loading:
-                        sts.isLoading ||
+                            sts.isLoading ||
                             subState.isLoading ||
                             state.isLoading,
                         enable: !sts.isLoading && !subState.isLoading,
