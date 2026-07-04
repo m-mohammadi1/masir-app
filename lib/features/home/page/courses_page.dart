@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
+import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
+
+import '../../main/presentation/page/outline_page.dart';
 
 class CoursesPage extends StatefulWidget {
   const CoursesPage({super.key});
@@ -55,11 +58,7 @@ class _CoursesPageState extends State<CoursesPage> {
         children: [
           context.appSize.width.w,
           60.h,
-          CustomText(
-            "دوره های من",
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          CustomText("دوره های من", fontWeight: FontWeight.bold, fontSize: 20),
           8.h,
           CustomText("دوره هایی که در آن ثبت نام کرده اید."),
           20.h,
@@ -78,14 +77,18 @@ class _CoursesPageState extends State<CoursesPage> {
                       itemBuilder: (context, index) {
                         final subscription = data[index];
                         final course = subscription.coursesModel;
-                        final progress = subscription.courseProgressPercent ?? 0;
+                        final progress =
+                            subscription.courseProgressPercent ?? 0;
                         return Directionality(
                           textDirection: TextDirection.ltr,
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Color(0xffE7DEF8), width: 1),
+                              border: Border.all(
+                                color: Color(0xffE7DEF8),
+                                width: 1,
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.04),
@@ -102,7 +105,8 @@ class _CoursesPageState extends State<CoursesPage> {
                                     children: [
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
                                           children: [
                                             Text(
                                               course?.title ?? "",
@@ -112,10 +116,13 @@ class _CoursesPageState extends State<CoursesPage> {
                                                 color: Color(0xff2F2146),
                                               ),
                                             ),
-                                            if (course?.publishedAt != null && course!.publishedAt!.isNotEmpty) ...[
+                                            if (course?.publishedAt != null &&
+                                                course!
+                                                    .publishedAt!
+                                                    .isNotEmpty) ...[
                                               SizedBox(height: 4),
                                               Text(
-                                                "تاریخ ثبت‌نام: ${_formatJalaliDate(course!.publishedAt!)}",
+                                                "تاریخ ثبت‌نام: ${_formatJalaliDate(course.publishedAt!)}",
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Color(0xff6E6884),
@@ -131,28 +138,36 @@ class _CoursesPageState extends State<CoursesPage> {
                                         height: 64,
                                         decoration: BoxDecoration(
                                           color: Color(0xff9B8FD8),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
-                                        child: course?.coverUrl != null && course!.coverUrl!.isNotEmpty
+                                        child:
+                                            course?.coverUrl != null &&
+                                                course!.coverUrl!.isNotEmpty
                                             ? ClipRRect(
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                                 child: Image.network(
                                                   course.coverUrl!,
                                                   fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) => Icon(
-                                                    Icons.play_circle_fill,
-                                                    size: 30,
-                                                    color: Colors.white70,
-                                                  ),
+                                                  errorBuilder: (_, __, ___) =>
+                                                      Icon(
+                                                        Icons.play_circle_fill,
+                                                        size: 30,
+                                                        color: Colors.white70,
+                                                      ),
                                                 ),
                                               )
-                                            :SizedBox(),
+                                            : SizedBox(),
                                       ),
                                     ],
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                   child: Row(
                                     children: [
                                       Text(
@@ -166,12 +181,17 @@ class _CoursesPageState extends State<CoursesPage> {
                                       SizedBox(width: 6),
                                       Expanded(
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                           child: LinearProgressIndicator(
                                             value: progress / 100.0,
                                             minHeight: 8,
                                             backgroundColor: Color(0xffE7DEF8),
-                                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xff7C3AED)),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Color(0xff7C3AED),
+                                                ),
                                           ),
                                         ),
                                       ),
@@ -180,28 +200,26 @@ class _CoursesPageState extends State<CoursesPage> {
                                 ),
                                 SizedBox(height: 12),
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    16,
+                                  ),
                                   child: SizedBox(
                                     width: double.infinity,
                                     height: 48,
-                                    child: ElevatedButton(
-                                      onPressed: () {},
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Color(0xff7C3AED),
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        elevation: 0,
-                                      ),
-                                      child: Text(
-                                        "ادامه یادگیری",
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
+                                    child: CustomButton(
+                                      onTap: () {
+                                        CustomNavigator.pushNamed(
+                                          OutlinePage.routeName,
+                                          arguments: {
+                                            "id": "${course?.id}",
+                                            "title": "${course?.title}",
+                                          },
+                                        );
+                                      },
+                                      title: "ادامه یادگیری",
                                     ),
                                   ),
                                 ),

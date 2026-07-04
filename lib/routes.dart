@@ -14,6 +14,7 @@ import 'features/intro/presentation/page/intro_screen.dart';
 import 'features/main/presentation/page/institutes_page.dart';
 import 'features/main/presentation/page/main_page.dart';
 import 'features/main/presentation/page/my_institutes_page.dart';
+import 'features/main/presentation/page/outline_page.dart';
 import 'features/otp/presentation/page/otp_screen.dart';
 import 'features/quiz/presentation/page/end_quiz_page.dart';
 import 'features/quiz/presentation/page/main_quiz_page.dart';
@@ -77,8 +78,14 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: DetailCoursePage.routeName,
-          builder: (context, state) => DetailCoursePage(
-            id: state.extra as String,
+          builder: (context, state) =>
+              DetailCoursePage(id: state.extra as String),
+        ),
+        GoRoute(
+          path: OutlinePage.routeName,
+          builder: (context, state) => OutlinePage(
+            id: (state.extra as Map<String, String>)['id']!,
+            title: (state.extra as Map<String, String>)['title']!,
           ),
         ),
       ],

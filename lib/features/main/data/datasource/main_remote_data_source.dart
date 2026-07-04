@@ -65,10 +65,10 @@ class MainRemoteDataSourceImpl implements MainRemoteDataSource {
 
 @override
 Future<OutlineCourseEntity> outlineCourse({RequestOutlineCourseModel? params}) async {
-  var response = await restfulApi.post(
-    path: '/',
+  var response = await restfulApi.get(
+    path: 'courses/${params?.id}/outline',
     result: const OutlineCourseModel().toResult,
-    request: params,
+    // request: params,
   );
   return response.result as OutlineCourseModel;
 }
