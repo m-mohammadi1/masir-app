@@ -6,6 +6,7 @@ import 'package:mohammad/features/main/data/models/request_outline_course_model.
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
+import 'package:mohammad/widgets/custom_text.dart';
 
 class OutlinePage extends StatefulWidget {
   final String title, id;
@@ -84,13 +85,11 @@ class _OutlinePageState extends State<OutlinePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
+                              CustomText(
                                 "پیشرفت دوره",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xff2F2146),
-                                ),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xff2F2146),
                               ),
                               Container(
                                 padding: EdgeInsets.symmetric(
@@ -101,13 +100,12 @@ class _OutlinePageState extends State<OutlinePage> {
                                   color: Color(0xff7C3AED),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Text(
+                                child: CustomText(
                                   "%$courseProgress",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                             ],
@@ -155,13 +153,12 @@ class _OutlinePageState extends State<OutlinePage> {
                                     children: [
                                       Padding(
                                         padding: const EdgeInsets.all(16),
-                                        child: Text(
+                                        child: CustomText(
                                           module.title ?? "",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xff2F2146),
-                                          ),
+
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xff2F2146),
                                         ),
                                       ),
                                       ...paths.map((path) {
@@ -187,24 +184,20 @@ class _OutlinePageState extends State<OutlinePage> {
                                                         MainAxisAlignment
                                                             .spaceBetween,
                                                     children: [
-                                                      Text(
+                                                      CustomText(
                                                         path.title ?? "",
-                                                        style: TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: Color(
-                                                            0xff2F2146,
-                                                          ),
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: Color(
+                                                          0xff2F2146,
                                                         ),
                                                       ),
-                                                      Text(
+                                                      CustomText(
                                                         "$pathProgress%",
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Color(
-                                                            0xff6E6884,
-                                                          ),
+                                                        fontSize: 12,
+                                                        color: Color(
+                                                          0xff6E6884,
                                                         ),
                                                       ),
                                                     ],
@@ -319,25 +312,22 @@ class _OutlinePageState extends State<OutlinePage> {
                                                               CrossAxisAlignment
                                                                   .start,
                                                           children: [
-                                                            Text(
+                                                            CustomText(
                                                               unit.title ?? "",
-                                                              style: TextStyle(
-                                                                fontSize: 14,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color:
-                                                                    unitLocked
-                                                                    ? Color(
-                                                                        0xff9E96B0,
-                                                                      )
-                                                                    : Color(
-                                                                        0xff2F2146,
-                                                                      ),
-                                                              ),
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: unitLocked
+                                                                  ? Color(
+                                                                      0xff9E96B0,
+                                                                    )
+                                                                  : Color(
+                                                                      0xff2F2146,
+                                                                    ),
                                                             ),
                                                             SizedBox(height: 2),
-                                                            Text(
+                                                            CustomText(
                                                               _getTypeLabel(
                                                                 unitType,
                                                               ),
@@ -368,16 +358,13 @@ class _OutlinePageState extends State<OutlinePage> {
                                                                   8,
                                                                 ),
                                                           ),
-                                                          child: Text(
+                                                          child: CustomText(
                                                             "قفل",
-                                                            style: TextStyle(
-                                                              fontSize: 11,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              color: Color(
-                                                                0xff7C3AED,
-                                                              ),
+                                                            fontSize: 11,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: Color(
+                                                              0xff7C3AED,
                                                             ),
                                                           ),
                                                         ),

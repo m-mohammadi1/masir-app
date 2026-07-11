@@ -72,8 +72,33 @@ flutter:
   assets:
     - assets/png/
     - assets/svg/
+    - assets/fonts/
   #   - images/a_dot_ham.jpeg
 
+
+  fonts:
+    - family: Pinar
+      fonts:
+        - asset: assets/fonts/Pinar/Pinar-FD-Regular.ttf
+          style: italic
+    - family: Pinar-Bold
+      fonts:
+        - asset: assets/fonts/Pinar/Pinar-FD-Bold.ttf
+        - asset: assets/fonts/Pinar/Pinar-FD-ExtraBold.ttf
+        - asset: assets/fonts/Pinar/Pinar-FD-SemiBold.ttf
+          weight: 700
+    - family: Pinar-Medium
+      fonts:
+        - asset: assets/fonts/Pinar/Pinar-FD-Medium.ttf
+          weight: 500
+    - family: Pinar-Regular
+      fonts:
+        - asset: assets/fonts/Pinar/Pinar-FD-Regular.ttf
+          weight: 400
+    - family: IRANSans
+      fonts:
+        - asset: assets/fonts/IRANSansX/IRANSansXFaNum-MediumD4.ttf
+          weight: 400
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

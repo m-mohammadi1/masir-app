@@ -114,13 +114,11 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text(
+                                    CustomText(
                                       data.coursesModel?.title ?? "",
-                                      style: TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.bold,
                                         color: Color(0xff2F2146),
-                                      ),
                                       textAlign: TextAlign.right,
                                     ),
                                     if (data.coursesModel?.description !=
@@ -130,15 +128,13 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                             .description!
                                             .isNotEmpty) ...[
                                       SizedBox(height: 6),
-                                      Text(
+                                      CustomText(
                                         data.coursesModel!.description!,
-                                        style: TextStyle(
                                           fontSize: 13,
                                           color: Color(0xff6E6884),
-                                        ),
                                         textAlign: TextAlign.right,
                                         maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                                        // overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                     SizedBox(height: 10),
@@ -155,15 +151,13 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                             20,
                                           ),
                                         ),
-                                        child: Text(
+                                        child: CustomText(
                                           isFree
                                               ? "رایگان"
                                               : "${data.coursesModel?.price} تومان",
-                                          style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                             color: Color(0xff7C3AED),
-                                          ),
                                         ),
                                       ),
                                     ),

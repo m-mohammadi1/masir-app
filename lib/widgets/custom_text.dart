@@ -32,7 +32,7 @@ class CustomText extends StatelessWidget {
       style:
           style ??
           TextStyle(
-            fontFamily: fontFamily??( (fontWeight?.value ?? 400) >= 600
+            fontFamily: true ? "IRANSans": fontFamily??( (fontWeight?.value ?? 400) >= 600
                 ? "Pinar-Bold"
                 : (fontWeight?.value ?? 400) == 500
                 ? "Pinar-Medium"
@@ -58,7 +58,7 @@ TextStyle customTextStyle({
   Color? color,
 }) {
   return TextStyle(
-    fontFamily: (fontWeight?.value ?? 400) >= 600
+    fontFamily:  true ? "IRANSans":(fontWeight?.value ?? 400) >= 600
         ? "Pinar-Bold"
         : (fontWeight?.value ?? 400) == 500
         ? "Pinar-Medium"
