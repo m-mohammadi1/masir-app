@@ -1,7 +1,11 @@
 import 'package:injectable/injectable.dart';
 
 
+
 import 'package:easy_helper/easy_helper.dart';
+import '../../domain/entities/units.dart';
+import '../models/units_model.dart';
+import '../models/request_units_model.dart';
 import '../../domain/entities/outline_course.dart';
 import '../models/outline_course_model.dart';
 import '../models/request_outline_course_model.dart';
@@ -30,6 +34,9 @@ import '../../domain/entities/main.dart';
 sealed class MainRemoteDataSource {
   final IRestfulApi restfulApi;
   const MainRemoteDataSource({required this.restfulApi});
+
+  @factoryMethod
+  Future<UnitsEntity> units({RequestUnitsModel? params});
 
   @factoryMethod
   Future<OutlineCourseEntity> outlineCourse({RequestOutlineCourseModel? params});
@@ -62,6 +69,15 @@ class MainRemoteDataSourceImpl implements MainRemoteDataSource {
   final IRestfulApi restfulApi;
 
   const MainRemoteDataSourceImpl({required this.restfulApi});
+
+@override
+Future<UnitsEntity> units({RequestUnitsModel? params}) async {
+  var response = await restfulApi.get(
+    path: 'units/${params?.id}',
+    result: const UnitsModel().toResult,
+  );
+  return response.result as UnitsModel;
+}
 
 @override
 Future<OutlineCourseEntity> outlineCourse({RequestOutlineCourseModel? params}) async {

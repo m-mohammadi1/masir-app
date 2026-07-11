@@ -5,7 +5,10 @@ import 'package:injectable/injectable.dart';
 
 
 
+
 import 'package:easy_helper/easy_helper.dart';
+import '../../data/models/request_units_model.dart';
+import '../entities/units.dart';
 import '../../data/models/request_outline_course_model.dart';
 import '../entities/outline_course.dart';
 import '../../data/models/request_subscribe_course_model.dart';
@@ -29,6 +32,10 @@ abstract class MainRepository {
   final MainRemoteDataSource remoteDataSource;
 
   const MainRepository({required this.remoteDataSource});
+
+  @factoryMethod
+  Future<Either<Failure, UnitsEntity>> units({RequestUnitsModel? params});
+
 
   @factoryMethod
   Future<Either<Failure, OutlineCourseEntity>> outlineCourse({RequestOutlineCourseModel? params});

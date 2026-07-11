@@ -5,7 +5,10 @@ import 'package:injectable/injectable.dart';
 
 
 
+
 import 'package:easy_helper/easy_helper.dart';
+import '../../domain/entities/units.dart';
+import '../models/request_units_model.dart';
 import '../../domain/entities/outline_course.dart';
 import '../models/request_outline_course_model.dart';
 import '../../domain/entities/subscribe_course.dart';
@@ -32,6 +35,20 @@ class MainRepositoryImpl implements MainRepository {
   final MainRemoteDataSource remoteDataSource;
 
   const MainRepositoryImpl({required this.remoteDataSource});
+
+  @override
+  Future<Either<Failure, UnitsEntity>> units({RequestUnitsModel? params}) async {
+    try {
+      return Right(await remoteDataSource.units(params: params));
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return Left(ServerFailure().fromJson(e.response?.data));
+      }
+      return Left(DefaultFailure(message: e.message.toString()));
+    } catch (e) {
+      return Left(DefaultFailure(message: e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, OutlineCourseEntity>> outlineCourse({RequestOutlineCourseModel? params}) async {

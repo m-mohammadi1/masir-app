@@ -65,6 +65,7 @@ import '../../features/main/domain/usecases/outline_course_usecase.dart'
     as _i578;
 import '../../features/main/domain/usecases/subscribe_course_usecase.dart'
     as _i497;
+import '../../features/main/domain/usecases/units_usecase.dart' as _i435;
 import '../../features/main/presentation/bloc/course_detail/course_detail_bloc.dart'
     as _i635;
 import '../../features/main/presentation/bloc/courses/courses_bloc.dart'
@@ -80,6 +81,7 @@ import '../../features/main/presentation/bloc/outline_course/outline_course_bloc
     as _i448;
 import '../../features/main/presentation/bloc/subscribe_course/subscribe_course_bloc.dart'
     as _i519;
+import '../../features/main/presentation/bloc/units/units_bloc.dart' as _i85;
 import '../../features/otp/presentation/bloc/otp_form/otp_form_bloc.dart'
     as _i1022;
 import '../../features/quiz/data/datasource/quiz_remote_data_source.dart'
@@ -210,6 +212,9 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i497.SubscribeCourseUseCase(repository: gh<_i1055.MainRepository>()),
     );
+    gh.factory<_i435.UnitsUseCase>(
+      () => _i435.UnitsUseCase(repository: gh<_i1055.MainRepository>()),
+    );
     gh.factory<_i771.RegisterBloc>(
       () => _i771.RegisterBloc(registerUseCase: gh<_i73.RegisterUseCase>()),
     );
@@ -251,6 +256,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i386.SubmitUsernameBloc(
         submitUsernameUseCase: gh<_i672.SubmitUsernameUseCase>(),
       ),
+    );
+    gh.factory<_i85.UnitsBloc>(
+      () => _i85.UnitsBloc(unitsUseCase: gh<_i435.UnitsUseCase>()),
     );
     gh.factory<_i369.SubmitRegisterBloc>(
       () => _i369.SubmitRegisterBloc(
