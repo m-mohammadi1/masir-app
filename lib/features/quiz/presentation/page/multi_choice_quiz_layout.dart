@@ -1,65 +1,45 @@
-part of 'main_quiz_page.dart';
+import 'package:flutter/material.dart';
+import 'package:mohammad/features/main/data/models/units_model.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/option_widget.dart';
 
-class _MultiChoiceQuizLayout extends StatefulWidget {
-  const _MultiChoiceQuizLayout({super.key});
+class MultiChoiceQuizLayout extends StatefulWidget {
+  final UnitsQuestionModel question;
+  final bool readOnly;
+
+  const MultiChoiceQuizLayout({
+    super.key,
+    required this.question,
+    this.readOnly = false,
+  });
 
   @override
-  State<_MultiChoiceQuizLayout> createState() => _MultiChoiceQuizLayoutState();
+  State<MultiChoiceQuizLayout> createState() => _MultiChoiceQuizLayoutState();
 }
 
-class _MultiChoiceQuizLayoutState extends State<_MultiChoiceQuizLayout> {
+class _MultiChoiceQuizLayoutState extends State<MultiChoiceQuizLayout> {
   int correct = -1;
+
   @override
   Widget build(BuildContext context) {
+    if (widget.readOnly) {
+      return const SizedBox.shrink();
+    }
+
+    final options = widget.question.options ?? [];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        16.h,
-        CustomText("عنوان سوال چهار گزینه ای", fontSize: 18),
-        24.h,
-        Html(data: "توضیحات سوال"),
-        24.h,
-        _OptionWidget(
-          title: "گزینه یک",
-          selected: correct == 1,
-          onTap: () {
-            setState(() {
-              correct = 1;
-            });
-          },
-        ),
-        8.h,
-        _OptionWidget(
-          title: "گزینه دو",
-          onTap: () {
-            setState(() {
-              correct = 2;
-            });
-          },
-          selected: correct == 2,
-        ),
-        8.h,
-        _OptionWidget(
-          title: "گزینه سه",
-          onTap: () {
-            setState(() {
-              correct = 3;
-            });
-          },
-          selected: correct == 3,
-        ),
-        8.h,
-        _OptionWidget(
-          title: "گزینه چهار",
-          onTap: () {
-            setState(() {
-              correct = 4;
-            });
-          },
-          selected: correct == 4,
-        ),
-      ],
+      children: List.generate(options.length, (index) {
+        final optionIndex = index + 1;
+        return Padding(
+          padding: EdgeInsets.only(bottom: index == options.length - 1 ? 0 : 8),
+          child: OptionWidget(
+            title: options[index],
+            selected: correct == optionIndex,
+            onTap: () => setState(() => correct = optionIndex),
+          ),
+        );
+      }),
     );
   }
 }

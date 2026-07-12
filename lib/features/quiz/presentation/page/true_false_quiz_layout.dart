@@ -1,44 +1,44 @@
-part of 'main_quiz_page.dart';
+import 'package:easy_helper/easy_helper.dart';
+import 'package:flutter/material.dart';
+import 'package:mohammad/features/main/data/models/units_model.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/option_widget.dart';
 
-class _TrueFalseQuizLayout extends StatefulWidget {
-  const _TrueFalseQuizLayout({super.key});
+class TrueFalseQuizLayout extends StatefulWidget {
+  final UnitsQuestionModel question;
+  final bool readOnly;
+
+  const TrueFalseQuizLayout({
+    super.key,
+    required this.question,
+    this.readOnly = false,
+  });
 
   @override
-  State<_TrueFalseQuizLayout> createState() => _TrueFalseQuizLayoutState();
+  State<TrueFalseQuizLayout> createState() => _TrueFalseQuizLayoutState();
 }
 
-class _TrueFalseQuizLayoutState extends State<_TrueFalseQuizLayout> {
+class _TrueFalseQuizLayoutState extends State<TrueFalseQuizLayout> {
   bool? correct;
 
   @override
   Widget build(BuildContext context) {
+    if (widget.readOnly) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        16.h,
-        CustomText("عنوان سوال صحیح و غلط", fontSize: 18),
-        24.h,
-        Html(data: "توضیحات سوال"),
-        24.h,
-        _OptionWidget(
-          title: "درست",
+        OptionWidget(
+          title: 'درست',
           selected: correct == true,
-          onTap: () {
-            setState(() {
-              correct = true;
-            });
-          },
+          onTap: () => setState(() => correct = true),
         ),
         8.h,
-        _OptionWidget(
-          title: "غلط",
-          onTap: () {
-            setState(() {
-              correct = false;
-            });
-          },
+        OptionWidget(
+          title: 'غلط',
           selected: correct == false,
+          onTap: () => setState(() => correct = false),
         ),
       ],
     );

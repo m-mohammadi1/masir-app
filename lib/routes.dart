@@ -17,7 +17,7 @@ import 'features/main/presentation/page/my_institutes_page.dart';
 import 'features/main/presentation/page/outline_page.dart';
 import 'features/otp/presentation/page/otp_screen.dart';
 import 'features/quiz/presentation/page/end_quiz_page.dart';
-import 'features/quiz/presentation/page/main_quiz_page.dart';
+import 'features/quiz/presentation/page/unit_page.dart';
 import 'features/register/presentation/page/register_page.dart';
 
 const String initialRoute = SplashScreen.routeName;
@@ -91,8 +91,16 @@ final GoRouter router = GoRouter(
       ],
     ),
     GoRoute(
-      path: MainQuizPage.routeName,
-      builder: (context, state) => MainQuizPage(),
+      path: UnitPage.routeName,
+      builder: (context, state) {
+        final extra = state.extra as Map<String, String>?;
+        return UnitPage(
+          unitId: extra?['id'] ?? '',
+          unitType: extra?['type'] ?? '',
+          unitTitle: extra?['title'] ?? '',
+          status: extra?['status'] ?? '',
+        );
+      },
     ),
     GoRoute(
       path: EditProfilePage.routeName,

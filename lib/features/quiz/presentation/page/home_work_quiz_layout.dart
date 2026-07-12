@@ -1,47 +1,52 @@
-part of 'main_quiz_page.dart';
+import 'package:easy_helper/easy_helper.dart';
+import 'package:flutter/material.dart';
+import 'package:mohammad/features/main/data/models/units_model.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/option_widget.dart';
 
-class _HomeWorkQuizLayout extends StatefulWidget {
-  const _HomeWorkQuizLayout({super.key});
+class HomeWorkQuizLayout extends StatefulWidget {
+  final UnitsQuestionModel question;
+  final bool readOnly;
+  final ValueChanged<bool?>? onAnswerChanged;
+
+  const HomeWorkQuizLayout({
+    super.key,
+    required this.question,
+    this.readOnly = false,
+    this.onAnswerChanged,
+  });
 
   @override
-  State<_HomeWorkQuizLayout> createState() => _HomeWorkQuizLayoutState();
+  State<HomeWorkQuizLayout> createState() => _HomeWorkQuizLayoutState();
 }
 
-class _HomeWorkQuizLayoutState extends State<_HomeWorkQuizLayout> {
-
+class _HomeWorkQuizLayoutState extends State<HomeWorkQuizLayout> {
   bool? correct;
 
   @override
   Widget build(BuildContext context) {
+    if (widget.readOnly) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        16.h,
-        CustomText("عنوان سوال تمرینی", fontSize: 18),
-        24.h,
-        Html(data: "توضیحات سوال"),
-        24.h,
-        Html(data: "محتوای متن درس به شرح زیر هست ولی شرح زیر خالیه پس یک متنی مینویسیم تا خالی نباشد.</br></br></br></br></br> نقطه سر خط"),
-        8.h,
-        _OptionWidget(
-          title: "خواندم",
+        OptionWidget(
+          title: 'خواندم',
           selected: correct == true,
           onTap: () {
-            setState(() {
-              correct = true;
-            });
+            setState(() => correct = true);
+            widget.onAnswerChanged?.call(true);
           },
         ),
         8.h,
-        _OptionWidget(
-          title: "فراموش کردم",
-          onTap: () {
-            setState(() {
-              correct = false;
-            });
-          },
+        OptionWidget(
+          title: 'فراموش کردم',
           selected: correct == false,
+          onTap: () {
+            setState(() => correct = false);
+            widget.onAnswerChanged?.call(false);
+          },
         ),
       ],
     );

@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/request_outline_course_model.dart';
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
+import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
+import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
@@ -44,6 +46,26 @@ class _OutlinePageState extends State<OutlinePage> {
       default:
         return type;
     }
+  }
+
+  void _onUnitTap({
+    required String? id,
+    required String? type,
+    required String? title,
+    required String? status,
+    required bool locked,
+  }) {
+    if (locked || id == null || id.isEmpty) return;
+
+    CustomNavigator.pushNamed(
+      UnitPage.routeName,
+      arguments: UnitPageArgs(
+        unitId: id,
+        unitType: type ?? '',
+        unitTitle: title ?? '',
+        status: status ?? '',
+      ).toMap(),
+    );
   }
 
   IconData _getTypeIcon(String type) {
@@ -239,7 +261,15 @@ class _OutlinePageState extends State<OutlinePage> {
                                                       horizontal: 16,
                                                       vertical: 5,
                                                     ),
-                                                child: Container(
+                                                child: OnClick(
+                                                  onTap: () => _onUnitTap(
+                                                    id: unit.id,
+                                                    type: unitType,
+                                                    title: unit.title,
+                                                    status: unitStatus,
+                                                    locked: unitLocked,
+                                                  ),
+                                                  child: Container(
                                                   padding: EdgeInsets.symmetric(
                                                     horizontal: 14,
                                                     vertical: 12,
@@ -371,6 +401,7 @@ class _OutlinePageState extends State<OutlinePage> {
                                                       ],
                                                     ],
                                                   ),
+                                                ),
                                                 ),
                                               );
                                             }),

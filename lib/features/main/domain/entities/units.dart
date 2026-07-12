@@ -24,14 +24,21 @@ abstract class UnitsEntity extends BaseResult {
 abstract class UnitsPayloadEntity extends BaseResult {
   final int? passThreshold;
   final List<UnitsQuestionEntity>? questions;
+  final String? body;
+  final String? instructions;
+  final String? attachmentUrl;
 
   const UnitsPayloadEntity({
     this.passThreshold,
     this.questions,
+    this.body,
+    this.instructions,
+    this.attachmentUrl,
   });
 
   @override
-  List<Object?> get props => [passThreshold, questions];
+  List<Object?> get props =>
+      [passThreshold, questions, body, instructions, attachmentUrl];
 }
 
 abstract class UnitsQuestionEntity extends BaseResult {

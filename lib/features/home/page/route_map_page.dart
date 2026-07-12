@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/core/helper/custom_colors.dart';
-import 'package:mohammad/features/quiz/presentation/page/main_quiz_page.dart';
+import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
 class RouteMapPage extends StatefulWidget {
@@ -259,7 +259,7 @@ class _RoadItemState extends State<RoadItem>
           child: OnClick(
             onTap: () {
               if (widget.state != StepState.locked) {
-                CustomNavigator.pushNamed(MainQuizPage.routeName);
+                CustomNavigator.pushNamed(UnitPage.routeName);
               }
             },
             child: Center(child: child),

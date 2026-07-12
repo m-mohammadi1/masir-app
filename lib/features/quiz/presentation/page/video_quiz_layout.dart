@@ -1,22 +1,30 @@
-part of 'main_quiz_page.dart';
+import 'package:flutter/material.dart';
+import 'package:mohammad/features/main/data/models/units_model.dart';
+import 'package:mohammad/features/quiz/presentation/bloc/video/video_view_model.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/video_player.dart';
 
-class _VideoQuizLayout extends StatelessWidget {
-   _VideoQuizLayout({super.key});
+class VideoQuizLayout extends StatelessWidget {
+  final UnitsQuestionModel question;
+  final bool readOnly;
+
+  VideoQuizLayout({
+    super.key,
+    required this.question,
+    this.readOnly = false,
+  });
 
   final VideoViewModel videoViewModel = VideoViewModel();
 
   @override
   Widget build(BuildContext context) {
+    final videoUrl = question.options?.isNotEmpty == true
+        ? question.options!.first
+        : '';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        16.h,
-        CustomText("عنوان سوال ویدئویی", fontSize: 18),
-        24.h,
-        Html(data: "توضیحات سوال"),
-        24.h,
-        CustomVideoPlayer(url: "", videoViewModel: videoViewModel),
+        CustomVideoPlayer(url: videoUrl, videoViewModel: videoViewModel),
       ],
     );
   }

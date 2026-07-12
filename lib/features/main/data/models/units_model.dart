@@ -42,11 +42,17 @@ class UnitsPayloadModel extends UnitsPayloadEntity {
   const UnitsPayloadModel({
     super.passThreshold,
     super.questions,
+    super.body,
+    super.instructions,
+    super.attachmentUrl,
   });
 
   factory UnitsPayloadModel.fromJson(Map<String, dynamic> json) {
     return UnitsPayloadModel(
       passThreshold: json['pass_threshold'],
+      body: json['body'],
+      instructions: json['instructions'],
+      attachmentUrl: json['attachment_url'],
       questions: (json['questions'] as List<dynamic>?)
           ?.map((e) => UnitsQuestionModel.fromJson(e))
           .toList(),

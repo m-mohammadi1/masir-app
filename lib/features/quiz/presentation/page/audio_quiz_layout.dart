@@ -1,20 +1,30 @@
-part of 'main_quiz_page.dart';
+import 'package:flutter/material.dart';
+import 'package:mohammad/features/main/data/models/units_model.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/audio_player.dart';
 
-class _AudioQuizLayout extends StatelessWidget {
-  const _AudioQuizLayout({super.key});
+class AudioQuizLayout extends StatelessWidget {
+  final UnitsQuestionModel question;
+  final bool readOnly;
+
+  const AudioQuizLayout({
+    super.key,
+    required this.question,
+    this.readOnly = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final audioUrl = question.options?.isNotEmpty == true
+        ? question.options!.first
+        : '';
+
     return Column(
-      crossAxisAlignment:CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        16.h,
-        CustomText("عنوان سوال صوتی", fontSize: 18),
-        24.h,
-        Html(data: "توضیحات سوال"),
-        24.h,
-        CustomAudioPlayer(onChanged: (value) {}, url: ""),
+        CustomAudioPlayer(
+          onChanged: (value) {},
+          url: audioUrl,
+        ),
       ],
     );
   }

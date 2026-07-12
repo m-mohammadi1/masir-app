@@ -258,7 +258,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
             ),
           ],
         ),
-        const SizedBox(height: 18),
+        20.h,
         SpeedWidget(
           color: AppColor.primary,
           onChanged: (value) {

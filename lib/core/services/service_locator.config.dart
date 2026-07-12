@@ -63,6 +63,7 @@ import '../../features/main/domain/usecases/my_subscriptions_usecase.dart'
     as _i671;
 import '../../features/main/domain/usecases/outline_course_usecase.dart'
     as _i578;
+import '../../features/main/domain/usecases/quiz_submit_usecase.dart' as _i714;
 import '../../features/main/domain/usecases/subscribe_course_usecase.dart'
     as _i497;
 import '../../features/main/domain/usecases/units_usecase.dart' as _i435;
@@ -79,6 +80,8 @@ import '../../features/main/presentation/bloc/my_subscriptions/my_subscriptions_
     as _i1032;
 import '../../features/main/presentation/bloc/outline_course/outline_course_bloc.dart'
     as _i448;
+import '../../features/main/presentation/bloc/quiz_submit/quiz_submit_bloc.dart'
+    as _i842;
 import '../../features/main/presentation/bloc/subscribe_course/subscribe_course_bloc.dart'
     as _i519;
 import '../../features/main/presentation/bloc/units/units_bloc.dart' as _i85;
@@ -208,6 +211,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i578.OutlineCourseUseCase>(
       () => _i578.OutlineCourseUseCase(repository: gh<_i1055.MainRepository>()),
     );
+    gh.factory<_i714.QuizSubmitUseCase>(
+      () => _i714.QuizSubmitUseCase(repository: gh<_i1055.MainRepository>()),
+    );
     gh.factory<_i497.SubscribeCourseUseCase>(
       () =>
           _i497.SubscribeCourseUseCase(repository: gh<_i1055.MainRepository>()),
@@ -237,6 +243,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i519.SubscribeCourseBloc>(
       () => _i519.SubscribeCourseBloc(
         subscribeCourseUseCase: gh<_i497.SubscribeCourseUseCase>(),
+      ),
+    );
+    gh.factory<_i842.QuizSubmitBloc>(
+      () => _i842.QuizSubmitBloc(
+        quizSubmitUseCase: gh<_i714.QuizSubmitUseCase>(),
       ),
     );
     gh.factory<_i279.MyInstitutesBloc>(
