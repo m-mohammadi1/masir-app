@@ -43,82 +43,88 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
 
   int currentTime = 0;
 
+  static const Color _trackActive = Color(0xffC4B5FD);
+  static const Color _trackInactive = Color(0xffE7DEF8);
+  static const Color _thumbColor = Color(0xff7C3AED);
+
+  Widget _buildProgressSection({
+    required double currentTime,
+    required double fullTime,
+    required String elapsedLabel,
+    required String totalLabel,
+    required ValueChanged<double>? onSeek,
+  }) {
+    final safeMax = fullTime > 0 ? fullTime : 1.0;
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                CustomText(
+                  elapsedLabel,
+                  fontSize: 10,
+                  color: const Color(0xff6E6884),
+                ),
+                const Spacer(),
+                CustomText(
+                  totalLabel,
+                  fontSize: 10,
+                  color: const Color(0xff6E6884),
+                ),
+              ],
+            ),
+          ),
+          SliderTheme(
+            data: SliderThemeData(
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              overlayShape: SliderComponentShape.noOverlay,
+              activeTrackColor: _trackActive,
+              inactiveTrackColor: _trackInactive,
+              thumbColor: _thumbColor,
+            ),
+            child: Slider(
+              value: currentTime.clamp(0, safeMax),
+              min: 0,
+              max: safeMax,
+              onChanged: onSeek,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    print('audio url is : ${widget.url}');
     return Column(
       children: [
-        SizedBox(
-          height: 20,
-          child: BlocConsumer(
-            bloc: viewModel,
-            buildWhen: (previous, current) => current is AudioCurrentTimeState,
-            listener: (context, state) {},
-            builder: (context, state) {
-              if (state is AudioCurrentTimeState) {
-                return Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 50, end: 48),
-                  child: Row(
-                    children: [
-                      CustomText(state.time, fontSize: 10),
-                      const Spacer(),
-                      CustomText(state.current, fontSize: 10),
-                    ],
-                  ),
-                );
-              } else {
-                return Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 50, end: 48),
-                  child: Row(
-                    children: [
-                      CustomText("00:00", fontSize: 10,),
-                      const Spacer(),
-                      CustomText("00:00", fontSize: 10,),
-                    ],
-                  ),
-                );
-              }
-            },
-          ),
-        ),
         BlocBuilder(
           bloc: viewModel,
           buildWhen: (previous, current) => current is AudioCurrentTimeState,
           builder: (context, state) {
             if (state is AudioCurrentTimeState) {
               currentTime = state.currentTime.toInt();
-              return Padding(
-                padding: const EdgeInsetsDirectional.only(start: 30, end: 28),
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: 20,
-                  child: Slider(
-                    value: state.currentTime,
-                    min: 0,
-                    max: state.fullTime,
-                    // activeColor: widget.color,
-                    // inactiveColor: border,
-                    onChanged: viewModel.seekTo,
-                  ),
-                ),
-              );
-            } else {
-              return Padding(
-                padding: const EdgeInsetsDirectional.only(start: 30, end: 28),
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: 20,
-                  child: Slider(
-                    value: 0,
-                    min: 0,
-                    max: 100,
-                    // activeColor: widget.color,
-                    // inactiveColor: border,
-                    onChanged: (double value) {},
-                  ),
-                ),
+              return _buildProgressSection(
+                currentTime: state.currentTime,
+                fullTime: state.fullTime,
+                elapsedLabel: state.time,
+                totalLabel: state.current,
+                onSeek: viewModel.seekTo,
               );
             }
+
+            return _buildProgressSection(
+              currentTime: 0,
+              fullTime: 1,
+              elapsedLabel: '00:00',
+              totalLabel: '00:00',
+              onSeek: null,
+            );
           },
         ),
         const SizedBox(height: 21),
@@ -135,12 +141,12 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                 child: Stack(
                   alignment: AlignmentDirectional.bottomStart,
                   children: [
-                    SvgPicture.asset(
-                      "assets/quiz/previous_second.svg",
-                      // color: widget.color,
-                      width: 37,
-                      height: 32,
-                    ),
+                    // SvgPicture.asset(
+                    //   "assets/quiz/previous_second.svg",
+                    //   // color: widget.color,
+                    //   width: 37,
+                    //   height: 32,
+                    // ),
                     Container(height: 12.6, width: 12, color: AppColor.white),
                     Align(
                       alignment: AlignmentDirectional.centerEnd,
@@ -234,12 +240,12 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                 child: Stack(
                   alignment: AlignmentDirectional.bottomEnd,
                   children: [
-                    SvgPicture.asset(
-                      "assets/quiz/next_second.svg",
-                      color: AppColor.primary,
-                      width: 37,
-                      height: 32,
-                    ),
+                    // SvgPicture.asset(
+                    //   "assets/quiz/next_second.svg",
+                    //   color: AppColor.primary,
+                    //   width: 37,
+                    //   height: 32,
+                    // ),
                     Container(height: 12.6, width: 12, color: Colors.white),
                     Align(
                       alignment: AlignmentDirectional.centerStart,

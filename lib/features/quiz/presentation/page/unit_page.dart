@@ -9,6 +9,7 @@ import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/main/presentation/bloc/quiz_submit/quiz_submit_bloc.dart';
 import 'package:mohammad/features/main/presentation/bloc/units/units_bloc.dart';
 import 'package:mohammad/features/quiz/presentation/page/quiz_layout_helper.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/audio_unit_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/html_unit_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/practice_unit_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/quiz_result_content.dart';
@@ -83,6 +84,11 @@ class _UnitPageState extends State<UnitPage> {
   bool get _isPracticeUnit {
     final type = _unitData?.type ?? widget.unitType;
     return type == 'practice';
+  }
+
+  bool get _isAudioUnit {
+    final type = _unitData?.type ?? widget.unitType;
+    return type == 'audio';
   }
 
   void _handleBack() => CustomNavigator.pop();
@@ -245,6 +251,17 @@ class _UnitPageState extends State<UnitPage> {
 
     if (_isPracticeUnit) {
       return PracticeUnitContent(
+        data: data,
+        isCompleted: widget.isCompleted,
+        isSubmitting: _isSubmitting,
+        onNext: widget.isCompleted
+            ? _handleBack
+            : () => _submitSimpleUnit(),
+      );
+    }
+
+    if (_isAudioUnit) {
+      return AudioUnitContent(
         data: data,
         isCompleted: widget.isCompleted,
         isSubmitting: _isSubmitting,

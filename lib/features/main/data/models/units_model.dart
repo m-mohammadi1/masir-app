@@ -45,6 +45,9 @@ class UnitsPayloadModel extends UnitsPayloadEntity {
     super.body,
     super.instructions,
     super.attachmentUrl,
+    super.durationSeconds,
+    super.mediaAccessUrl,
+    super.mediaExpiresAt,
   });
 
   factory UnitsPayloadModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +56,9 @@ class UnitsPayloadModel extends UnitsPayloadEntity {
       body: json['body'],
       instructions: json['instructions'],
       attachmentUrl: json['attachment_url'],
+      durationSeconds: json['duration_seconds'],
+      mediaAccessUrl: json['media_access_url'],
+      mediaExpiresAt: json['media_expires_at'],
       questions: (json['questions'] as List<dynamic>?)
           ?.map((e) => UnitsQuestionModel.fromJson(e))
           .toList(),

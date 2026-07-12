@@ -27,6 +27,9 @@ abstract class UnitsPayloadEntity extends BaseResult {
   final String? body;
   final String? instructions;
   final String? attachmentUrl;
+  final int? durationSeconds;
+  final String? mediaAccessUrl;
+  final String? mediaExpiresAt;
 
   const UnitsPayloadEntity({
     this.passThreshold,
@@ -34,11 +37,22 @@ abstract class UnitsPayloadEntity extends BaseResult {
     this.body,
     this.instructions,
     this.attachmentUrl,
+    this.durationSeconds,
+    this.mediaAccessUrl,
+    this.mediaExpiresAt,
   });
 
   @override
-  List<Object?> get props =>
-      [passThreshold, questions, body, instructions, attachmentUrl];
+  List<Object?> get props => [
+        passThreshold,
+        questions,
+        body,
+        instructions,
+        attachmentUrl,
+        durationSeconds,
+        mediaAccessUrl,
+        mediaExpiresAt,
+      ];
 }
 
 abstract class UnitsQuestionEntity extends BaseResult {
