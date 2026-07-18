@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:easy_helper/easy_helper.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
@@ -19,12 +17,9 @@ const String _baseUrl = "https://api.getmasir.com/v1/app/";
 bool _haveFormData = false;
 
 Map<String, dynamic> _header(bool haveFormData) => {
-  HttpHeaders.contentTypeHeader: haveFormData
-      ? 'multipart/form-data'
-      : 'application/json',
-  HttpHeaders.acceptHeader: 'application/json',
-  if (HiveService.token != null)
-    HttpHeaders.authorizationHeader: 'Bearer ${HiveService.token}',
+  'Content-Type': haveFormData ? 'multipart/form-data' : 'application/json',
+  'Accept': 'application/json',
+  if (HiveService.token != null) 'Authorization': 'Bearer ${HiveService.token}',
 };
 
 void updateHeader() {

@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
@@ -23,11 +21,6 @@ class FCMManager {
       await init();
       FirebaseMessaging.instance.requestPermission();
       try {
-        if (Platform.isAndroid) {
-          await FirebaseMessaging.instance.subscribeToTopic('Android');
-        } else {
-          await FirebaseMessaging.instance.subscribeToTopic('iOS');
-        }
         await FirebaseMessaging.instance.subscribeToTopic('All');
       } catch (e) {}
     }

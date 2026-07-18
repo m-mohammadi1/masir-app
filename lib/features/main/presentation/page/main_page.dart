@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/core/services/service_locator.dart';
@@ -49,7 +47,7 @@ class _MainPageState extends State<MainPage> {
             index = 1;
           });
         } else {
-          exit(0);
+          Navigator.pop(context);
         }
       },
       canPop: false,

@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:easy_helper/easy_helper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class RetryPage extends StatefulWidget {
@@ -29,18 +29,20 @@ class _RetryPageState extends State<RetryPage> {
   bool _connection = true;
 
   Future<bool> _initConnectivity() async {
-    late bool isConnected;
+    if (kIsWeb) {
+      final result = await Connectivity().checkConnectivity();
+      return !result.contains(ConnectivityResult.none);
+    }
+
     try {
-      final List<InternetAddress> result =
-      await InternetAddress.lookup('google.com');
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        isConnected = true;
+      final result = await Connectivity().checkConnectivity();
+      if (result.contains(ConnectivityResult.none)) {
+        return false;
       }
-    } on SocketException catch (_) {
-      isConnected = false;
+      return true;
+    } catch (_) {
       return false;
     }
-    return isConnected;
   }
 
   StreamSubscription<List<ConnectivityResult>>? _connectionSubscription;

@@ -48,16 +48,16 @@ class _OutlinePageState extends State<OutlinePage> {
     }
   }
 
-  void _onUnitTap({
+  Future<void> _onUnitTap({
     required String? id,
     required String? type,
     required String? title,
     required String? status,
     required bool locked,
-  }) {
+  }) async {
     if (locked || id == null || id.isEmpty) return;
 
-    CustomNavigator.pushNamed(
+    await CustomNavigator.pushNamed(
       UnitPage.routeName,
       arguments: UnitPageArgs(
         unitId: id,
@@ -65,6 +65,13 @@ class _OutlinePageState extends State<OutlinePage> {
         unitTitle: title ?? '',
         status: status ?? '',
       ).toMap(),
+    );
+
+    if (!mounted) return;
+    bloc.add(
+      OutlineCourseEvent.outlineCourse(
+        params: RequestOutlineCourseModel(id: widget.id),
+      ),
     );
   }
 
