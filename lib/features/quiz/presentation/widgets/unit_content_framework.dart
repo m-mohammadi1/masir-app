@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
-import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
 class UnitContentFramework extends StatelessWidget {
@@ -11,8 +11,9 @@ class UnitContentFramework extends StatelessWidget {
   final String instructionText;
   final String? attachmentUrl;
   final Widget? content;
-  final VoidCallback? onNext;
-  final String nextButtonTitle;
+  final VoidCallback? onComplete;
+  final VoidCallback onBack;
+  final String primaryButtonTitle;
   final bool isSubmitting;
 
   const UnitContentFramework({
@@ -21,10 +22,11 @@ class UnitContentFramework extends StatelessWidget {
     required this.typeLabel,
     required this.isCompleted,
     required this.instructionText,
+    required this.onBack,
     this.attachmentUrl,
     this.content,
-    this.onNext,
-    this.nextButtonTitle = 'واحد بعدی',
+    this.onComplete,
+    this.primaryButtonTitle = 'تکمیل شد',
     this.isSubmitting = false,
   });
 
@@ -63,23 +65,12 @@ class UnitContentFramework extends StatelessWidget {
           ),
         ),
         16.h,
-        CustomButton(
-          title: nextButtonTitle,
-          loading: isSubmitting,
-          onTap: onNext,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomText(
-                nextButtonTitle,
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              8.w,
-              const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
-            ],
-          ),
+        UnitActionButtons(
+          showPrimary: !isCompleted,
+          primaryTitle: primaryButtonTitle,
+          isSubmitting: isSubmitting,
+          onPrimary: onComplete,
+          onBack: onBack,
         ),
         20.h,
       ],

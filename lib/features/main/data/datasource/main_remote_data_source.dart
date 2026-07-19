@@ -79,8 +79,11 @@ class MainRemoteDataSourceImpl implements MainRemoteDataSource {
 
 @override
 Future<QuizSubmitResponseEntity> quizSubmit({RequestQuizSubmitModel? params}) async {
+  final hasAnswers = params?.answers.isNotEmpty == true;
   var response = await restfulApi.post(
-    path: 'units/${params?.id}/quiz-submit',
+    path: hasAnswers
+        ? 'units/${params?.id}/quiz-submit'
+        : 'units/${params?.id}/complete',
     result: const QuizSubmitResponseModel().toResult,
     request: params,
   );

@@ -243,9 +243,8 @@ class _UnitPageState extends State<UnitPage> {
         data: data,
         isCompleted: widget.isCompleted,
         isSubmitting: _isSubmitting,
-        onNext: widget.isCompleted
-            ? _handleBack
-            : () => _submitSimpleUnit(),
+        onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
+        onBack: _handleBack,
       );
     }
 
@@ -254,9 +253,8 @@ class _UnitPageState extends State<UnitPage> {
         data: data,
         isCompleted: widget.isCompleted,
         isSubmitting: _isSubmitting,
-        onNext: widget.isCompleted
-            ? _handleBack
-            : () => _submitSimpleUnit(),
+        onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
+        onBack: _handleBack,
       );
     }
 
@@ -265,9 +263,8 @@ class _UnitPageState extends State<UnitPage> {
         data: data,
         isCompleted: widget.isCompleted,
         isSubmitting: _isSubmitting,
-        onNext: widget.isCompleted
-            ? _handleBack
-            : () => _submitSimpleUnit(),
+        onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
+        onBack: _handleBack,
       );
     }
 
@@ -305,8 +302,9 @@ class _UnitPageState extends State<UnitPage> {
                 setState(() => _homeworkAnswer = value);
               },
             ),
-      onNext: widget.isCompleted ? _handleBack : _submitHomework,
-      nextButtonTitle: widget.isCompleted ? 'واحد بعدی' : 'ثبت پاسخ',
+      onComplete: widget.isCompleted ? null : _submitHomework,
+      onBack: _handleBack,
+      primaryButtonTitle: 'تکمیل شد',
     );
   }
 }

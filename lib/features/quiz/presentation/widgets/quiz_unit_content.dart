@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/request_quiz_submit_model.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/page/quiz_layout_helper.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
-import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
 class QuizUnitContent extends StatefulWidget {
@@ -144,30 +144,12 @@ class QuizUnitContentState extends State<QuizUnitContent> {
           ),
         ),
         16.h,
-        if (!widget.isCompleted)
-          CustomButton(
-            title: 'ارسال پاسخ',
-            loading: widget.isSubmitting,
-            onTap: _handleSubmit,
-          ),
-        if (!widget.isCompleted) 12.h,
-        OnClick(
-          onTap: widget.onBack,
-          child: Container(
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xffE7DEF8)),
-            ),
-            child: const CustomText(
-              'بازگشت به مسیر',
-              color: Color(0xff2F2146),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+        UnitActionButtons(
+          showPrimary: !widget.isCompleted,
+          primaryTitle: 'ارسال پاسخ',
+          isSubmitting: widget.isSubmitting,
+          onPrimary: _handleSubmit,
+          onBack: widget.onBack,
         ),
         20.h,
       ],

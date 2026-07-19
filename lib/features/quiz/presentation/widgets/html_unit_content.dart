@@ -2,22 +2,24 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
-import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
 class HtmlUnitContent extends StatelessWidget {
   final UnitsModel data;
   final bool isCompleted;
   final bool isSubmitting;
-  final VoidCallback onNext;
+  final VoidCallback? onComplete;
+  final VoidCallback onBack;
 
   const HtmlUnitContent({
     super.key,
     required this.data,
     required this.isCompleted,
     this.isSubmitting = false,
-    required this.onNext,
+    this.onComplete,
+    required this.onBack,
   });
 
   String get _body => data.payload?.body ?? '';
@@ -70,23 +72,12 @@ class HtmlUnitContent extends StatelessWidget {
           ),
         ),
         16.h,
-        CustomButton(
-          title: 'واحد بعدی',
-          loading: isSubmitting,
-          onTap: onNext,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CustomText(
-                'واحد بعدی',
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              8.w,
-              const Icon(Icons.arrow_back, color: Colors.white, size: 18),
-            ],
-          ),
+        UnitActionButtons(
+          showPrimary: !isCompleted,
+          primaryTitle: 'تکمیل شد',
+          isSubmitting: isSubmitting,
+          onPrimary: onComplete,
+          onBack: onBack,
         ),
         20.h,
       ],
