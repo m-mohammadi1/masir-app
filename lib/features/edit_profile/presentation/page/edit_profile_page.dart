@@ -2,6 +2,7 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
+import 'package:mohammad/features/edit_profile/presentation/bloc/edit_password/edit_password_bloc.dart';
 import 'package:mohammad/features/edit_profile/presentation/bloc/edit_profile_bloc.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
@@ -11,6 +12,7 @@ import 'package:mohammad/widgets/custom_text_field.dart';
 
 import '../../../../core/services/hive_service.dart';
 import '../../../auth/domain/entities/submit_username.dart';
+import '../../data/models/request_edit_password_model.dart';
 import '../../data/models/request_edit_profile_model.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -24,6 +26,7 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final editProfileBloc = inject<EditProfileBloc>();
+  final editPasswordBloc = inject<EditPasswordBloc>();
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -32,6 +35,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
+  static const int _minPasswordLength = 8;
 
   @override
   void initState() {
@@ -51,6 +56,55 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  String? _validatePasswordFields() {
+    final currentPassword = _currentPasswordController.text;
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (currentPassword.isEmpty) {
+      return "رمز عبور فعلی را وارد کنید";
+    }
+    if (newPassword.isEmpty) {
+      return "رمز عبور جدید را وارد کنید";
+    }
+    if (newPassword.length < _minPasswordLength) {
+      return "رمز عبور جدید باید حداقل $_minPasswordLength کاراکتر باشد";
+    }
+    if (confirmPassword.isEmpty) {
+      return "تکرار رمز عبور را وارد کنید";
+    }
+    if (newPassword != confirmPassword) {
+      return "رمز عبور جدید و تکرار آن یکسان نیستند";
+    }
+    if (currentPassword == newPassword) {
+      return "رمز عبور جدید باید با رمز فعلی متفاوت باشد";
+    }
+    return null;
+  }
+
+  void _onChangePassword() {
+    final error = _validatePasswordFields();
+    if (error != null) {
+      CustomToast.toast(context, error);
+      return;
+    }
+
+    editPasswordBloc.add(
+      EditPasswordEvent.editPassword(
+        params: RequestEditPasswordModel(
+          currentPassword: _currentPasswordController.text,
+          newPassword: _newPasswordController.text,
+        ),
+      ),
+    );
+  }
+
+  void _clearPasswordFields() {
+    _currentPasswordController.clear();
+    _newPasswordController.clear();
+    _confirmPasswordController.clear();
   }
 
   @override
@@ -153,17 +207,46 @@ class _EditProfilePageState extends State<EditProfilePage> {
             textDirection: TextDirection.ltr,
           ),
           20.h,
-          BlocBuilder<EditProfileBloc, EditProfileState>(
+          BlocConsumer<EditProfileBloc, EditProfileState>(
             bloc: editProfileBloc,
+            listener: (context, state) {
+              state.whenOrNull(
+                error: (isLoading, message) {
+                  CustomToast.toast(context, message);
+                },
+                success: (isLoading, data) {
+                  final current = HiveService.user;
+                  if (current != null) {
+                    HiveService.setUser(
+                      User(
+                        id: data.id ?? current.id,
+                        phone: data.phone ?? current.phone,
+                        username: data.username ?? current.username,
+                        name: data.name ?? _nameController.text.trim(),
+                      ),
+                    );
+                  }
+                  CustomToast.toast(
+                    context,
+                    "اطلاعات با موفقیت ذخیره شد",
+                    type: Type.success,
+                  );
+                },
+              );
+            },
             builder: (context, state) {
-              final isLoading = state.whenOrNull(loading: (isLoading) => isLoading) ?? false;
               return CustomButton(
                 title: "ذخیره",
-                loading: isLoading,
+                loading: state.isLoading,
                 onTap: () {
+                  final name = _nameController.text.trim();
+                  if (name.isEmpty) {
+                    CustomToast.toast(context, "نام را وارد کنید");
+                    return;
+                  }
                   editProfileBloc.add(
                     EditProfileEvent.editProfile(
-                      params: RequestEditProfileModel(),
+                      params: RequestEditProfileModel(name: name),
                     ),
                   );
                 },
@@ -245,9 +328,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
             hint: "رمز عبور جدید را تکرار کنید",
           ),
           20.h,
-          CustomButton(
-            title: "ذخیره",
-            onTap: () {},
+          BlocConsumer<EditPasswordBloc, EditPasswordState>(
+            bloc: editPasswordBloc,
+            listener: (context, state) {
+              state.whenOrNull(
+                error: (isLoading, message) {
+                  CustomToast.toast(context, message);
+                },
+                success: (isLoading, data) {
+                  _clearPasswordFields();
+                  CustomToast.toast(
+                    context,
+                    "رمز عبور با موفقیت تغییر کرد",
+                    type: Type.success,
+                  );
+                },
+              );
+            },
+            builder: (context, state) {
+              return CustomButton(
+                title: "ذخیره",
+                loading: state.isLoading,
+                onTap: _onChangePassword,
+              );
+            },
           ),
         ],
       ),

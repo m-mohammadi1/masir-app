@@ -1,7 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/presentation/bloc/courses/courses_bloc.dart';
 import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';

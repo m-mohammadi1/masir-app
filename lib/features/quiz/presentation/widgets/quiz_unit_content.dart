@@ -334,11 +334,13 @@ class _MultiChoiceOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: List.generate(options.length, (index) {
-        final isSelected = selectedIndex == index;
+        // API expects 1-based answers (1..n), not list indices (0..n-1).
+        final optionNumber = index + 1;
+        final isSelected = selectedIndex == optionNumber;
         return Padding(
           padding: EdgeInsets.only(bottom: index == options.length - 1 ? 0 : 10),
           child: OnClick(
-            onTap: readOnly ? null : () => onChanged(index),
+            onTap: readOnly ? null : () => onChanged(optionNumber),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(

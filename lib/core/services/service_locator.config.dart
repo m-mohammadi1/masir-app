@@ -43,8 +43,12 @@ import '../../features/edit_profile/data/repository/edit_profile_repository_impl
     as _i859;
 import '../../features/edit_profile/domain/repository/edit_profile_repository.dart'
     as _i119;
+import '../../features/edit_profile/domain/usecases/edit_password_usecase.dart'
+    as _i190;
 import '../../features/edit_profile/domain/usecases/edit_profile_usecase.dart'
     as _i894;
+import '../../features/edit_profile/presentation/bloc/edit_password/edit_password_bloc.dart'
+    as _i258;
 import '../../features/edit_profile/presentation/bloc/edit_profile_bloc.dart'
     as _i84;
 import '../../features/main/data/datasource/main_remote_data_source.dart'
@@ -255,6 +259,11 @@ extension GetItInjectableX on _i174.GetIt {
         myInstitutesUseCase: gh<_i919.MyInstitutesUseCase>(),
       ),
     );
+    gh.factory<_i190.EditPasswordUseCase>(
+      () => _i190.EditPasswordUseCase(
+        repository: gh<_i119.EditProfileRepository>(),
+      ),
+    );
     gh.factory<_i894.EditProfileUseCase>(
       () => _i894.EditProfileUseCase(
         repository: gh<_i119.EditProfileRepository>(),
@@ -282,6 +291,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i635.CourseDetailBloc>(
       () => _i635.CourseDetailBloc(
         courseDetailUseCase: gh<_i380.CourseDetailUseCase>(),
+      ),
+    );
+    gh.factory<_i258.EditPasswordBloc>(
+      () => _i258.EditPasswordBloc(
+        editPasswordUseCase: gh<_i190.EditPasswordUseCase>(),
       ),
     );
     gh.factory<_i208.LoginBloc>(

@@ -1,10 +1,18 @@
 import 'package:easy_helper/easy_helper.dart';
 
 abstract class EditProfileEntity extends BaseResult {
-   final String? id;
+  final String? id;
+  final String? phone;
+  final String? username;
+  final String? name;
 
-   const EditProfileEntity({this.id});
+  const EditProfileEntity({
+    this.id,
+    this.phone,
+    this.username,
+    this.name,
+  });
 
-   @override
-   List<Object?> get props => [id];
- }
+  @override
+  List<Object?> get props => [id, phone, username, name];
+}

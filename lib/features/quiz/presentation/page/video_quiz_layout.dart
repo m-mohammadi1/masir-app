@@ -1,30 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
-import 'package:mohammad/features/quiz/presentation/bloc/video/video_view_model.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/video_player.dart';
+import 'package:mohammad/widgets/custom_text.dart';
 
 class VideoQuizLayout extends StatelessWidget {
   final UnitsQuestionModel question;
   final bool readOnly;
+  final String? mediaUrl;
 
-  VideoQuizLayout({
+  const VideoQuizLayout({
     super.key,
     required this.question,
     this.readOnly = false,
+    this.mediaUrl,
   });
 
-  final VideoViewModel videoViewModel = VideoViewModel();
+  String get _videoUrl {
+    if (mediaUrl != null && mediaUrl!.isNotEmpty) {
+      return mediaUrl!;
+    }
+    if (question.options?.isNotEmpty == true) {
+      return question.options!.first;
+    }
+    return '';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final videoUrl = question.options?.isNotEmpty == true
-        ? question.options!.first
-        : '';
+    final videoUrl = _videoUrl;
+
+    if (videoUrl.isEmpty) {
+      return const CustomText(
+        'فایل ویدئو در دسترس نیست',
+        fontSize: 14,
+        color: Color(0xff6E6884),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CustomVideoPlayer(url: videoUrl, videoViewModel: videoViewModel),
+        CustomVideoPlayer(url: videoUrl),
       ],
     );
   }

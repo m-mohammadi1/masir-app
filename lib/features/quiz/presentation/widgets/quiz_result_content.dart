@@ -308,7 +308,8 @@ class _ResultMultiChoiceOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: List.generate(options.length, (index) {
-        final isSelected = selectedIndex == index;
+        final optionNumber = index + 1;
+        final isSelected = selectedIndex == optionNumber;
         return Padding(
           padding: EdgeInsets.only(bottom: index == options.length - 1 ? 0 : 10),
           child: Container(

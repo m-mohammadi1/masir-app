@@ -15,6 +15,7 @@ import 'package:mohammad/features/quiz/presentation/widgets/practice_unit_conten
 import 'package:mohammad/features/quiz/presentation/widgets/quiz_result_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/quiz_unit_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_content_framework.dart';
+import 'package:mohammad/features/quiz/presentation/widgets/video_unit_content.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
@@ -89,6 +90,11 @@ class _UnitPageState extends State<UnitPage> {
   bool get _isAudioUnit {
     final type = _unitData?.type ?? widget.unitType;
     return type == 'audio';
+  }
+
+  bool get _isVideoUnit {
+    final type = _unitData?.type ?? widget.unitType;
+    return type == 'video';
   }
 
   void _handleBack() => CustomNavigator.pop();
@@ -260,6 +266,16 @@ class _UnitPageState extends State<UnitPage> {
 
     if (_isAudioUnit) {
       return AudioUnitContent(
+        data: data,
+        isCompleted: widget.isCompleted,
+        isSubmitting: _isSubmitting,
+        onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
+        onBack: _handleBack,
+      );
+    }
+
+    if (_isVideoUnit) {
+      return VideoUnitContent(
         data: data,
         isCompleted: widget.isCompleted,
         isSubmitting: _isSubmitting,

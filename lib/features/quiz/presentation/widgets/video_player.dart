@@ -1,109 +1,193 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../../core/package/lib/pod_player.dart';
-import '../bloc/video/video_view_model.dart';
+import 'package:mohammad/widgets/custom_text.dart';
+import 'package:video_player/video_player.dart';
 
 class CustomVideoPlayer extends StatefulWidget {
   final String url;
   final bool autoPlay;
-  final VideoViewModel videoViewModel;
 
   const CustomVideoPlayer({
-    Key? key,
+    super.key,
     required this.url,
-    required this.videoViewModel,
     this.autoPlay = false,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomVideoPlayer> createState() => _CustomVideoPlayerState();
 }
 
 class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
-  // late final VideoPlayerController _videoController;
+  late final VideoPlayerController _controller;
+  bool _initialized = false;
+  bool _hasError = false;
+  bool _showControls = true;
 
-  // late final ChewieController _controller;
-
-  @override
-  void dispose() {
-    controller.pause();
-    controller.dispose();
-    _timer.cancel();
-    super.dispose();
-  }
-
-  void pause() {
-    controller.pause();
-  }
-
-  void play() {
-    controller.play();
-  }
-
-  late final PodPlayerController controller;
-
-  late Timer _timer;
+  static const Color _accent = Color(0xff7C3AED);
 
   @override
   void initState() {
-    controller = PodPlayerController(
-      podPlayerConfig: PodPlayerConfig(autoPlay: widget.autoPlay),
-      playVideoFrom: PlayVideoFrom.network(
-        widget.url,
-      ),
-    )
-      ..initialise().then((value) {
-        if(widget.autoPlay){
-          controller.play();
-        }
-      }
-      );
     super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
+      ..initialize().then((_) {
+        if (!mounted) return;
+        setState(() => _initialized = true);
+        if (widget.autoPlay) {
+          _controller.play();
+        }
+      }).catchError((error, stack) {
+        debugPrint('Video play error: $error\n$stack');
+        if (!mounted) return;
+        setState(() => _hasError = true);
+      });
+
+    _controller.addListener(_onUpdate);
   }
 
+  void _onUpdate() {
+    if (mounted) setState(() {});
+  }
 
+  @override
+  void dispose() {
+    _controller.removeListener(_onUpdate);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _togglePlay() {
+    if (_controller.value.isPlaying) {
+      _controller.pause();
+    } else {
+      _controller.play();
+    }
+  }
+
+  String _format(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener(
-      bloc: widget.videoViewModel,
-      listener: (context, state) {
-        if (state is VideoPauseState) {
-          pause();
-        } else if (state is VideoPlayState) {
-          play();
-        } else if (state is SeekTo) {
-          controller.videoSeekTo(Duration(
-            minutes: state.minute,
-            seconds: state.seconds,
-          ));
-        } else if (state is PlaybackSpeed) {
-          String time = "1x";
-          if (state.speed == 1) {
-            time = "1x";
-          } else if (state.speed == 1.25) {
-            time = "1.25x";
-          } else if (state.speed == 0.75) {
-            time = "0.75x";
-          } else if (state.speed == 1.5) {
-            time = "1.5x";
-          } else if (state.speed == 2) {
-            time = "2x";
-          } else {
-            time = "1x";
-          }
-
-          controller.ctr.setVideoPlayBack(time);
-        }
-      },
-      child: PodVideoPlayer(
-        controller: controller,
-        podPlayerLabels: const PodPlayerLabels(
-          loopVideo: "boucle vidéo",
-          playbackSpeed: "Vitesse de lecture",
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: ColoredBox(
+        color: Colors.black,
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: _buildBody(),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_hasError) {
+      return const Center(
+        child: CustomText(
+          'خطا در پخش ویدئو',
+          fontSize: 14,
+          color: Colors.white,
+        ),
+      );
+    }
+
+    if (!_initialized) {
+      return const Center(
+        child: CircularProgressIndicator(color: _accent),
+      );
+    }
+
+    final value = _controller.value;
+    final position = value.position.inMilliseconds.toDouble();
+    final durationMs = value.duration.inMilliseconds.toDouble();
+    final max = durationMs > 0 ? durationMs : 1.0;
+    final sliderValue = position.clamp(0.0, max).toDouble();
+    final aspect = value.aspectRatio == 0 ? 16 / 9 : value.aspectRatio;
+
+    return GestureDetector(
+      onTap: () => setState(() => _showControls = !_showControls),
+      child: Stack(
+        alignment: Alignment.center,
+        fit: StackFit.expand,
+        children: [
+          FittedBox(
+            fit: BoxFit.contain,
+            child: SizedBox(
+              width: aspect * 100,
+              height: 100,
+              child: VideoPlayer(_controller),
+            ),
+          ),
+          if (_showControls) ...[
+            Container(color: Colors.black26),
+            IconButton(
+              onPressed: _togglePlay,
+              iconSize: 56,
+              color: Colors.white,
+              icon: Icon(
+                value.isPlaying
+                    ? Icons.pause_circle_filled
+                    : Icons.play_circle_filled,
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                  child: Column(
+                    children: [
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 6,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 12,
+                          ),
+                          activeTrackColor: _accent,
+                          inactiveTrackColor: Colors.white38,
+                          thumbColor: Colors.white,
+                        ),
+                        child: Slider(
+                          min: 0,
+                          max: max,
+                          value: sliderValue,
+                          onChanged: (v) {
+                            _controller.seekTo(
+                              Duration(milliseconds: v.round()),
+                            );
+                          },
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          CustomText(
+                            _format(value.position),
+                            fontSize: 11,
+                            color: Colors.white,
+                          ),
+                          const Spacer(),
+                          CustomText(
+                            _format(value.duration),
+                            fontSize: 11,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

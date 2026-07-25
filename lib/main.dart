@@ -24,7 +24,6 @@ Future<void> background(RemoteMessage message) async {
   await FCMManager.init();
 }
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
