@@ -1,3 +1,4 @@
+import '/core/helper/custom_colors.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/quiz_submit_model.dart';
@@ -73,7 +74,7 @@ class QuizResultContent extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColor.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xffE7DEF8)),
           ),
@@ -117,7 +118,7 @@ class QuizResultContent extends StatelessWidget {
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColor.surface,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xffE7DEF8)),
             ),
@@ -201,7 +202,7 @@ class _ResultQuestionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xffE7DEF8)),
         boxShadow: [

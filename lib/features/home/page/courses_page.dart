@@ -2,6 +2,7 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
+import '/core/helper/custom_colors.dart';
 import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
@@ -83,15 +84,15 @@ class _CoursesPageState extends State<CoursesPage> {
                           textDirection: TextDirection.ltr,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColor.surface,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: Color(0xffE7DEF8),
+                                color: AppColor.border,
                                 width: 1,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
+                                  color: AppColor.ink.withValues(alpha: 0.06),
                                   blurRadius: 8,
                                   offset: Offset(0, 2),
                                 ),

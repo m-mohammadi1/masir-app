@@ -1,3 +1,4 @@
+import '/core/helper/custom_colors.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/request_quiz_submit_model.dart';
@@ -239,7 +240,7 @@ class _QuizQuestionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xffE7DEF8)),
         boxShadow: [
@@ -344,7 +345,7 @@ class _MultiChoiceOptions extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColor.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
@@ -421,7 +422,7 @@ class _QuizOutlineButton extends StatelessWidget {
         child: Container(
           height: 44,
           decoration: BoxDecoration(
-            color: selected ? const Color(0xffF3EBFF) : Colors.white,
+            color: selected ? AppColor.primaryTint : AppColor.surface,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: selected

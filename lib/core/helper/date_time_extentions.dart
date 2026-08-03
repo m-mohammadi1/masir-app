@@ -5,7 +5,7 @@ extension DateTimeExtentions on DateTime {
   String formatDate() {
     DateTime time = (this).toUtc();
     time = time.toLocal();
-    var temp = DateFormat.yMEd("fa",).format(time);
+    var temp = DateFormat.yMEd("fa").format(time);
     temp.replaceAll("-", "/");
     return temp.fixNumberToEnglish;
   }

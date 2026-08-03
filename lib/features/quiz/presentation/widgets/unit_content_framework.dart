@@ -1,5 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import '/core/helper/custom_colors.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
@@ -95,7 +96,7 @@ class _TypeBadge extends StatelessWidget {
         label,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: Colors.white,
+        color: AppColor.surface,
       ),
     );
   }
@@ -146,7 +147,7 @@ class _InstructionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xffE7DEF8)),
       ),

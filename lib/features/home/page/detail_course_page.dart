@@ -73,7 +73,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                         textDirection: TextDirection.ltr,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColor.surface,
                             border: Border.all(
                               color: AppColor.primary.withValues(alpha: 0.2),
                             ),
@@ -118,7 +118,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                       data.coursesModel?.title ?? "",
                                         fontSize: 17,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xff2F2146),
+                                        color: AppColor.ink,
                                       textAlign: TextAlign.right,
                                     ),
                                     if (data.coursesModel?.description !=
@@ -131,7 +131,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                       CustomText(
                                         data.coursesModel!.description!,
                                           fontSize: 13,
-                                          color: Color(0xff6E6884),
+                                          color: AppColor.inkMuted,
                                         textAlign: TextAlign.right,
                                         maxLines: 2,
                                         // overflow: TextOverflow.ellipsis,
@@ -146,7 +146,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Color(0xffF3EBFF),
+                                          color: AppColor.primaryTint,
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
@@ -168,7 +168,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                               Container(
                                 margin: EdgeInsets.symmetric(horizontal: 16),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AppColor.surface,
                                   border: Border.all(
                                     color: AppColor.primary.withValues(
                                       alpha: 0.2,

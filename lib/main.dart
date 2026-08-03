@@ -15,12 +15,9 @@ import 'core/services/service_locator.dart';
 import 'fcm.dart';
 import 'firebase_options.dart';
 
-
 @pragma('vm:entry-point')
 Future<void> background(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FCMManager.init();
 }
 
@@ -29,7 +26,6 @@ void main() async {
 
   await HiveService.init();
   await setup();
-
 
   FirebaseMessaging.onBackgroundMessage(background);
 
@@ -78,9 +74,9 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MediaQuery(
-      data: MediaQueryData.fromView(View.of(context)).copyWith(
-        textScaler: const TextScaler.linear(1.0),
-      ),
+      data: MediaQueryData.fromView(
+        View.of(context),
+      ).copyWith(textScaler: const TextScaler.linear(1.0)),
       child: MaterialApp.router(
         title: 'Masir',
         localizationsDelegates: const [
@@ -124,10 +120,7 @@ class _MyAppState extends State<MyApp> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CustomImage(
-                assets: Assets.logo,
-                width: 200,
-              ),
+              CustomImage(assets: Assets.logo, width: 200),
               40.h,
               const Directionality(
                 textDirection: TextDirection.rtl,
@@ -154,7 +147,7 @@ class _MyAppState extends State<MyApp> {
           GEasyHelper.color = Colors.transparent;
           return widget ?? Container();
         },
-        theme: light,
+        theme: HiveService.isDarkMode ? dark : light,
       ),
     );
   }

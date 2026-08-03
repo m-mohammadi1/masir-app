@@ -1,6 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 
 import '/core/helper/custom_colors.dart';
+import '/core/helper/paper_surface.dart';
 import 'package:flutter/material.dart';
 
 class BaseScreen extends StatefulWidget {
@@ -8,6 +9,7 @@ class BaseScreen extends StatefulWidget {
   final Widget? floatActionButton;
   final Color? backgroundColor;
   final EdgeInsets? padding;
+  final bool usePaperGrain;
 
   const BaseScreen({
     super.key,
@@ -15,6 +17,7 @@ class BaseScreen extends StatefulWidget {
     this.floatActionButton,
     this.backgroundColor,
     this.padding,
+    this.usePaperGrain = true,
   });
 
   @override
@@ -49,10 +52,21 @@ class _BaseScreenState extends State<BaseScreen> {
           children: [
             45.h,
             Expanded(
-              child: Padding(
-                padding: widget.padding ?? EdgeInsets.symmetric(horizontal: 16),
-                child: widget.body,
-              ),
+              child: widget.usePaperGrain
+                  ? PaperBackdrop(
+                      child: Padding(
+                        padding:
+                            widget.padding ??
+                            const EdgeInsets.symmetric(horizontal: 16),
+                        child: widget.body,
+                      ),
+                    )
+                  : Padding(
+                      padding:
+                          widget.padding ??
+                          const EdgeInsets.symmetric(horizontal: 16),
+                      child: widget.body,
+                    ),
             ),
             HandleOpenKeyBoard(),
           ],

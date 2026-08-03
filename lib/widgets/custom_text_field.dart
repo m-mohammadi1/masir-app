@@ -112,7 +112,7 @@ class CustomTextField extends StatelessWidget {
               onChanged: onChanged,
               enabled: (enabled == true && onTap == null),
               decoration: InputDecoration(
-                fillColor: backgroundColor ?? Colors.white,
+                fillColor: backgroundColor ?? AppColor.surface,
                 hintTextDirection: textDirection,
                 focusColor: Colors.transparent,
                 hoverColor: Colors.transparent,

@@ -7,6 +7,7 @@ import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_sub
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/helper/custom_colors.dart';
 import '../widgets/home_item.dart';
 import 'detail_course_page.dart';
 
@@ -63,11 +64,12 @@ class _CoursesScreenState extends State<CoursesScreen> {
                             textDirection: TextDirection.ltr,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AppColor.surface,
                                 borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColor.border),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.06),
+                                    color: AppColor.ink.withValues(alpha: 0.06),
                                     blurRadius: 10,
                                     offset: Offset(0, 2),
                                   ),

@@ -1,5 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import '/core/helper/custom_colors.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
@@ -40,13 +41,13 @@ class UnitActionButtons extends StatelessWidget {
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColor.surface,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xffE7DEF8)),
+              border: Border.all(color: AppColor.border),
             ),
-            child: const CustomText(
+            child: CustomText(
               'بازگشت به مسیر',
-              color: Color(0xff2F2146),
+              color: AppColor.ink,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),

@@ -10,6 +10,7 @@ import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:mohammad/widgets/custom_text_field.dart';
 
+import '../../../../core/helper/custom_colors.dart';
 import '../../../../core/services/hive_service.dart';
 import '../../../auth/domain/entities/submit_username.dart';
 import '../../data/models/request_edit_password_model.dart';
@@ -140,7 +141,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Color(0xffE7DEF8), width: 1),
         boxShadow: [
@@ -262,7 +263,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Color(0xffE7DEF8), width: 1),
         boxShadow: [

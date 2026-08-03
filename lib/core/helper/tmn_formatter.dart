@@ -6,9 +6,9 @@ class ThousandsFormatter extends TextInputFormatter {
 
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     // اگر خالی شد
     if (newValue.text.isEmpty) {
       return newValue;
@@ -26,9 +26,7 @@ class ThousandsFormatter extends TextInputFormatter {
 
     return TextEditingValue(
       text: formatted,
-      selection: TextSelection.collapsed(
-        offset: formatted.length,
-      ),
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

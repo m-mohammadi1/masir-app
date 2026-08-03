@@ -5,6 +5,7 @@ import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/request_my_institutes_model.dart';
 import 'package:mohammad/features/main/presentation/bloc/my_institutes/my_institutes_bloc.dart';
 
+import '../../../../core/helper/custom_colors.dart';
 import '../../../../core/services/hive_service.dart';
 import '../../../../widgets/custom_text.dart';
 import '../../../auth/domain/entities/submit_username.dart';
@@ -66,12 +67,12 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        border: Border.all(color: AppColor.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColor.ink.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -85,7 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xff2F2146),
+              color: AppColor.ink,
             ),
           ),
           SizedBox(height: 20),
@@ -107,18 +108,18 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: Icon(
                 Icons.edit_outlined,
                 size: 18,
-                color: Color(0xff2F2146),
+                color: AppColor.ink,
               ),
               label: Text(
                 "ویرایش پروفایل",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xff2F2146),
+                  color: AppColor.ink,
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Color(0xffE7DEF8), width: 1),
+                side: BorderSide(color: AppColor.border, width: 1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -138,14 +139,14 @@ class _ProfilePageState extends State<ProfilePage> {
           value,
           style: TextStyle(
             fontSize: 14,
-            color: Color(0xff2F2146),
+            color: AppColor.ink,
           ),
         ),
         Text(
           label,
           style: TextStyle(
             fontSize: 14,
-            color: Color(0xff6E6884),
+            color: AppColor.inkMuted,
           ),
         ),
       ],
@@ -156,12 +157,12 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        border: Border.all(color: AppColor.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColor.ink.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -175,7 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xff2F2146),
+              color: AppColor.ink,
             ),
           ),
           SizedBox(height: 16),
@@ -186,7 +187,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 loading: (_) => Center(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
-                    child: CircularProgressIndicator(color: Color(0xff7C3AED)),
+                    child: CircularProgressIndicator(color: AppColor.primary),
                   ),
                 ),
                 error: (_, message) => Center(
@@ -206,7 +207,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: Text(
                           " مؤسسه‌ای یافت نشد",
                           style: TextStyle(
-                            color: Color(0xff6E6884),
+                            color: AppColor.inkMuted,
                             fontSize: 13,
                           ),
                         ),
@@ -219,7 +220,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         margin: EdgeInsets.only(bottom: 8),
                         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: Color(0xffF9F7FD),
+                          color: AppColor.borderF9,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -229,7 +230,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               institute.slug ?? "",
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xff6E6884),
+                                color: AppColor.inkMuted,
                               ),
                             ),
                             Text(
@@ -237,7 +238,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xff2F2146),
+                                color: AppColor.ink,
                               ),
                             ),
                           ],
@@ -276,18 +277,18 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: Icon(
             Icons.logout_rounded,
             size: 20,
-            color: Color(0xff2F2146),
+            color: AppColor.ink,
           ),
           label: Text(
             "خروج",
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xff2F2146),
+              color: AppColor.ink,
             ),
           ),
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: Color(0xffE7DEF8), width: 1),
+            side: BorderSide(color: AppColor.border, width: 1),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

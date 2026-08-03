@@ -7,6 +7,8 @@ import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/request_outline_course_model.dart';
 import 'package:mohammad/features/main/domain/entities/outline_course.dart';
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
+import 'package:mohammad/core/helper/custom_colors.dart';
+import 'package:mohammad/core/helper/paper_surface.dart';
 import 'package:mohammad/features/main/presentation/page/outline/roadmap/paper_theme.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
@@ -349,7 +351,8 @@ class _OutlinePageState extends State<OutlinePage>
     return Directionality(
       textDirection: TextDirection.rtl,
       child: BaseScreen(
-        backgroundColor: PaperTheme.pagePaper,
+        usePaperGrain: false,
+        backgroundColor: AppColor.background,
         body: Column(
           children: [
             CustomAppBar(title: widget.title),

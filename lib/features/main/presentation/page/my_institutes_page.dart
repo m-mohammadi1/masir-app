@@ -5,6 +5,7 @@ import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/helper/custom_colors.dart';
 
 import '../bloc/my_institutes/my_institutes_bloc.dart';
 
@@ -56,11 +57,12 @@ class _MyInstitutesPageState extends State<MyInstitutesPage> {
                             child: Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AppColor.surface,
                                 borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColor.border),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.06),
+                                    color: AppColor.ink.withValues(alpha: 0.06),
                                     blurRadius: 10,
                                     offset: Offset(0, 2),
                                   ),
