@@ -50,7 +50,7 @@ const double _kRoadNodeSize = 44;
 // on the timeline (so the trail still flows from one chapter into the
 // next) but never zigzag and never compete visually with the real
 // waypoints, which are paths and units.
-const double _kChapterNodeHeight = 128;
+const double _kChapterNodeHeight = 92;
 const double _kPathNodeHeight = 118;
 const double _kUnitNodeHeight = 118;
 const double _kTrophyNodeHeight = 112;
@@ -608,7 +608,7 @@ class _OutlinePageState extends State<OutlinePage>
         body: Column(
           children: [
             CustomAppBar(title: widget.title),
-            16.h,
+            10.h,
             BlocBuilder<OutlineCourseBloc, OutlineCourseState>(
               bloc: bloc,
               builder: (context, state) {
@@ -631,7 +631,7 @@ class _OutlinePageState extends State<OutlinePage>
                       child: Column(
                         children: [
                           _CourseProgressHeader(progress: courseProgress),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 10),
                           Expanded(
                             child: PaperBackdrop(
                               child: SingleChildScrollView(
@@ -639,7 +639,7 @@ class _OutlinePageState extends State<OutlinePage>
                                 physics: const BouncingScrollPhysics(),
                                 padding: const EdgeInsets.fromLTRB(
                                   12,
-                                  4,
+                                  0,
                                   12,
                                   32,
                                 ),
@@ -676,7 +676,7 @@ class _CourseProgressHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: PaperTheme.cardPaper,
         borderRadius: BorderRadius.circular(14),
@@ -695,18 +695,18 @@ class _CourseProgressHeader extends StatelessWidget {
                 color: PaperTheme.ink,
               ),
               _StampBadge(
-                size: 36,
+                size: 32,
                 ringColor: PaperTheme.accent,
                 child: CustomText(
                   '$progress٪',
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: PaperTheme.ink,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
@@ -943,16 +943,16 @@ class _ChapterHeader extends StatelessWidget {
     final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: PaperTheme.cardPaper,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: PaperTheme.paperEdge),
         boxShadow: [
           BoxShadow(
             color: PaperTheme.ink.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -960,28 +960,28 @@ class _ChapterHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 36,
+            height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: PaperTheme.cardPaper,
-              border: Border.all(color: accent, width: 2),
+              border: Border.all(color: accent, width: 1.8),
             ),
             child: isComplete
                 ? const Icon(
                     Icons.check_rounded,
-                    size: 22,
+                    size: 18,
                     color: PaperTheme.success,
                   )
                 : CustomText(
                     persianDigits(index + 1),
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: PaperTheme.ink,
                   ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -989,17 +989,17 @@ class _ChapterHeader extends StatelessWidget {
               children: [
                 CustomText(
                   title,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: PaperTheme.ink,
                   maxLines: 2,
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 4),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: progress / 100.0,
-                    minHeight: 5,
+                    minHeight: 4,
                     backgroundColor: PaperTheme.inkFaint.withValues(alpha: 0.3),
                     valueColor: AlwaysStoppedAnimation<Color>(accent),
                   ),
