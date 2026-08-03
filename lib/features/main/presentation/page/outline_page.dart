@@ -45,8 +45,13 @@ const double _kRoadNodeSize = 44;
 // purpose — text is always capped with `maxLines` + ellipsis, so these are
 // safe upper bounds, not tight fits, and there's no risk of the guessed
 // height ever being too small for the actual content.
-const double _kChapterNodeHeight = 150;
-const double _kPathNodeHeight = 122;
+//
+// Chapters are plain full-width title plates, not trail markers — they sit
+// on the timeline (so the trail still flows from one chapter into the
+// next) but never zigzag and never compete visually with the real
+// waypoints, which are paths and units.
+const double _kChapterNodeHeight = 128;
+const double _kPathNodeHeight = 118;
 const double _kUnitNodeHeight = 118;
 const double _kTrophyNodeHeight = 112;
 
@@ -425,6 +430,14 @@ class _OutlinePageState extends State<OutlinePage>
   /// chapter is fully complete) → next chapter → … This is the *only* place
   /// that decides ordering, sizing, and left/right/center placement, so the
   /// painter and the widgets can never disagree about where anything is.
+  ///
+  /// Chapters are plain full-width title plates, not trail markers — they
+  /// still sit on the timeline (so the trail keeps flowing from one module
+  /// into the next), but they never zigzag and never compete visually with
+  /// the actual waypoints, which are paths and units. Paths and units share
+  /// one continuous left/right alternation (`zigzagCounter`) instead of
+  /// paths always snapping back to dead-center, which read as an artificial
+  /// hourglass rather than a winding trail.
   _NodeBuildResult _buildTrailNodes(
     List<OutlineModuleEntity> modules,
     String? currentUnitId,
@@ -432,6 +445,7 @@ class _OutlinePageState extends State<OutlinePage>
     final nodes = <_TrailNode>[];
     int? currentUnitIndex;
     bool? previousModuleFullyCompleted;
+    var zigzagCounter = 0;
 
     for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
       final module = modules[moduleIndex];
@@ -444,7 +458,7 @@ class _OutlinePageState extends State<OutlinePage>
         _TrailNode(
           height: _kChapterNodeHeight,
           incomingSolid: previousModuleFullyCompleted ?? false,
-          build: (_) => _ChapterNode(
+          build: (_) => _ChapterHeader(
             index: moduleIndex,
             title: module.title ?? '',
             progress: moduleProgress,
@@ -468,17 +482,27 @@ class _OutlinePageState extends State<OutlinePage>
             ? (pathFullyComplete || firstUnitDone)
             : _isPathFullyCompleted(paths[pathIndex - 1]);
 
+        final pathIsLeft = zigzagCounter % 2 == 0;
+        zigzagCounter++;
+
         nodes.add(
           _TrailNode(
             height: _kPathNodeHeight,
+            centered: false,
+            isLeft: pathIsLeft,
             incomingSolid: pathIncomingSolid,
-            build: (_) => _PathNode(path: path),
+            build: (canvasWidth) => _PathWaypoint(
+              path: path,
+              isLeft: pathIsLeft,
+              maxLabelWidth: (canvasWidth * 0.46).clamp(90.0, 150.0),
+            ),
           ),
         );
 
         for (var unitIndex = 0; unitIndex < units.length; unitIndex++) {
           final unit = units[unitIndex];
-          final isLeft = (unitIndex + pathIndex) % 2 == 0;
+          final isLeft = zigzagCounter % 2 == 0;
+          zigzagCounter++;
           final isCompleted = unit.status == 'completed';
           final isLocked = unit.locked ?? false;
           final isCurrent = unit.id == currentUnitId;
@@ -843,16 +867,18 @@ class _FullTrailPainter extends CustomPainter {
 // Waypoint widgets — pure visuals, no positioning logic of their own.
 // ---------------------------------------------------------------------------
 
-/// Chapter waypoint — a big numbered/checked stamp with its title and
-/// status centered below, sized like a bead on the trail (not a wide card)
-/// so it stays proportionate whether the chapter has one unit or twenty.
-class _ChapterNode extends StatelessWidget {
+/// Chapter title plate — a full-width header card, *not* a trail marker.
+/// It still sits on the timeline (so the trail keeps flowing between
+/// modules), but it reads as a section title. All "waypoint" styling is
+/// reserved for paths and units, which is what should actually look like
+/// beads on the trail.
+class _ChapterHeader extends StatelessWidget {
   final int index;
   final String title;
   final int progress;
   final bool isComplete;
 
-  const _ChapterNode({
+  const _ChapterHeader({
     required this.index,
     required this.title,
     required this.progress,
@@ -861,45 +887,82 @@ class _ChapterNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _StampBadge(
-          size: 54,
-          ringColor: isComplete ? PaperTheme.success : PaperTheme.accent,
-          child: isComplete
-              ? const Icon(
-                  Icons.check_rounded,
-                  size: 22,
-                  color: PaperTheme.success,
-                )
-              : CustomText(
-                  persianDigits(index + 1),
-                  fontSize: 17,
+    final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: PaperTheme.cardPaper,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: PaperTheme.paperEdge),
+        boxShadow: [
+          BoxShadow(
+            color: PaperTheme.ink.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: PaperTheme.cardPaper,
+              border: Border.all(color: accent, width: 2),
+            ),
+            child: isComplete
+                ? const Icon(
+                    Icons.check_rounded,
+                    size: 22,
+                    color: PaperTheme.success,
+                  )
+                : CustomText(
+                    persianDigits(index + 1),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: PaperTheme.ink,
+                  ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomText(
+                  title,
+                  fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: PaperTheme.ink,
+                  maxLines: 2,
                 ),
-        ),
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 36),
-          child: CustomText(
-            title,
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: PaperTheme.ink,
-            textAlign: TextAlign.center,
-            maxLines: 2,
+                const SizedBox(height: 7),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress / 100.0,
+                    minHeight: 5,
+                    backgroundColor: PaperTheme.inkFaint.withValues(alpha: 0.3),
+                    valueColor: AlwaysStoppedAnimation<Color>(accent),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 3),
-        CustomText(
-          isComplete ? 'این فصل کامل شد' : 'پیشرفت فصل $progress٪',
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: isComplete ? PaperTheme.success : PaperTheme.inkMuted,
-        ),
-      ],
+          const SizedBox(width: 10),
+          CustomText(
+            isComplete ? 'کامل' : '$progress٪',
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: accent,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -947,59 +1010,92 @@ class _StampBadge extends StatelessWidget {
   }
 }
 
-/// Path waypoint — a medium route/flag icon with title and status centered
-/// below it, matching the chapter node's proportions on a smaller scale.
-class _PathNode extends StatelessWidget {
+/// Path waypoint — a rounded-*square* marker (never a circle, so it can
+/// never be mistaken for a chapter's badge or a unit's pin) with its title
+/// in a pill tag beside it. Positioned in the same left/right zigzag as
+/// units (see `_buildTrailNodes`'s `zigzagCounter`) instead of always
+/// sitting dead-center, so the trail keeps winding naturally through every
+/// path instead of snapping back to the middle each time.
+class _PathWaypoint extends StatelessWidget {
   final OutlinePathEntity path;
+  final bool isLeft;
+  final double maxLabelWidth;
 
-  const _PathNode({required this.path});
+  const _PathWaypoint({
+    required this.path,
+    required this.isLeft,
+    required this.maxLabelWidth,
+  });
 
   @override
   Widget build(BuildContext context) {
     final pathProgress = path.pathProgressPercent ?? 0;
     final isComplete = pathProgress >= 100;
+    final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 46,
-          height: 46,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: PaperTheme.cardPaper,
-            border: Border.all(
-              color: isComplete ? PaperTheme.success : PaperTheme.paperEdge,
-              width: 1.8,
-            ),
+    final pin = Container(
+      width: 52,
+      height: 52,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: PaperTheme.cardPaper,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent, width: 2.2),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.18),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
-          child: Icon(
-            isComplete ? Icons.flag_circle_rounded : Icons.route_outlined,
-            size: 20,
-            color: isComplete ? PaperTheme.success : PaperTheme.accent,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: CustomText(
+        ],
+      ),
+      child: Icon(
+        isComplete ? Icons.flag_circle_rounded : Icons.route_outlined,
+        size: 24,
+        color: accent,
+      ),
+    );
+
+    final label = Container(
+      constraints: BoxConstraints(maxWidth: maxLabelWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: PaperTheme.cardPaper,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accent.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: isLeft
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CustomText(
             path.title ?? '',
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: PaperTheme.ink,
-            textAlign: TextAlign.center,
+            textAlign: isLeft ? TextAlign.left : TextAlign.right,
             maxLines: 2,
           ),
-        ),
-        const SizedBox(height: 2),
-        CustomText(
-          isComplete ? 'کامل' : '$pathProgress٪',
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: isComplete ? PaperTheme.success : PaperTheme.accent,
-        ),
-      ],
+          const SizedBox(height: 2),
+          CustomText(
+            isComplete ? 'مسیر کامل شد' : 'پیشرفت مسیر $pathProgress٪',
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: accent,
+            textAlign: isLeft ? TextAlign.left : TextAlign.right,
+          ),
+        ],
+      ),
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      textDirection: TextDirection.ltr,
+      children: isLeft
+          ? [pin, const SizedBox(width: 10), label]
+          : [label, const SizedBox(width: 10), pin],
     );
   }
 }
