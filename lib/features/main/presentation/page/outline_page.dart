@@ -469,13 +469,32 @@ class _OutlinePageState extends State<OutlinePage>
     final nodes = <_TrailNode>[];
     int? currentUnitIndex;
     bool? previousModuleFullyCompleted;
-    var zigzagCounter = 0;
 
     // Fixed seed → same jitter every rebuild for the same course structure
     // (no flicker when the bloc re-emits after a tap), but different from
     // path to path so the trail reads as hand-drawn instead of mechanical.
     final rng = math.Random(1337);
     double jitter(double range) => (rng.nextDouble() * 2 - 1) * range;
+    double rand01() => rng.nextDouble();
+
+    // Picks which side the next path/unit waypoint falls on. A strict
+    // left-right-left-right alternation is what made the zigzag look like
+    // a metronome — real switchback trails don't flip every single step.
+    // This usually alternates (70% of the time) but sometimes holds the
+    // same side for one extra waypoint, while never letting a run go past
+    // two so it still reads as a zigzag rather than a straight line.
+    var zigzagLeft = rand01() < 0.5;
+    var zigzagStreak = 0;
+    bool nextZigzagSide() {
+      final mustSwitch = zigzagStreak >= 1;
+      if (mustSwitch || rand01() < 0.7) {
+        zigzagLeft = !zigzagLeft;
+        zigzagStreak = 0;
+      } else {
+        zigzagStreak++;
+      }
+      return zigzagLeft;
+    }
 
     for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
       final module = modules[moduleIndex];
@@ -514,18 +533,17 @@ class _OutlinePageState extends State<OutlinePage>
             ? (pathFullyComplete || firstUnitDone)
             : _isPathFullyCompleted(paths[pathIndex - 1]);
 
-        final pathIsLeft = zigzagCounter % 2 == 0;
-        zigzagCounter++;
+        final pathIsLeft = nextZigzagSide();
 
         nodes.add(
           _TrailNode(
-            height: _kPathNodeHeight,
+            height: _kPathNodeHeight + jitter(8),
             centered: false,
             isLeft: pathIsLeft,
-            xJitter: jitter(0.055),
+            xJitter: jitter(0.09),
             pinRadius: 26,
-            curveKickA: jitter(22),
-            curveKickB: jitter(22),
+            curveKickA: jitter(24),
+            curveKickB: jitter(24),
             incomingSolid: pathIncomingSolid,
             build: (canvasWidth) => _PathWaypoint(
               path: path,
@@ -537,8 +555,7 @@ class _OutlinePageState extends State<OutlinePage>
 
         for (var unitIndex = 0; unitIndex < units.length; unitIndex++) {
           final unit = units[unitIndex];
-          final isLeft = zigzagCounter % 2 == 0;
-          zigzagCounter++;
+          final isLeft = nextZigzagSide();
           final isCompleted = unit.status == 'completed';
           final isLocked = unit.locked ?? false;
           final isCurrent = unit.id == currentUnitId;
@@ -552,12 +569,12 @@ class _OutlinePageState extends State<OutlinePage>
 
           nodes.add(
             _TrailNode(
-              height: _kUnitNodeHeight,
+              height: _kUnitNodeHeight + jitter(10),
               centered: false,
               isLeft: isLeft,
-              xJitter: jitter(0.05),
-              curveKickA: jitter(18),
-              curveKickB: jitter(18),
+              xJitter: jitter(0.08),
+              curveKickA: jitter(20),
+              curveKickB: jitter(20),
               incomingSolid: incomingSolid,
               build: (canvasWidth) => _RoadUnitNode(
                 title: unit.title ?? '',
