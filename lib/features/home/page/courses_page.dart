@@ -114,7 +114,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                               style: TextStyle(
                                                 fontSize: 17,
                                                 fontWeight: FontWeight.bold,
-                                                color: Color(0xff2F2146),
+                                                color: AppColor.ink,
                                               ),
                                             ),
                                             if (course?.publishedAt != null &&
@@ -126,7 +126,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                                 "تاریخ ثبت‌نام: ${_formatJalaliDate(course.publishedAt!)}",
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Color(0xff6E6884),
+                                                  color: AppColor.inkMuted,
                                                 ),
                                               ),
                                             ],
@@ -138,7 +138,9 @@ class _CoursesPageState extends State<CoursesPage> {
                                         width: 64,
                                         height: 64,
                                         decoration: BoxDecoration(
-                                          color: Color(0xff9B8FD8),
+                                          color: AppColor.primary.withValues(
+                                            alpha: 0.55,
+                                          ),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -176,7 +178,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
-                                          color: Color(0xff6E6884),
+                                          color: AppColor.inkMuted,
                                         ),
                                       ),
                                       SizedBox(width: 6),
@@ -188,10 +190,10 @@ class _CoursesPageState extends State<CoursesPage> {
                                           child: LinearProgressIndicator(
                                             value: progress / 100.0,
                                             minHeight: 8,
-                                            backgroundColor: Color(0xffE7DEF8),
+                                            backgroundColor: AppColor.border,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                                  Color(0xff7C3AED),
+                                                  AppColor.primary,
                                                 ),
                                           ),
                                         ),

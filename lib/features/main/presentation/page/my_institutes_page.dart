@@ -47,70 +47,70 @@ class _MyInstitutesPageState extends State<MyInstitutesPage> {
                   error: (isLoading, message) => CustomError(message: message),
                   success: (isLoading, data) {
                     return ListView.separated(
-                        itemCount: data.length,
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        separatorBuilder: (_, __) => SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final institute = data[index];
-                          return Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: Container(
-                              padding: EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: AppColor.surface,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: AppColor.border),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColor.ink.withValues(alpha: 0.06),
-                                    blurRadius: 10,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Column(
-                                          children: [
-                                            CustomText(
-                                              institute.name ?? "",
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.black87,
-                                            ),
-                                            CustomText(
-                                              institute.slug ?? "",
-                                              fontSize: 14,
-                                              color: Colors.black87,
-                                            ),
-
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  12.w,
-                                  ClipOval(
-                                    child: Container(
-                                      width: 64,
-                                      height: 64,
-                                      color: Colors.grey[200],
-                                      child: Icon(
-                                        Icons.apartment_rounded,
-                                        size: 30,
-                                        color: Colors.grey[500],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                      itemCount: data.length,
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      separatorBuilder: (_, __) => SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final institute = data[index];
+                        return Directionality(
+                          textDirection: TextDirection.ltr,
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColor.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColor.border),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColor.ink.withValues(alpha: 0.06),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          );
-                        });
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Column(
+                                        children: [
+                                          CustomText(
+                                            institute.name ?? "",
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColor.ink,
+                                          ),
+                                          CustomText(
+                                            institute.slug ?? "",
+                                            fontSize: 14,
+                                            color: AppColor.ink,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                12.w,
+                                ClipOval(
+                                  child: Container(
+                                    width: 64,
+                                    height: 64,
+                                    color: AppColor.borderF9,
+                                    child: Icon(
+                                      Icons.apartment_rounded,
+                                      size: 30,
+                                      color: AppColor.inkMuted,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
                   },
                 );
               },

@@ -1,7 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:mohammad/core/helper/custom_colors.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/speed_widget.dart';
 import 'package:mohammad/widgets/custom_text.dart';
@@ -36,16 +35,16 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
 
   @override
   void initState() {
-    viewModel = AudioViewModel(this,widget.url);
+    viewModel = AudioViewModel(this, widget.url);
     viewModel.updateSpeed(1);
     super.initState();
   }
 
   int currentTime = 0;
 
-  static const Color _trackActive = Color(0xffC4B5FD);
-  static const Color _trackInactive = Color(0xffE7DEF8);
-  static const Color _thumbColor = Color(0xff7C3AED);
+  static Color get _trackActive => AppColor.primary.withValues(alpha: .45);
+  static Color get _trackInactive => AppColor.primaryTint;
+  static Color get _thumbColor => AppColor.primary;
 
   Widget _buildProgressSection({
     required double currentTime,
@@ -67,14 +66,10 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                 CustomText(
                   elapsedLabel,
                   fontSize: 10,
-                  color: const Color(0xff6E6884),
+                  color: AppColor.inkMuted,
                 ),
                 const Spacer(),
-                CustomText(
-                  totalLabel,
-                  fontSize: 10,
-                  color: const Color(0xff6E6884),
-                ),
+                CustomText(totalLabel, fontSize: 10, color: AppColor.inkMuted),
               ],
             ),
           ),
@@ -147,14 +142,14 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                     //   width: 37,
                     //   height: 32,
                     // ),
-                    Container(height: 12.6, width: 12, color: AppColor.white),
+                    Container(height: 12.6, width: 12, color: AppColor.surface),
                     Align(
                       alignment: AlignmentDirectional.centerEnd,
                       child: Padding(
                         padding: const EdgeInsetsDirectional.only(end: 5),
                         child: CustomText(
                           "15s",
-                         fontSize: 12,
+                          fontSize: 12,
                           color: AppColor.primary,
                         ),
                       ),
@@ -246,15 +241,15 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                     //   width: 37,
                     //   height: 32,
                     // ),
-                    Container(height: 12.6, width: 12, color: Colors.white),
+                    Container(height: 12.6, width: 12, color: AppColor.surface),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: Padding(
                         padding: const EdgeInsetsDirectional.only(start: 7),
                         child: CustomText(
                           "15s",
-                            fontSize: 10,
-                            color: AppColor.primary,
+                          fontSize: 10,
+                          color: AppColor.primary,
                         ),
                       ),
                     ),

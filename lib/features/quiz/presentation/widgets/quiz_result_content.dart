@@ -50,11 +50,7 @@ class QuizResultContent extends StatelessWidget {
       children: [
         CustomAppBar(title: title),
         16.h,
-        Row(
-          children: [
-            _QuizTypeBadge(label: data.type ?? 'quiz'),
-          ],
-        ),
+        Row(children: [_QuizTypeBadge(label: data.type ?? 'quiz')]),
         12.h,
         Row(
           children: [
@@ -65,7 +61,7 @@ class QuizResultContent extends StatelessWidget {
                 'حد نصاب: $_passThreshold٪',
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xff6E6884),
+                color: AppColor.inkMuted,
               ),
           ],
         ),
@@ -76,14 +72,14 @@ class QuizResultContent extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColor.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xffE7DEF8)),
+            border: Border.all(color: AppColor.border),
           ),
           child: Center(
             child: CustomText(
               passed ? 'قبول شدید' : 'قبول نشدید',
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: const Color(0xff2F2146),
+              color: AppColor.ink,
             ),
           ),
         ),
@@ -106,11 +102,7 @@ class QuizResultContent extends StatelessWidget {
           ),
         ),
         16.h,
-        if (!passed)
-          CustomButton(
-            title: 'تلاش مجدد',
-            onTap: onRetry,
-          ),
+        if (!passed) CustomButton(title: 'تلاش مجدد', onTap: onRetry),
         if (!passed) 12.h,
         OnClick(
           onTap: onBack,
@@ -120,11 +112,11 @@ class QuizResultContent extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColor.surface,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xffE7DEF8)),
+              border: Border.all(color: AppColor.border),
             ),
-            child: const CustomText(
+            child: CustomText(
               'بازگشت به مسیر',
-              color: Color(0xff2F2146),
+              color: AppColor.ink,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -146,14 +138,14 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xffF5F0E8),
+        color: AppColor.borderF9,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         label,
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: const Color(0xff6E6884),
+        color: AppColor.inkMuted,
       ),
     );
   }
@@ -169,14 +161,14 @@ class _QuizTypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xffF3EBFF),
+        color: AppColor.primaryTint,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         label,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: const Color(0xff7C3AED),
+        color: AppColor.primary,
       ),
     );
   }
@@ -204,10 +196,10 @@ class _ResultQuestionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xffE7DEF8)),
+        border: Border.all(color: AppColor.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: AppColor.ink.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -218,8 +210,7 @@ class _ResultQuestionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (isCorrect != null)
-                _ResultBadge(isCorrect: isCorrect!),
+              if (isCorrect != null) _ResultBadge(isCorrect: isCorrect!),
             ],
           ),
           12.h,
@@ -227,7 +218,7 @@ class _ResultQuestionCard extends StatelessWidget {
             '$index. ${question.text ?? ''}',
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: const Color(0xff2F2146),
+            color: AppColor.ink,
           ),
           16.h,
           switch (layoutType) {
@@ -256,14 +247,16 @@ class _ResultBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isCorrect? Color(0xff4CAF50).withValues(alpha: 0.95) :  Color(0xffF5F0E8),
+        color: isCorrect
+            ? AppColor.success.withValues(alpha: 0.95)
+            : AppColor.borderF9,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         isCorrect ? 'درست' : 'نادرست',
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: isCorrect ? Colors.white : Color(0xff6E6884),
+        color: isCorrect ? AppColor.white : AppColor.inkMuted,
       ),
     );
   }
@@ -312,16 +305,16 @@ class _ResultMultiChoiceOptions extends StatelessWidget {
         final optionNumber = index + 1;
         final isSelected = selectedIndex == optionNumber;
         return Padding(
-          padding: EdgeInsets.only(bottom: index == options.length - 1 ? 0 : 10),
+          padding: EdgeInsets.only(
+            bottom: index == options.length - 1 ? 0 : 10,
+          ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xffF3EBFF) : Colors.white,
+              color: isSelected ? AppColor.primaryTint : AppColor.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected
-                    ? const Color(0xff7C3AED)
-                    : const Color(0xffE7DEF8),
+                color: isSelected ? AppColor.primary : AppColor.border,
                 width: isSelected ? 1.5 : 1,
               ),
             ),
@@ -332,7 +325,7 @@ class _ResultMultiChoiceOptions extends StatelessWidget {
                     options[index],
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xff2F2146),
+                    color: AppColor.ink,
                   ),
                 ),
                 12.w,
@@ -342,9 +335,7 @@ class _ResultMultiChoiceOptions extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected
-                          ? const Color(0xff7C3AED)
-                          : const Color(0xffC4B5D8),
+                      color: isSelected ? AppColor.primary : AppColor.inkFaint,
                       width: 2,
                     ),
                   ),
@@ -353,9 +344,9 @@ class _ResultMultiChoiceOptions extends StatelessWidget {
                           child: Container(
                             width: 12,
                             height: 12,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Color(0xff7C3AED),
+                              color: AppColor.primary,
                             ),
                           ),
                         )
@@ -374,20 +365,17 @@ class _ResultOptionButton extends StatelessWidget {
   final String title;
   final bool selected;
 
-  const _ResultOptionButton({
-    required this.title,
-    required this.selected,
-  });
+  const _ResultOptionButton({required this.title, required this.selected});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: selected ? const Color(0xff7C3AED) : Colors.white,
+        color: selected ? AppColor.primary : AppColor.surface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: selected ? const Color(0xff7C3AED) : const Color(0xffE7DEF8),
+          color: selected ? AppColor.primary : AppColor.border,
         ),
       ),
       child: Center(
@@ -395,7 +383,7 @@ class _ResultOptionButton extends StatelessWidget {
           title,
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: selected ? Colors.white : const Color(0xff2F2146),
+          color: selected ? AppColor.white : AppColor.ink,
         ),
       ),
     );

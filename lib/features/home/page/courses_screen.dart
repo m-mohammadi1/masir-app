@@ -37,7 +37,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           context.appSize.width.w,
-         CustomAppBar(title: "دوره‌ها"),
+          CustomAppBar(title: "دوره‌ها"),
           8.h,
           CustomText("همه دوره‌های منتشرشده"),
           20.h,
@@ -51,14 +51,21 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   success: (isLoading, data) {
                     return ListView.separated(
                       itemCount: data.length,
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       separatorBuilder: (_, __) => SizedBox(height: 14),
                       itemBuilder: (context, index) {
                         final course = data[index];
-                        final isFree = course.price == null || course.price == 0;
+                        final isFree =
+                            course.price == null || course.price == 0;
                         return OnClick(
                           onTap: () {
-                            CustomNavigator.pushNamed(DetailCoursePage.routeName,arguments: course.id);
+                            CustomNavigator.pushNamed(
+                              DetailCoursePage.routeName,
+                              arguments: course.id,
+                            );
                           },
                           child: Directionality(
                             textDirection: TextDirection.ltr,
@@ -81,40 +88,51 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                 children: [
                                   Container(
                                     height: 160,
-                                    color: Color(0xff9B8FD8),
-                                    child: course.coverUrl != null && course.coverUrl!.isNotEmpty
+                                    color: AppColor.primary.withValues(
+                                      alpha: 0.55,
+                                    ),
+                                    child:
+                                        course.coverUrl != null &&
+                                            course.coverUrl!.isNotEmpty
                                         ? Image.network(
                                             course.coverUrl!,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => Center(
-                                              child: Icon(Icons.play_circle_fill, size: 48, color: Colors.white70),
-                                            ),
+                                            errorBuilder: (_, __, ___) =>
+                                                Center(
+                                                  child: Icon(
+                                                    Icons.play_circle_fill,
+                                                    size: 48,
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
                                           )
                                         : SizedBox(),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(16),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
                                       children: [
                                         Text(
                                           course.title ?? "",
                                           style: TextStyle(
                                             fontSize: 17,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xff2F2146),
+                                            color: AppColor.ink,
                                           ),
                                           textAlign: TextAlign.right,
                                         ),
-                                        if (course.description != null && course.description!.isNotEmpty) ...[
+                                        if (course.description != null &&
+                                            course.description!.isNotEmpty) ...[
                                           SizedBox(height: 6),
                                           Text(
                                             course.description!,
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: Color(0xff6E6884),
+                                              color: AppColor.inkMuted,
                                             ),
-                                              textAlign: TextAlign.right,
+                                            textAlign: TextAlign.right,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -123,17 +141,23 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                         Align(
                                           alignment: Alignment.centerLeft,
                                           child: Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 6,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: Color(0xffF3EBFF),
-                                              borderRadius: BorderRadius.circular(20),
+                                              color: AppColor.primaryTint,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
                                             child: Text(
-                                              isFree ? "رایگان" : "${course.price} تومان",
+                                              isFree
+                                                  ? "رایگان"
+                                                  : "${course.price} تومان",
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
-                                                color: Color(0xff7C3AED),
+                                                color: AppColor.primary,
                                               ),
                                             ),
                                           ),

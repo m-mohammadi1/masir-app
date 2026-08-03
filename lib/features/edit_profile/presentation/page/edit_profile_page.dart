@@ -119,7 +119,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           CustomText(
             "نام و رمز عبور خود را مدیریت کنید",
             fontSize: 13,
-            color: Color(0xff6E6884),
+            color: AppColor.inkMuted,
           ),
           20.h,
           Expanded(
@@ -143,10 +143,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       decoration: BoxDecoration(
         color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        border: Border.all(color: AppColor.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColor.ink.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -158,21 +158,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Icon(Icons.person_outline, color: Color(0xff7C3AED), size: 22),
+              Icon(Icons.person_outline, color: AppColor.primary, size: 22),
               8.w,
-              CustomText(
-                "پروفایل",
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              CustomText("پروفایل", fontSize: 17, fontWeight: FontWeight.bold),
             ],
           ),
-          Divider(height: 30, color: Color(0xffE7DEF8)),
+          Divider(height: 30, color: AppColor.border),
           CustomText(
             "نام",
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Color(0xff6E6884),
+            color: AppColor.inkMuted,
           ),
           8.h,
           CustomTextField(
@@ -185,13 +181,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
             "شماره موبایل",
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Color(0xff6E6884),
+            color: AppColor.inkMuted,
           ),
           8.h,
           CustomTextField(
             controller: _phoneController,
             enabled: false,
-            backgroundColor: Color(0xffF5F3F8),
+            backgroundColor: AppColor.primaryTint,
             textDirection: TextDirection.ltr,
           ),
           16.h,
@@ -199,7 +195,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             "نام کاربری",
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Color(0xff6E6884),
+            color: AppColor.inkMuted,
           ),
           8.h,
           CustomTextField(
@@ -265,10 +261,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       decoration: BoxDecoration(
         color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        border: Border.all(color: AppColor.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColor.ink.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -280,21 +276,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Icon(Icons.lock_outline, color: Color(0xff7C3AED), size: 22),
+              Icon(Icons.lock_outline, color: AppColor.primary, size: 22),
               8.w,
-              CustomText(
-                "امنیت",
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              CustomText("امنیت", fontSize: 17, fontWeight: FontWeight.bold),
             ],
           ),
-          Divider(height: 30, color: Color(0xffE7DEF8)),
+          Divider(height: 30, color: AppColor.border),
           CustomText(
             "رمز عبور فعلی",
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Color(0xff6E6884),
+            color: AppColor.inkMuted,
           ),
           8.h,
           CustomTextField(
@@ -307,7 +299,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             "رمز عبور جدید",
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Color(0xff6E6884),
+            color: AppColor.inkMuted,
           ),
           8.h,
           CustomTextField(
@@ -320,7 +312,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             "تکرار رمز عبور",
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Color(0xff6E6884),
+            color: AppColor.inkMuted,
           ),
           8.h,
           CustomTextField(

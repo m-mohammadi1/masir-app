@@ -14,8 +14,7 @@ class AppColor {
   static Color get background =>
       HiveService.isDarkMode ? DarkColors.pagePaper : LightColors.pagePaper;
 
-  static Color get error =>
-      HiveService.isDarkMode ? DarkColors.white : LightColors.white;
+  static Color get error => ConstColors.red;
 
   /// Primary body text ("ink" on paper).
   static Color get text =>

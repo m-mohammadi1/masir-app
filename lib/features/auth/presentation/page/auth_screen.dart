@@ -329,7 +329,7 @@ class _AuthCard extends StatelessWidget {
         border: Border.all(color: AppColor.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColor.ink.withValues(alpha: 0.06),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),

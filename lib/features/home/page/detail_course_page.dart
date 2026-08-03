@@ -80,7 +80,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
+                                color: AppColor.ink.withValues(alpha: 0.06),
                                 blurRadius: 10,
                                 offset: Offset(0, 2),
                               ),
@@ -92,7 +92,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                             children: [
                               Container(
                                 height: 160,
-                                color: Color(0xff9B8FD8),
+                                color: AppColor.primary.withValues(alpha: 0.55),
                                 child:
                                     data.coursesModel?.coverUrl != null &&
                                         data.coursesModel!.coverUrl!.isNotEmpty
@@ -116,9 +116,9 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                   children: [
                                     CustomText(
                                       data.coursesModel?.title ?? "",
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColor.ink,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColor.ink,
                                       textAlign: TextAlign.right,
                                     ),
                                     if (data.coursesModel?.description !=
@@ -130,8 +130,8 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                       SizedBox(height: 6),
                                       CustomText(
                                         data.coursesModel!.description!,
-                                          fontSize: 13,
-                                          color: AppColor.inkMuted,
+                                        fontSize: 13,
+                                        color: AppColor.inkMuted,
                                         textAlign: TextAlign.right,
                                         maxLines: 2,
                                         // overflow: TextOverflow.ellipsis,
@@ -155,9 +155,9 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                           isFree
                                               ? "رایگان"
                                               : "${data.coursesModel?.price} تومان",
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xff7C3AED),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColor.primary,
                                         ),
                                       ),
                                     ),

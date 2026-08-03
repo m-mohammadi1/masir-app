@@ -59,6 +59,7 @@ class _RouteMapPageState extends State<RouteMapPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('زبان ترکی')),
+      backgroundColor: AppColor.background,
       body: AnimatedBuilder(
         animation: Listenable.merge([animationController, scrollController]),
         builder: (c, w) {
@@ -114,7 +115,7 @@ class RoadMapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.grey
+      ..color = AppColor.locked
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
@@ -219,19 +220,19 @@ class _RoadItemState extends State<RoadItem>
 
     switch (widget.state) {
       case StepState.completed:
-        color = AppColor.primary;
+        color = AppColor.success;
         child = const Icon(Icons.check, color: Colors.white);
         break;
 
       case StepState.current:
-        color = Colors.orange;
+        color = AppColor.primary;
         child = CustomText(
           (widget.index + 1).toString(),
           style: const TextStyle(color: Colors.white),
         );
         break;
       case StepState.locked:
-        color = Colors.grey;
+        color = AppColor.locked;
         child = const Icon(Icons.lock, color: Colors.white);
         break;
     }
@@ -245,7 +246,9 @@ class _RoadItemState extends State<RoadItem>
           width: 70,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(colors: [color, color.withValues(alpha: .8)]),
+            gradient: LinearGradient(
+              colors: [color, color.withValues(alpha: .8)],
+            ),
             boxShadow: widget.state == StepState.current
                 ? [
                     BoxShadow(
@@ -303,7 +306,7 @@ class RoadPainter extends CustomPainter {
       final isPassed = i < currentStep;
 
       final paint = Paint()
-        ..color = isPassed ? Colors.orange : Colors.grey.shade400
+        ..color = isPassed ? AppColor.trailWalkedEdge : AppColor.trailUnwalked
         ..strokeWidth = 3
         ..style = PaintingStyle.stroke;
 

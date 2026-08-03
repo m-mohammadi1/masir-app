@@ -45,73 +45,76 @@ class _InstitutesPageState extends State<InstitutesPage> {
                   error: (isLoading, message) => CustomError(message: message),
                   success: (isLoading, data) {
                     return ListView.separated(
-                        itemCount: data.length,
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        separatorBuilder: (_, __) => SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final institute = data[index];
-                      return Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColor.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColor.border),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColor.ink.withValues(alpha: 0.06),
-                                blurRadius: 10,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      institute.name ?? "",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
+                      itemCount: data.length,
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      separatorBuilder: (_, __) => SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final institute = data[index];
+                        return Directionality(
+                          textDirection: TextDirection.ltr,
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColor.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColor.border),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColor.ink.withValues(alpha: 0.06),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 2),
                                 ),
-                              ),
-                              12.w,
-                              ClipOval(
-                                child: Container(
-                                  width: 64,
-                                  height: 64,
-                                  color: Colors.grey[200],
-                                  child: institute.logoUrl != null && institute.logoUrl!.isNotEmpty
-                                      ? Image.network(
-                                          institute.logoUrl!,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Icon(
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        institute.name ?? "",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColor.ink,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                12.w,
+                                ClipOval(
+                                  child: Container(
+                                    width: 64,
+                                    height: 64,
+                                    color: AppColor.borderF9,
+                                    child:
+                                        institute.logoUrl != null &&
+                                            institute.logoUrl!.isNotEmpty
+                                        ? Image.network(
+                                            institute.logoUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Icon(
+                                              Icons.school,
+                                              size: 30,
+                                              color: AppColor.inkMuted,
+                                            ),
+                                          )
+                                        : Icon(
                                             Icons.school,
                                             size: 30,
-                                            color: Colors.grey[500],
+                                            color: AppColor.inkMuted,
                                           ),
-                                        )
-                                      : Icon(
-                                          Icons.school,
-                                          size: 30,
-                                          color: Colors.grey[500],
-                                        ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    });
+                        );
+                      },
+                    );
                   },
                 );
               },
