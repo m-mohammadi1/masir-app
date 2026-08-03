@@ -88,6 +88,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                 children: [
                                   Container(
                                     height: 160,
+                                    alignment: Alignment.center,
                                     color: AppColor.primary.withValues(
                                       alpha: 0.55,
                                     ),
@@ -97,16 +98,21 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                         ? Image.network(
                                             course.coverUrl!,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                Center(
-                                                  child: Icon(
-                                                    Icons.play_circle_fill,
-                                                    size: 48,
-                                                    color: Colors.white70,
-                                                  ),
-                                                ),
+                                            errorBuilder: (_, __, ___) => Icon(
+                                              Icons.menu_book_rounded,
+                                              size: 48,
+                                              color: AppColor.white.withValues(
+                                                alpha: 0.85,
+                                              ),
+                                            ),
                                           )
-                                        : SizedBox(),
+                                        : Icon(
+                                            Icons.menu_book_rounded,
+                                            size: 48,
+                                            color: AppColor.white.withValues(
+                                              alpha: 0.85,
+                                            ),
+                                          ),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(16),

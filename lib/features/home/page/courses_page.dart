@@ -137,6 +137,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                       Container(
                                         width: 64,
                                         height: 64,
+                                        alignment: Alignment.center,
                                         decoration: BoxDecoration(
                                           color: AppColor.primary.withValues(
                                             alpha: 0.55,
@@ -156,13 +157,21 @@ class _CoursesPageState extends State<CoursesPage> {
                                                   fit: BoxFit.cover,
                                                   errorBuilder: (_, __, ___) =>
                                                       Icon(
-                                                        Icons.play_circle_fill,
+                                                        Icons.menu_book_rounded,
                                                         size: 30,
-                                                        color: Colors.white70,
+                                                        color: AppColor.white
+                                                            .withValues(
+                                                              alpha: 0.85,
+                                                            ),
                                                       ),
                                                 ),
                                               )
-                                            : SizedBox(),
+                                            : Icon(
+                                                Icons.menu_book_rounded,
+                                                size: 30,
+                                                color: AppColor.white
+                                                    .withValues(alpha: 0.85),
+                                              ),
                                       ),
                                     ],
                                   ),

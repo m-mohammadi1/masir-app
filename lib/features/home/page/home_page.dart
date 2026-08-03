@@ -6,10 +6,13 @@ import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
 import '/widgets/custom_text.dart';
 import '../../main/data/models/courses_model.dart';
+import '../../main/data/models/my_subscriptions_model.dart';
 import '../../main/data/models/request_courses_model.dart';
 import '../../main/presentation/bloc/courses/courses_bloc.dart';
 import '../../main/presentation/bloc/my_institutes/my_institutes_bloc.dart';
+import '../../main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import '../../main/presentation/page/institutes_page.dart';
+import '../../main/presentation/page/outline_page.dart';
 import 'detail_course_page.dart';
 
 /// The student's "home" once inside an institute: a header for the current
@@ -26,11 +29,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final myInstitutesBloc = inject<MyInstitutesBloc>();
   final coursesBloc = inject<CoursesBloc>();
+  final mySubscriptionsBloc = inject<MySubscriptionsBloc>();
   bool _noInstituteFound = false;
 
   @override
   void initState() {
     super.initState();
+    // Always fetched regardless of which institute is "current" — a
+    // student can be subscribed to a course from an institute other than
+    // the one selected right now, and we still want that course to show
+    // up (marked as already registered) instead of silently vanishing.
+    mySubscriptionsBloc.add(MySubscriptionsEvent.mySubscriptions());
     if (HiveService.hasCurrentInstitute) {
       _loadCourses(HiveService.currentInstituteId!);
     } else {
@@ -152,36 +161,79 @@ class _HomePageState extends State<HomePage> {
         child: Center(child: CustomLoading()),
       );
     }
-    return BlocBuilder<CoursesBloc, CoursesState>(
-      bloc: coursesBloc,
-      builder: (context, state) {
-        return state.when(
-          loading: (_) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            child: Center(child: CustomLoading()),
-          ),
-          error: (_, message) => CustomError(message: message),
-          success: (isLoading, data) {
-            if (data.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: CustomText(
-                    "هنوز دوره‌ای منتشر نشده است.",
-                    color: AppColor.inkMuted,
-                  ),
-                ),
-              );
-            }
-            return Column(
-              children: data
-                  .map(
-                    (course) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _InstituteCourseTile(course: course),
+    return BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(
+      bloc: mySubscriptionsBloc,
+      builder: (context, subState) {
+        final subscriptions =
+            subState.whenOrNull(success: (isLoading, data) => data) ??
+            const <MySubscriptionsModel>[];
+        final subscriptionByCourseId = <String, MySubscriptionsModel>{
+          for (final sub in subscriptions)
+            if (sub.courseId != null) sub.courseId!: sub,
+        };
+
+        return BlocBuilder<CoursesBloc, CoursesState>(
+          bloc: coursesBloc,
+          builder: (context, state) {
+            return state.when(
+              loading: (_) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: CustomLoading()),
+              ),
+              error: (_, message) => CustomError(message: message),
+              success: (isLoading, data) {
+                // A subscribed course must never just disappear — even if
+                // it belongs to a different institute than the one
+                // currently selected, or the institute's course list
+                // happens to leave it out for some other reason, fold it
+                // back in so the student can always reach it and see it's
+                // already registered.
+                final byId = <String, CoursesModel>{
+                  for (final course in data)
+                    if (course.id != null) course.id!: course,
+                };
+                for (final sub in subscriptions) {
+                  final course = sub.coursesModel;
+                  if (course?.id != null && !byId.containsKey(course!.id)) {
+                    byId[course.id!] = course;
+                  }
+                }
+                final merged = byId.values.toList()
+                  ..sort((a, b) {
+                    final aRank = subscriptionByCourseId.containsKey(a.id)
+                        ? 0
+                        : 1;
+                    final bRank = subscriptionByCourseId.containsKey(b.id)
+                        ? 0
+                        : 1;
+                    return aRank.compareTo(bRank);
+                  });
+
+                if (merged.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: CustomText(
+                        "هنوز دوره‌ای منتشر نشده است.",
+                        color: AppColor.inkMuted,
+                      ),
                     ),
-                  )
-                  .toList(),
+                  );
+                }
+                return Column(
+                  children: merged
+                      .map(
+                        (course) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _InstituteCourseTile(
+                            course: course,
+                            subscription: subscriptionByCourseId[course.id],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                );
+              },
             );
           },
         );
@@ -263,23 +315,45 @@ class _InstituteHeader extends StatelessWidget {
 class _InstituteCourseTile extends StatelessWidget {
   final CoursesModel course;
 
-  const _InstituteCourseTile({required this.course});
+  /// The student's subscription to this course, if any. Its presence is
+  /// what makes the tile read as "already registered" instead of showing
+  /// a price/register affordance.
+  final MySubscriptionsModel? subscription;
+
+  const _InstituteCourseTile({required this.course, this.subscription});
 
   @override
   Widget build(BuildContext context) {
+    final isSubscribed = subscription != null;
     final isFree = course.price == null || course.price == 0;
+    final progress = subscription?.courseProgressPercent;
+
     return OnClick(
-      onTap: () => CustomNavigator.pushNamed(
-        DetailCoursePage.routeName,
-        arguments: course.id,
-      ),
+      onTap: () {
+        if (isSubscribed) {
+          CustomNavigator.pushNamed(
+            OutlinePage.routeName,
+            arguments: {"id": course.id ?? '', "title": course.title ?? ''},
+          );
+        } else {
+          CustomNavigator.pushNamed(
+            DetailCoursePage.routeName,
+            arguments: course.id,
+          );
+        }
+      },
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: Container(
           decoration: BoxDecoration(
             color: AppColor.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColor.border),
+            border: Border.all(
+              color: isSubscribed
+                  ? AppColor.success.withValues(alpha: 0.45)
+                  : AppColor.border,
+              width: isSubscribed ? 1.4 : 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: AppColor.ink.withValues(alpha: 0.05),
@@ -291,23 +365,55 @@ class _InstituteCourseTile extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Row(
             children: [
-              Container(
-                width: 88,
-                height: 88,
-                color: AppColor.primary.withValues(alpha: 0.55),
-                child: (course.coverUrl != null && course.coverUrl!.isNotEmpty)
-                    ? Image.network(
-                        course.coverUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.menu_book_rounded,
-                          color: AppColor.white.withValues(alpha: 0.85),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    alignment: Alignment.center,
+                    color: AppColor.primary.withValues(alpha: 0.55),
+                    child:
+                        (course.coverUrl != null && course.coverUrl!.isNotEmpty)
+                        ? Image.network(
+                            course.coverUrl!,
+                            fit: BoxFit.cover,
+                            width: 88,
+                            height: 88,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.menu_book_rounded,
+                              color: AppColor.white.withValues(alpha: 0.85),
+                            ),
+                          )
+                        : Icon(
+                            Icons.menu_book_rounded,
+                            color: AppColor.white.withValues(alpha: 0.85),
+                          ),
+                  ),
+                  // Obvious at a glance, without reading any text — a
+                  // registered course carries a check badge on its cover.
+                  if (isSubscribed)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColor.success,
+                          border: Border.all(
+                            color: AppColor.surface,
+                            width: 1.5,
+                          ),
                         ),
-                      )
-                    : Icon(
-                        Icons.menu_book_rounded,
-                        color: AppColor.white.withValues(alpha: 0.85),
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: 12,
+                          color: AppColor.white,
+                        ),
                       ),
+                    ),
+                ],
               ),
               12.w,
               Expanded(
@@ -339,23 +445,59 @@ class _InstituteCourseTile extends StatelessWidget {
                         ),
                       ],
                       8.h,
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColor.primaryTint,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          isFree ? "رایگان" : "${course.price} تومان",
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColor.primary,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSubscribed
+                                  ? AppColor.success.withValues(alpha: 0.14)
+                                  : AppColor.primaryTint,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isSubscribed) ...[
+                                  Icon(
+                                    Icons.play_circle_fill_rounded,
+                                    size: 13,
+                                    color: AppColor.success,
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+                                Text(
+                                  isSubscribed
+                                      ? "ادامه یادگیری"
+                                      : (isFree
+                                            ? "رایگان"
+                                            : "${course.price} تومان"),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSubscribed
+                                        ? AppColor.success
+                                        : AppColor.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          if (isSubscribed && progress != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              "$progress٪",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColor.inkMuted,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
