@@ -471,10 +471,11 @@ class _OutlinePageState extends State<OutlinePage>
     bool? previousModuleFullyCompleted;
 
     // Fixed seed → same randomness every rebuild for the same course
-    // structure (no flicker when the bloc re-emits after a tap), but
-    // different from path to path so the trail reads as hand-drawn instead
-    // of mechanical.
-    final rng = math.Random(1337);
+    // structure (no flicker when the bloc re-emits after a tap), and seeded
+    // from this course's own id — not a fixed constant — so every course
+    // keeps its own distinct trail shape across app sessions instead of
+    // every course rendering the exact same pattern.
+    final rng = math.Random(widget.id.hashCode);
     double jitter(double range) => (rng.nextDouble() * 2 - 1) * range;
     // Each path/unit waypoint picks its side independently at random
     // instead of strictly alternating left-right-left-right.
