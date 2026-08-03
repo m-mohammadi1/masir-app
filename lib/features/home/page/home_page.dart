@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '/core/helper/custom_colors.dart';
 import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
+import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
 import '../../main/data/models/courses_model.dart';
 import '../../main/data/models/my_subscriptions_model.dart';
@@ -322,190 +323,217 @@ class _InstituteCourseTile extends StatelessWidget {
 
   const _InstituteCourseTile({required this.course, this.subscription});
 
+  void _open() {
+    if (subscription != null) {
+      CustomNavigator.pushNamed(
+        OutlinePage.routeName,
+        arguments: {"id": course.id ?? '', "title": course.title ?? ''},
+      );
+    } else {
+      CustomNavigator.pushNamed(
+        DetailCoursePage.routeName,
+        arguments: course.id,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSubscribed = subscription != null;
     final isFree = course.price == null || course.price == 0;
     final progress = subscription?.courseProgressPercent;
+    final hasCover = course.coverUrl != null && course.coverUrl!.isNotEmpty;
 
-    return OnClick(
-      onTap: () {
-        if (isSubscribed) {
-          CustomNavigator.pushNamed(
-            OutlinePage.routeName,
-            arguments: {"id": course.id ?? '', "title": course.title ?? ''},
-          );
-        } else {
-          CustomNavigator.pushNamed(
-            DetailCoursePage.routeName,
-            arguments: course.id,
-          );
-        }
-      },
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColor.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSubscribed
-                  ? AppColor.success.withValues(alpha: 0.45)
-                  : AppColor.border,
-              width: isSubscribed ? 1.4 : 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColor.ink.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColor.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSubscribed
+                ? AppColor.success.withValues(alpha: 0.45)
+                : AppColor.border,
+            width: isSubscribed ? 1.4 : 1,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Row(
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
+          boxShadow: [
+            BoxShadow(
+              color: AppColor.ink.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            OnClick(
+              onTap: _open,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 88,
-                    height: 88,
-                    alignment: Alignment.center,
-                    color: AppColor.primary.withValues(alpha: 0.55),
-                    child:
-                        (course.coverUrl != null && course.coverUrl!.isNotEmpty)
-                        ? Image.network(
-                            course.coverUrl!,
-                            fit: BoxFit.cover,
-                            width: 88,
-                            height: 88,
-                            errorBuilder: (_, __, ___) => Icon(
-                              Icons.menu_book_rounded,
-                              color: AppColor.white.withValues(alpha: 0.85),
-                            ),
-                          )
-                        : Icon(
-                            Icons.menu_book_rounded,
-                            color: AppColor.white.withValues(alpha: 0.85),
-                          ),
-                  ),
-                  // Obvious at a glance, without reading any text — a
-                  // registered course carries a check badge on its cover.
-                  if (isSubscribed)
-                    Positioned(
-                      top: 6,
-                      left: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColor.success,
-                          border: Border.all(
-                            color: AppColor.surface,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.check_rounded,
-                          size: 12,
-                          color: AppColor.white,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              12.w,
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // 12px of breathing room around the cover on every side
+                  // (via the card's own padding) plus rounded corners of
+                  // its own, and the badge floats just outside the corner
+                  // instead of overlapping it — nothing feels cramped or
+                  // clipped anymore.
+                  Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      Text(
-                        course.title ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: AppColor.ink,
+                      Container(
+                        width: 76,
+                        height: 76,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColor.primary.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                      ),
-                      if ((course.description ?? '').isNotEmpty) ...[
-                        4.h,
-                        Text(
-                          course.description!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColor.inkMuted,
-                          ),
-                        ),
-                      ],
-                      8.h,
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSubscribed
-                                  ? AppColor.success.withValues(alpha: 0.14)
-                                  : AppColor.primaryTint,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (isSubscribed) ...[
-                                  Icon(
-                                    Icons.play_circle_fill_rounded,
-                                    size: 13,
-                                    color: AppColor.success,
-                                  ),
-                                  const SizedBox(width: 4),
-                                ],
-                                Text(
-                                  isSubscribed
-                                      ? "ادامه یادگیری"
-                                      : (isFree
-                                            ? "رایگان"
-                                            : "${course.price} تومان"),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSubscribed
-                                        ? AppColor.success
-                                        : AppColor.primary,
-                                  ),
+                        clipBehavior: Clip.antiAlias,
+                        child: hasCover
+                            ? Image.network(
+                                course.coverUrl!,
+                                fit: BoxFit.cover,
+                                width: 76,
+                                height: 76,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.menu_book_rounded,
+                                  size: 34,
+                                  color: AppColor.white.withValues(alpha: 0.9),
                                 ),
-                              ],
-                            ),
-                          ),
-                          if (isSubscribed && progress != null) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              "$progress٪",
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColor.inkMuted,
+                              )
+                            : Icon(
+                                Icons.menu_book_rounded,
+                                size: 34,
+                                color: AppColor.white.withValues(alpha: 0.9),
+                              ),
+                      ),
+                      if (isSubscribed)
+                        Positioned(
+                          top: -6,
+                          right: -6,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColor.success,
+                              border: Border.all(
+                                color: AppColor.surface,
+                                width: 2,
                               ),
                             ),
-                          ],
-                        ],
-                      ),
+                            child: Icon(
+                              Icons.check_rounded,
+                              size: 13,
+                              color: AppColor.white,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
+                  12.w,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          course.title ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.ink,
+                          ),
+                        ),
+                        if ((course.description ?? '').isNotEmpty) ...[
+                          4.h,
+                          Text(
+                            course.description!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColor.inkMuted,
+                            ),
+                          ),
+                        ],
+                        if (isSubscribed && progress != null) ...[
+                          8.h,
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: LinearProgressIndicator(
+                              value: progress / 100.0,
+                              minHeight: 6,
+                              backgroundColor: AppColor.border,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColor.success,
+                              ),
+                            ),
+                          ),
+                          4.h,
+                          Text(
+                            "$progress٪ پیشرفت",
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColor.inkMuted,
+                            ),
+                          ),
+                        ] else ...[
+                          6.h,
+                          Text(
+                            isFree ? "رایگان" : "${course.price} تومان",
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColor.primary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            12.h,
+            // A real, full-width call-to-action instead of a small pill —
+            // impossible to miss, and its color alone signals state.
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: CustomButton(
+                onTap: _open,
+                backgroundColor: isSubscribed ? AppColor.success : null,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isSubscribed
+                          ? Icons.play_circle_fill_rounded
+                          : Icons.arrow_back_ios_new_rounded,
+                      size: isSubscribed ? 18 : 14,
+                      color: AppColor.white,
+                    ),
+                    const SizedBox(width: 8),
+                    CustomText(
+                      isSubscribed
+                          ? "ادامه یادگیری"
+                          : (isFree ? "شروع رایگان" : "مشاهده و ثبت‌نام"),
+                      color: AppColor.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ],
                 ),
               ),
-              8.w,
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
