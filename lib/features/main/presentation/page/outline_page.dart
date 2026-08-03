@@ -643,7 +643,7 @@ class _OutlinePageState extends State<OutlinePage>
         backgroundColor: AppColor.background,
         body: Column(
           children: [
-            CustomAppBar(title: widget.title),
+            CustomAppBar(title: widget.title, topSpacing: 4),
             10.h,
             BlocBuilder<OutlineCourseBloc, OutlineCourseState>(
               bloc: bloc,
