@@ -7,15 +7,165 @@ import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/request_outline_course_model.dart';
 import 'package:mohammad/features/main/domain/entities/outline_course.dart';
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
+import 'package:mohammad/features/main/presentation/page/outline/roadmap/paper_theme.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
-/// Horizontal inset for zigzag nodes / road path (matches painter & widgets).
-const double _kRoadSideRatio = 0.18;
-const double _kRoadNodeSize = 64;
+/// Horizontal inset for zigzag nodes / trail (matches painter & widgets).
+/// Kept moderate (not 0.5) so the route still zigzags, but gentle enough
+/// that a thick trail reads as a winding path rather than a coiling snake.
+const double _kRoadSideRatio = 0.30;
+const double _kRoadNodeSize = 44;
+
+// ---------------------------------------------------------------------------
+// The trail — drawn as a walkable path ribbon, not a thin line, so the
+// roadmap reads as an actual route rather than a graph. It's one continuous
+// ribbon throughout; only the color changes between the part still ahead
+// (purple) and the part already adventured (green).
+//
+// Each piece only strokes its two long edges (never the flat cut ends), and
+// caps are plain filled circles with no outline — so wherever two pieces
+// meet (module bridges, path headers) the colors blend instead of forming
+// a visible ring/knot.
+// ---------------------------------------------------------------------------
+
+class _TrailRibbon {
+  const _TrailRibbon._();
+
+  static const double halfWidth = 6.5;
+  static const double _sampleStep = 8.0;
+
+  /// The portion of [source] already adventured — solid green.
+  static void drawWalked(Canvas canvas, Path source, double progress) {
+    _drawSolid(
+      canvas,
+      source,
+      progress,
+      fill: PaperTheme.trailWalked,
+      edge: PaperTheme.trailWalkedEdge,
+    );
+  }
+
+  /// The portion of [source] not yet adventured — solid purple.
+  static void drawUnwalked(Canvas canvas, Path source, double progress) {
+    _drawSolid(
+      canvas,
+      source,
+      progress,
+      fill: PaperTheme.trailUnwalked,
+      edge: PaperTheme.trailUnwalkedEdge,
+    );
+  }
+
+  static void _drawSolid(
+    Canvas canvas,
+    Path source,
+    double progress, {
+    required Color fill,
+    required Color edge,
+  }) {
+    final clamped = progress.clamp(0.0, 1.0);
+    final fillPaint = Paint()
+      ..color = fill
+      ..style = PaintingStyle.fill;
+    final edgePaint = Paint()
+      ..color = edge
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+
+    for (final metric in source.computeMetrics()) {
+      final length = metric.length * clamped;
+      if (length <= 0.5) continue;
+      _paintPiece(canvas, metric.extractPath(0, length), fillPaint, edgePaint);
+    }
+  }
+
+  static void _paintPiece(
+    Canvas canvas,
+    Path piece,
+    Paint fillPaint,
+    Paint edgePaint,
+  ) {
+    final points = _samplePoints(piece);
+    if (points == null) return;
+
+    final fillPath = Path()..moveTo(points.left.first.dx, points.left.first.dy);
+    for (final p in points.left.skip(1)) {
+      fillPath.lineTo(p.dx, p.dy);
+    }
+    for (final p in points.right.reversed) {
+      fillPath.lineTo(p.dx, p.dy);
+    }
+    fillPath.close();
+    canvas.drawPath(fillPath, fillPaint);
+
+    final leftEdge = Path()..moveTo(points.left.first.dx, points.left.first.dy);
+    for (final p in points.left.skip(1)) {
+      leftEdge.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(leftEdge, edgePaint);
+
+    final rightEdge = Path()
+      ..moveTo(points.right.first.dx, points.right.first.dy);
+    for (final p in points.right.skip(1)) {
+      rightEdge.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(rightEdge, edgePaint);
+
+    canvas.drawCircle(points.startCenter, halfWidth, fillPaint);
+    canvas.drawCircle(points.endCenter, halfWidth, fillPaint);
+  }
+
+  static _RibbonPoints? _samplePoints(Path path) {
+    final leftPts = <Offset>[];
+    final rightPts = <Offset>[];
+    Offset? startCenter;
+    Offset? endCenter;
+
+    for (final metric in path.computeMetrics()) {
+      final len = metric.length;
+      if (len <= 0) continue;
+
+      var d = 0.0;
+      while (d < len) {
+        final tangent = metric.getTangentForOffset(d);
+        if (tangent != null) {
+          final normal = Offset(-tangent.vector.dy, tangent.vector.dx);
+          leftPts.add(tangent.position + normal * halfWidth);
+          rightPts.add(tangent.position - normal * halfWidth);
+          startCenter ??= tangent.position;
+        }
+        d += _sampleStep;
+      }
+
+      final endTangent = metric.getTangentForOffset(len);
+      if (endTangent != null) {
+        final normal = Offset(-endTangent.vector.dy, endTangent.vector.dx);
+        leftPts.add(endTangent.position + normal * halfWidth);
+        rightPts.add(endTangent.position - normal * halfWidth);
+        endCenter = endTangent.position;
+      }
+    }
+
+    if (leftPts.length < 2 || startCenter == null || endCenter == null) {
+      return null;
+    }
+    return _RibbonPoints(leftPts, rightPts, startCenter, endCenter);
+  }
+}
+
+class _RibbonPoints {
+  final List<Offset> left;
+  final List<Offset> right;
+  final Offset startCenter;
+  final Offset endCenter;
+
+  const _RibbonPoints(this.left, this.right, this.startCenter, this.endCenter);
+}
 
 class OutlinePage extends StatefulWidget {
   final String title, id;
@@ -36,16 +186,6 @@ class _OutlinePageState extends State<OutlinePage>
   bool _hasPlayedEntrance = false;
   bool _hasScrolledToCurrent = false;
   int _scrollRetryCount = 0;
-
-  static const _purple = Color(0xff7C3AED);
-  static const _purpleSoft = Color(0xffE7DEF8);
-  static const _purpleBg = Color(0xffF3EBFF);
-  static const _textDark = Color(0xff2F2146);
-  static const _textMuted = Color(0xff6E6884);
-  static const _green = Color(0xff4CAF50);
-  static const _greenBg = Color(0xffE8F5E9);
-  static const _greenSoft = Color(0xffC8E6C9);
-  static const _locked = Color(0xff9E96B0);
 
   @override
   void initState() {
@@ -209,10 +349,11 @@ class _OutlinePageState extends State<OutlinePage>
     return Directionality(
       textDirection: TextDirection.rtl,
       child: BaseScreen(
+        backgroundColor: PaperTheme.pagePaper,
         body: Column(
           children: [
             CustomAppBar(title: widget.title),
-            20.h,
+            16.h,
             BlocBuilder<OutlineCourseBloc, OutlineCourseState>(
               bloc: bloc,
               builder: (context, state) {
@@ -240,36 +381,43 @@ class _OutlinePageState extends State<OutlinePage>
                           _CourseProgressHeader(progress: courseProgress),
                           const SizedBox(height: 16),
                           Expanded(
-                            child: ListView(
-                              controller: _scrollController,
-                              physics: const BouncingScrollPhysics(),
-                              padding: const EdgeInsets.only(bottom: 32),
-                              children: List.generate(modules.length, (
-                                moduleIndex,
-                              ) {
-                                final module = modules[moduleIndex];
-                                final paths = module.paths ?? [];
-                                final moduleProgress = _moduleProgress(module);
-                                final isFullyCompleted =
-                                    _isModuleFullyCompleted(module);
+                            child: PaperBackdrop(
+                              child: ListView(
+                                controller: _scrollController,
+                                physics: const BouncingScrollPhysics(),
+                                padding: const EdgeInsets.only(
+                                  bottom: 32,
+                                  top: 4,
+                                ),
+                                children: List.generate(modules.length, (
+                                  moduleIndex,
+                                ) {
+                                  final module = modules[moduleIndex];
+                                  final paths = module.paths ?? [];
+                                  final moduleProgress = _moduleProgress(
+                                    module,
+                                  );
+                                  final isFullyCompleted =
+                                      _isModuleFullyCompleted(module);
 
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 20),
-                                  child: _ModuleRoadmap(
-                                    module: module,
-                                    paths: paths,
-                                    moduleProgress: moduleProgress,
-                                    isFullyCompleted: isFullyCompleted,
-                                    moduleIndex: moduleIndex,
-                                    currentUnitId: currentUnitId,
-                                    currentUnitKey: _currentUnitKey,
-                                    entrance: _entranceController,
-                                    getTypeLabel: _getTypeLabel,
-                                    getTypeIcon: _getTypeIcon,
-                                    onUnitTap: _onUnitTap,
-                                  ),
-                                );
-                              }),
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 20),
+                                    child: _ModuleRoadmap(
+                                      module: module,
+                                      paths: paths,
+                                      moduleProgress: moduleProgress,
+                                      isFullyCompleted: isFullyCompleted,
+                                      moduleIndex: moduleIndex,
+                                      currentUnitId: currentUnitId,
+                                      currentUnitKey: _currentUnitKey,
+                                      entrance: _entranceController,
+                                      getTypeLabel: _getTypeLabel,
+                                      getTypeIcon: _getTypeIcon,
+                                      onUnitTap: _onUnitTap,
+                                    ),
+                                  );
+                                }),
+                              ),
                             ),
                           ),
                         ],
@@ -286,6 +434,10 @@ class _OutlinePageState extends State<OutlinePage>
   }
 }
 
+// ---------------------------------------------------------------------------
+// Course header ("ledger" card)
+// ---------------------------------------------------------------------------
+
 class _CourseProgressHeader extends StatelessWidget {
   final int progress;
 
@@ -293,48 +445,58 @@ class _CourseProgressHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const CustomText(
-              'پیشرفت دوره',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: _OutlinePageState._textDark,
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _OutlinePageState._purple,
-                borderRadius: BorderRadius.circular(8),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: PaperTheme.cardPaper,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: PaperTheme.paperEdge),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const CustomText(
+                'مسیر یادگیری',
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: PaperTheme.ink,
               ),
-              child: CustomText(
-                '%$progress',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              _StampBadge(
+                size: 36,
+                ringColor: PaperTheme.accent,
+                child: CustomText(
+                  '$progress٪',
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: PaperTheme.ink,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress / 100.0,
-            minHeight: 6,
-            backgroundColor: _OutlinePageState._purpleSoft,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              _OutlinePageState._purple,
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress / 100.0,
+              minHeight: 6,
+              backgroundColor: PaperTheme.inkFaint.withValues(alpha: 0.3),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                PaperTheme.accent,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Module sheet ("chapter plate" + its path sections)
+// ---------------------------------------------------------------------------
 
 class _ModuleRoadmap extends StatelessWidget {
   final OutlineModuleEntity module;
@@ -353,7 +515,8 @@ class _ModuleRoadmap extends StatelessWidget {
     required String? title,
     required String? status,
     required bool locked,
-  }) onUnitTap;
+  })
+  onUnitTap;
 
   const _ModuleRoadmap({
     required this.module,
@@ -375,129 +538,29 @@ class _ModuleRoadmap extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _OutlinePageState._purpleSoft),
+        color: PaperTheme.cardPaper,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: PaperTheme.paperEdge, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: PaperTheme.ink.withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerRight,
-                end: Alignment.centerLeft,
-                colors: isComplete
-                    ? const [
-                        Color(0xffE8F5E9),
-                        Color(0xffF1F8E9),
-                      ]
-                    : const [
-                        Color(0xffF3EBFF),
-                        Color(0xffFAF7FF),
-                      ],
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: isComplete
-                        ? _OutlinePageState._green
-                        : _OutlinePageState._purple,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isComplete
-                                ? _OutlinePageState._green
-                                : _OutlinePageState._purple)
-                            .withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    isComplete ? Icons.check_rounded : Icons.menu_book_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CustomText(
-                        module.title ?? '',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: _OutlinePageState._textDark,
-                      ),
-                      const SizedBox(height: 2),
-                      CustomText(
-                        isComplete
-                            ? 'فصل کامل شده'
-                            : 'پیشرفت فصل $moduleProgress٪',
-                        fontSize: 12,
-                        color: _OutlinePageState._textMuted,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isComplete
-                          ? _OutlinePageState._greenSoft
-                          : _OutlinePageState._purpleSoft,
-                    ),
-                  ),
-                  child: CustomText(
-                    '$moduleProgress٪',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: isComplete
-                        ? _OutlinePageState._green
-                        : _OutlinePageState._purple,
-                  ),
-                ),
-              ],
-            ),
+          _ChapterPlateHeader(
+            index: moduleIndex,
+            title: module.title ?? '',
+            progress: moduleProgress,
+            isComplete: isComplete,
           ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: moduleProgress / 100.0,
-              minHeight: 3,
-              backgroundColor: _OutlinePageState._purpleSoft.withValues(
-                alpha: 0.5,
-              ),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isComplete
-                    ? _OutlinePageState._green
-                    : _OutlinePageState._purple,
-              ),
-            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 18),
+            child: _DashedDivider(),
           ),
           ..._buildPathSections(
             paths: paths,
@@ -510,7 +573,7 @@ class _ModuleRoadmap extends StatelessWidget {
             onUnitTap: onUnitTap,
             isFullyCompleted: isFullyCompleted,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
         ],
       ),
     );
@@ -530,7 +593,8 @@ class _ModuleRoadmap extends StatelessWidget {
       required String? title,
       required String? status,
       required bool locked,
-    }) onUnitTap,
+    })
+    onUnitTap,
     required bool isFullyCompleted,
   }) {
     final sections = <Widget>[];
@@ -547,16 +611,17 @@ class _ModuleRoadmap extends StatelessWidget {
       if (pathIndex == 0) {
         sections.add(
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
+            padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
             child: _PathHeaderCard(path: path),
           ),
         );
       }
 
       if (units.isNotEmpty) {
-        final hasPrevBridge = pathIndex > 0 &&
-            (paths[pathIndex - 1].units ?? []).isNotEmpty;
-        final hasNextBridge = pathIndex < paths.length - 1 &&
+        final hasPrevBridge =
+            pathIndex > 0 && (paths[pathIndex - 1].units ?? []).isNotEmpty;
+        final hasNextBridge =
+            pathIndex < paths.length - 1 &&
             (paths[pathIndex + 1].units ?? []).isNotEmpty;
         final startFromPathHeader = pathIndex == 0;
         final connectToTrophy =
@@ -588,8 +653,7 @@ class _ModuleRoadmap extends StatelessWidget {
         );
 
         if (connectToTrophy) {
-          final fromIsLeft =
-              (units.length - 1 + zigzagOffset) % 2 == 0;
+          final fromIsLeft = (units.length - 1 + zigzagOffset) % 2 == 0;
           sections.add(
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -607,8 +671,7 @@ class _ModuleRoadmap extends StatelessWidget {
         final nextPath = paths[pathIndex + 1];
         final nextUnits = nextPath.units ?? [];
         if (units.isNotEmpty && nextUnits.isNotEmpty) {
-          final fromIsLeft =
-              (units.length - 1 + zigzagOffset) % 2 == 0;
+          final fromIsLeft = (units.length - 1 + zigzagOffset) % 2 == 0;
           final toIsLeft = (pathIndex + 1) % 2 == 0;
           final pathComplete = _isPathFullyCompleted(path);
 
@@ -627,7 +690,7 @@ class _ModuleRoadmap extends StatelessWidget {
         } else {
           sections.add(
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 16, 12, 4),
+              padding: const EdgeInsets.fromLTRB(14, 16, 14, 4),
               child: _PathHeaderCard(path: nextPath),
             ),
           );
@@ -645,6 +708,167 @@ class _ModuleRoadmap extends StatelessWidget {
   }
 }
 
+/// "Chapter plate" — numbered stamp badge, title, and a percent stamp.
+class _ChapterPlateHeader extends StatelessWidget {
+  final int index;
+  final String title;
+  final int progress;
+  final bool isComplete;
+
+  const _ChapterPlateHeader({
+    required this.index,
+    required this.title,
+    required this.progress,
+    required this.isComplete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _StampBadge(
+            size: 38,
+            ringColor: isComplete ? PaperTheme.success : PaperTheme.accent,
+            child: isComplete
+                ? const Icon(
+                    Icons.check_rounded,
+                    size: 18,
+                    color: PaperTheme.success,
+                  )
+                : CustomText(
+                    persianDigits(index + 1),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: PaperTheme.ink,
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomText(
+                  title,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: PaperTheme.ink,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 4),
+                CustomText(
+                  isComplete ? 'این فصل کامل شد' : 'پیشرفت فصل',
+                  fontSize: 12,
+                  color: PaperTheme.inkMuted,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          _StampBadge(
+            size: 40,
+            ringColor: isComplete ? PaperTheme.success : PaperTheme.accent,
+            child: CustomText(
+              isComplete ? '✓' : '$progress٪',
+              fontSize: isComplete ? 16 : 11,
+              fontWeight: FontWeight.bold,
+              color: isComplete ? PaperTheme.success : PaperTheme.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Circular "wax seal" style badge reused for numbering, percentages, and
+/// the completed-unit stamp.
+class _StampBadge extends StatelessWidget {
+  final Widget child;
+  final double size;
+  final Color ringColor;
+
+  const _StampBadge({
+    required this.child,
+    required this.size,
+    required this.ringColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: -0.05,
+      child: Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: PaperTheme.cardPaper,
+          border: Border.all(color: ringColor, width: 2),
+        ),
+        child: Container(
+          margin: const EdgeInsets.all(3),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: ringColor.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Thin horizontal dashed rule (ink on paper), used instead of progress bars.
+class _DashedDivider extends StatelessWidget {
+  const _DashedDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 1,
+      child: CustomPaint(painter: _DashPainter()),
+    );
+  }
+}
+
+class _DashPainter extends CustomPainter {
+  const _DashPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = PaperTheme.inkFaint
+      ..strokeWidth = 1;
+    const dashWidth = 4.0;
+    const dashSpace = 4.0;
+    double x = 0;
+    final y = size.height / 2;
+    while (x < size.width) {
+      canvas.drawLine(
+        Offset(x, y),
+        Offset(math.min(x + dashWidth, size.width), y),
+        paint,
+      );
+      x += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashPainter oldDelegate) => false;
+}
+
+// ---------------------------------------------------------------------------
+// Path header ("trail tag")
+// ---------------------------------------------------------------------------
+
 class _PathHeaderCard extends StatelessWidget {
   final OutlinePathEntity path;
 
@@ -655,80 +879,60 @@ class _PathHeaderCard extends StatelessWidget {
     final pathProgress = path.pathProgressPercent ?? 0;
     final isComplete = pathProgress >= 100;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: isComplete
-            ? _OutlinePageState._greenBg.withValues(alpha: 0.6)
-            : const Color(0xffFAF8FC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isComplete
-              ? _OutlinePageState._greenSoft
-              : _OutlinePageState._purpleSoft,
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(
-                isComplete ? Icons.flag_rounded : Icons.alt_route_rounded,
-                size: 18,
-                color: isComplete
-                    ? _OutlinePageState._green
-                    : _OutlinePageState._purple,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CustomText(
-                  path.title ?? '',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: _OutlinePageState._textDark,
-                ),
-              ),
-              CustomText(
-                '$pathProgress٪',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: isComplete
-                    ? _OutlinePageState._green
-                    : _OutlinePageState._purple,
-              ),
-            ],
+    return Transform.rotate(
+      angle: -0.012,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: PaperTheme.pagePaper,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isComplete ? PaperTheme.success : PaperTheme.paperEdge,
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: pathProgress / 100.0,
-              minHeight: 4,
-              backgroundColor: _OutlinePageState._purpleSoft,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isComplete
-                    ? _OutlinePageState._green
-                    : _OutlinePageState._purple,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isComplete ? Icons.flag_circle_rounded : Icons.route_outlined,
+              size: 18,
+              color: isComplete ? PaperTheme.success : PaperTheme.accent,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: CustomText(
+                path.title ?? '',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: PaperTheme.ink,
+                maxLines: 2,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            CustomText(
+              isComplete ? 'کامل' : '$pathProgress٪',
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isComplete ? PaperTheme.success : PaperTheme.accent,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
+// ---------------------------------------------------------------------------
+// Trophy → wax-seal medallion at the end of a completed module.
+// ---------------------------------------------------------------------------
+
 class _TrophyConnector extends StatelessWidget {
-  static const double _topGap = 44;
-  static const double _circleSize = 72;
+  static const double _topGap = 40;
+  static const double _circleSize = 64;
 
   final bool fromIsLeft;
   final Animation<double> entrance;
 
-  const _TrophyConnector({
-    required this.fromIsLeft,
-    required this.entrance,
-  });
+  const _TrophyConnector({required this.fromIsLeft, required this.entrance});
 
   @override
   Widget build(BuildContext context) {
@@ -744,31 +948,34 @@ class _TrophyConnector extends StatelessWidget {
             circleSize: _circleSize,
           ),
           child: Padding(
-            padding: const EdgeInsets.only(top: _topGap, bottom: 20),
+            padding: const EdgeInsets.only(top: _topGap, bottom: 18),
             child: Center(
-              child: Container(
-                width: _circleSize,
-                height: _circleSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  border: Border.all(
-                    color: _OutlinePageState._purple,
-                    width: 3,
+              child: Transform.rotate(
+                angle: -0.06,
+                child: Container(
+                  width: _circleSize,
+                  height: _circleSize,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: PaperTheme.cardPaper,
+                    border: Border.all(color: PaperTheme.accent, width: 2.4),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _OutlinePageState._purple.withValues(alpha: 0.18),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                  child: Container(
+                    margin: const EdgeInsets.all(5),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: PaperTheme.accent.withValues(alpha: 0.35),
+                      ),
                     ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(12),
-                child: const Image(
-                  image: AssetImage('assets/png/chapter_trophy.png'),
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
+                    child: const Icon(
+                      Icons.verified_rounded,
+                      size: 26,
+                      color: PaperTheme.accent,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -799,55 +1006,15 @@ class _TrophyPathPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final startX = _x(fromIsLeft, size.width);
     final endX = size.width / 2;
-    final startY = 0.0;
-    // Connect to the center of the trophy circle, like unit nodes.
+    const startY = 0.0;
     final endY = topGap + circleSize / 2;
     final dy = endY - startY;
 
     final road = Path()
       ..moveTo(startX, startY)
-      ..cubicTo(
-        startX,
-        startY + dy * 0.55,
-        endX,
-        endY - dy * 0.45,
-        endX,
-        endY,
-      );
+      ..cubicTo(startX, startY + dy * 0.55, endX, endY - dy * 0.45, endX, endY);
 
-    final glowPaint = Paint()
-      ..color = _OutlinePageState._purple.withValues(alpha: 0.10)
-      ..strokeWidth = 10
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
-    final basePaint = Paint()
-      ..color = _OutlinePageState._purpleSoft.withValues(alpha: 0.85)
-      ..strokeWidth = 4.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final solidPaint = Paint()
-      ..color = _OutlinePageState._purple
-      ..strokeWidth = 3.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    void drawPartial(Path path, Paint paint) {
-      for (final metric in path.computeMetrics()) {
-        final length = metric.length * progress.clamp(0.0, 1.0);
-        if (length <= 0) continue;
-        canvas.drawPath(metric.extractPath(0, length), paint);
-      }
-    }
-
-    drawPartial(road, glowPaint);
-    drawPartial(road, basePaint);
-    drawPartial(road, solidPaint);
+    _TrailRibbon.drawWalked(canvas, road, progress);
   }
 
   @override
@@ -858,6 +1025,10 @@ class _TrophyPathPainter extends CustomPainter {
         oldDelegate.circleSize != circleSize;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Bridge between two paths inside the same module.
+// ---------------------------------------------------------------------------
 
 class _InterPathConnector extends StatelessWidget {
   final bool fromIsLeft;
@@ -917,88 +1088,18 @@ class _InterPathPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final startX = _x(fromIsLeft, size.width);
     final endX = _x(toIsLeft, size.width);
-    final startY = 0.0;
+    const startY = 0.0;
     final endY = size.height;
     final dy = endY - startY;
 
-    // Gentler S-curve so the bridge turns more gradually behind the header.
     final road = Path()
       ..moveTo(startX, startY)
-      ..cubicTo(
-        startX,
-        startY + dy * 0.7,
-        endX,
-        endY - dy * 0.7,
-        endX,
-        endY,
-      );
-
-    final glowPaint = Paint()
-      ..color = _OutlinePageState._purple.withValues(alpha: 0.10)
-      ..strokeWidth = 10
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
-    final basePaint = Paint()
-      ..color = _OutlinePageState._purpleSoft.withValues(alpha: 0.85)
-      ..strokeWidth = 4.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    _drawPartial(canvas, road, glowPaint, progress);
-    _drawPartial(canvas, road, basePaint, progress);
+      ..cubicTo(startX, startY + dy * 0.7, endX, endY - dy * 0.7, endX, endY);
 
     if (isPathComplete) {
-      final solidPaint = Paint()
-        ..color = _OutlinePageState._purple
-        ..strokeWidth = 3.2
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round;
-      _drawPartial(canvas, road, solidPaint, progress);
+      _TrailRibbon.drawWalked(canvas, road, progress);
     } else {
-      final dashedPaint = Paint()
-        ..color = _OutlinePageState._purple.withValues(alpha: 0.55)
-        ..strokeWidth = 3.2
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round;
-      _drawSoftDashes(canvas, road, dashedPaint, progress);
-    }
-  }
-
-  void _drawPartial(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    double progress,
-  ) {
-    for (final metric in path.computeMetrics()) {
-      final length = metric.length * progress.clamp(0.0, 1.0);
-      if (length <= 0) continue;
-      canvas.drawPath(metric.extractPath(0, length), paint);
-    }
-  }
-
-  void _drawSoftDashes(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    double progress,
-  ) {
-    const dashWidth = 5.0;
-    const dashSpace = 9.0;
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      final max = metric.length * progress.clamp(0.0, 1.0);
-      while (distance < max) {
-        final end = math.min(distance + dashWidth, max);
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance += dashWidth + dashSpace;
-      }
+      _TrailRibbon.drawUnwalked(canvas, road, progress);
     }
   }
 
@@ -1010,6 +1111,10 @@ class _InterPathPainter extends CustomPainter {
         oldDelegate.isPathComplete != isPathComplete;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Units of a single path, laid out in a zigzag along a trail.
+// ---------------------------------------------------------------------------
 
 class _ZigZagRoadmap extends StatefulWidget {
   final List<OutlineUnitEntity> units;
@@ -1026,7 +1131,8 @@ class _ZigZagRoadmap extends StatefulWidget {
     required String? title,
     required String? status,
     required bool locked,
-  }) onUnitTap;
+  })
+  onUnitTap;
   final bool extendFromTop;
   final bool extendToBottom;
   final bool startFromCenter;
@@ -1091,7 +1197,10 @@ class _ZigZagRoadmapState extends State<_ZigZagRoadmap> {
                 final isCurrent = unit.id == widget.currentUnitId;
                 final unitType = unit.type ?? '';
 
-                final start = (widget.staggerBase + index * 0.07).clamp(0.0, 0.85);
+                final start = (widget.staggerBase + index * 0.07).clamp(
+                  0.0,
+                  0.85,
+                );
                 final end = (start + 0.35).clamp(0.0, 1.0);
                 final t = Interval(
                   start,
@@ -1115,7 +1224,7 @@ class _ZigZagRoadmapState extends State<_ZigZagRoadmap> {
                           Positioned(
                             top: 0,
                             bottom: 0,
-                            // Keep circle center on the road path at every width.
+                            // Keep circle center on the trail at every width.
                             left: isLeft ? nodeCenterX - nodeRadius : null,
                             right: isLeft
                                 ? null
@@ -1124,8 +1233,8 @@ class _ZigZagRoadmapState extends State<_ZigZagRoadmap> {
                               alignment: Alignment.center,
                               child: Transform.translate(
                                 offset: Offset(
-                                  (1 - t) * (isLeft ? -40 : 40),
-                                  (1 - t) * 24,
+                                  (1 - t) * (isLeft ? -30 : 30),
+                                  (1 - t) * 18,
                                 ),
                                 child: Opacity(
                                   opacity: t.clamp(0.0, 1.0),
@@ -1135,15 +1244,16 @@ class _ZigZagRoadmapState extends State<_ZigZagRoadmap> {
                                         : null,
                                     child: _RoadUnitNode(
                                       title: unit.title ?? '',
-                                      typeLabel:
-                                          widget.getTypeLabel(unitType),
+                                      typeLabel: widget.getTypeLabel(unitType),
                                       icon: widget.getTypeIcon(unitType),
                                       isCompleted: isCompleted,
                                       isLocked: isLocked,
                                       isCurrent: isCurrent,
                                       isLeft: isLeft,
-                                      maxLabelWidth: (width * 0.42)
-                                          .clamp(88.0, 140.0),
+                                      maxLabelWidth: (width * 0.44).clamp(
+                                        80.0,
+                                        130.0,
+                                      ),
                                       onTap: () => widget.onUnitTap(
                                         id: unit.id,
                                         type: unitType,
@@ -1171,7 +1281,8 @@ class _ZigZagRoadmapState extends State<_ZigZagRoadmap> {
   }
 }
 
-class _RoadUnitNode extends StatefulWidget {
+/// A single "waypoint" — pin/stamp marker plus its paper label tag.
+class _RoadUnitNode extends StatelessWidget {
   final String title;
   final String typeLabel;
   final IconData icon;
@@ -1195,152 +1306,185 @@ class _RoadUnitNode extends StatefulWidget {
   });
 
   @override
-  State<_RoadUnitNode> createState() => _RoadUnitNodeState();
-}
-
-class _RoadUnitNodeState extends State<_RoadUnitNode>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-      lowerBound: 0.94,
-      upperBound: 1.06,
-    );
-    if (widget.isCurrent && !widget.isLocked) {
-      _pulse.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _RoadUnitNode oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isCurrent && !widget.isLocked) {
-      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
-    } else {
-      _pulse.stop();
-      _pulse.value = 1;
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final Color ringColor;
-    final Color fillColor;
-    final Color iconColor;
-    final IconData displayIcon;
+    final Widget pin;
 
-    if (widget.isCompleted) {
-      ringColor = _OutlinePageState._green;
-      fillColor = _OutlinePageState._greenBg;
-      iconColor = _OutlinePageState._green;
-      displayIcon = Icons.check_rounded;
-    } else if (widget.isLocked) {
-      ringColor = const Color(0xffD8D2E4);
-      fillColor = const Color(0xffF5F3F8);
-      iconColor = _OutlinePageState._locked;
-      displayIcon = Icons.lock_outline_rounded;
-    } else if (widget.isCurrent) {
-      ringColor = _OutlinePageState._purple;
-      fillColor = _OutlinePageState._purpleBg;
-      iconColor = _OutlinePageState._purple;
-      displayIcon = widget.icon;
-    } else {
-      ringColor = _OutlinePageState._purpleSoft;
-      fillColor = Colors.white;
-      iconColor = _OutlinePageState._purple;
-      displayIcon = widget.icon;
-    }
-
-    final label = Column(
-      crossAxisAlignment:
-          widget.isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: widget.maxLabelWidth),
-          child: CustomText(
-            widget.title,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: widget.isLocked
-                ? _OutlinePageState._locked
-                : _OutlinePageState._textDark,
-            // Keep title flush against the clickable circle.
-            textAlign: widget.isLeft ? TextAlign.left : TextAlign.right,
-            maxLines: 2,
-          ),
+    if (isCompleted) {
+      pin = _StampBadge(
+        size: _kRoadNodeSize,
+        ringColor: PaperTheme.success,
+        child: const Icon(
+          Icons.check_rounded,
+          size: 20,
+          color: PaperTheme.success,
         ),
-        const SizedBox(height: 2),
-        CustomText(
-          widget.typeLabel,
-          fontSize: 11,
-          color: _OutlinePageState._textMuted,
-          textAlign: widget.isLeft ? TextAlign.left : TextAlign.right,
+      );
+    } else if (isLocked) {
+      pin = _DashedCircle(
+        size: _kRoadNodeSize,
+        child: const Icon(
+          Icons.lock_outline_rounded,
+          size: 18,
+          color: PaperTheme.locked,
         ),
-        if (widget.isLocked) ...[
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: _OutlinePageState._purpleBg,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const CustomText(
-              'قفل',
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: _OutlinePageState._purple,
-            ),
-          ),
-        ],
-      ],
-    );
-
-    final node = ScaleTransition(
-      scale: _pulse,
-      child: Container(
+      );
+    } else if (isCurrent) {
+      pin = Container(
         width: _kRoadNodeSize,
         height: _kRoadNodeSize,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: fillColor,
-          border: Border.all(color: ringColor, width: 3),
+          color: PaperTheme.cardPaper,
+          border: Border.all(color: PaperTheme.accent, width: 2.4),
           boxShadow: [
             BoxShadow(
-              color: ringColor.withValues(alpha: widget.isCurrent ? 0.45 : 0.18),
-              blurRadius: widget.isCurrent ? 18 : 8,
-              spreadRadius: widget.isCurrent ? 2 : 0,
-              offset: const Offset(0, 4),
+              color: PaperTheme.accent.withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: Icon(displayIcon, color: iconColor, size: 26),
+        child: const Icon(
+          Icons.flag_rounded,
+          size: 20,
+          color: PaperTheme.accent,
+        ),
+      );
+    } else {
+      pin = Container(
+        width: _kRoadNodeSize,
+        height: _kRoadNodeSize,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: PaperTheme.cardPaper,
+          border: Border.all(color: PaperTheme.inkFaint, width: 1.6),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: PaperTheme.accent.withValues(alpha: 0.8),
+        ),
+      );
+    }
+
+    final tagRotation = isLeft ? -0.035 : 0.035;
+    final label = Transform.rotate(
+      angle: tagRotation,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: maxLabelWidth),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: PaperTheme.cardPaper,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isLocked ? PaperTheme.inkFaint : PaperTheme.paperEdge,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: isLeft
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomText(
+              title,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: isLocked ? PaperTheme.locked : PaperTheme.ink,
+              textAlign: isLeft ? TextAlign.left : TextAlign.right,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 2),
+            CustomText(
+              typeLabel,
+              fontSize: 11,
+              color: PaperTheme.inkMuted,
+              textAlign: isLeft ? TextAlign.left : TextAlign.right,
+            ),
+          ],
+        ),
       ),
     );
 
     return OnClick(
-      onTap: widget.isLocked ? null : widget.onTap,
+      onTap: isLocked ? null : onTap,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         textDirection: TextDirection.ltr,
-        children: widget.isLeft
-            ? [node, const SizedBox(width: 10), label]
-            : [label, const SizedBox(width: 10), node],
+        children: isLeft
+            ? [pin, const SizedBox(width: 10), label]
+            : [label, const SizedBox(width: 10), pin],
       ),
     );
   }
 }
+
+/// Circle with a dashed ink outline (locked waypoints).
+class _DashedCircle extends StatelessWidget {
+  final double size;
+  final Widget child;
+
+  const _DashedCircle({required this.size, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size(size, size),
+            painter: const _DashedCirclePainter(),
+          ),
+          Container(
+            width: size - 8,
+            height: size - 8,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: PaperTheme.cardPaper,
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _DashedCirclePainter extends CustomPainter {
+  const _DashedCirclePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = PaperTheme.locked
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
+    final path = Path()
+      ..addOval(Rect.fromLTWH(1, 1, size.width - 2, size.height - 2));
+    const dashWidth = 3.0;
+    const dashSpace = 3.0;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final end = math.min(distance + dashWidth, metric.length);
+        canvas.drawPath(metric.extractPath(distance, end), paint);
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) => false;
+}
+
+// ---------------------------------------------------------------------------
+// The trail itself (unit-to-unit + entry/exit bridges).
+// ---------------------------------------------------------------------------
 
 class _RoadPathPainter extends CustomPainter {
   final int itemCount;
@@ -1369,9 +1513,7 @@ class _RoadPathPainter extends CustomPainter {
 
   double _nodeX(int index, double width) {
     final isLeft = (index + zigzagOffset) % 2 == 0;
-    return isLeft
-        ? width * _kRoadSideRatio
-        : width * (1 - _kRoadSideRatio);
+    return isLeft ? width * _kRoadSideRatio : width * (1 - _kRoadSideRatio);
   }
 
   double _nodeY(int index) => index * itemHeight + itemHeight / 2;
@@ -1387,46 +1529,17 @@ class _RoadPathPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (itemCount < 1) return;
 
-    final glowPaint = Paint()
-      ..color = _OutlinePageState._purple.withValues(alpha: 0.10)
-      ..strokeWidth = 10
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
-    final basePaint = Paint()
-      ..color = _OutlinePageState._purpleSoft.withValues(alpha: 0.85)
-      ..strokeWidth = 4.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final activePaint = Paint()
-      ..color = _OutlinePageState._purple.withValues(alpha: 0.55)
-      ..strokeWidth = 3.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final solidPurplePaint = Paint()
-      ..color = _OutlinePageState._purple
-      ..strokeWidth = 3.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
     void paintTrail(Path road, {required bool solid}) {
-      _drawPartial(canvas, road, glowPaint, progress);
-      _drawPartial(canvas, road, basePaint, progress);
       if (solid) {
-        _drawPartial(canvas, road, solidPurplePaint, progress);
+        _TrailRibbon.drawWalked(canvas, road, progress);
       } else {
-        _drawSoftDashes(canvas, road, activePaint, progress);
+        _TrailRibbon.drawUnwalked(canvas, road, progress);
       }
     }
 
-    // From path-header bottom-center → first unit.
+    // From path-header bottom-center → first unit. This should turn green
+    // as soon as the first unit itself is done, not only once the whole
+    // path is finished — otherwise it would rarely ever color in.
     if (startFromCenter) {
       final entry = _segment(
         size.width / 2,
@@ -1434,7 +1547,8 @@ class _RoadPathPainter extends CustomPainter {
         _nodeX(0, size.width),
         _nodeY(0),
       );
-      paintTrail(entry, solid: pathFullyComplete);
+      final firstUnitDone = completedFlags.isNotEmpty && completedFlags.first;
+      paintTrail(entry, solid: pathFullyComplete || firstUnitDone);
     }
 
     // Incoming bridge from previous path → first unit.
@@ -1444,7 +1558,7 @@ class _RoadPathPainter extends CustomPainter {
       paintTrail(entry, solid: entryBridgeSolid);
     }
 
-    // Unit-to-unit road.
+    // Unit-to-unit trail.
     if (itemCount >= 2) {
       final road = Path()..moveTo(_nodeX(0, size.width), _nodeY(0));
 
@@ -1465,33 +1579,24 @@ class _RoadPathPainter extends CustomPainter {
         );
       }
 
-      _drawPartial(canvas, road, glowPaint, progress);
-      _drawPartial(canvas, road, basePaint, progress);
-
       if (pathFullyComplete) {
-        // All units done → full solid purple trail (no dashes).
-        _drawPartial(canvas, road, solidPurplePaint, progress);
+        _TrailRibbon.drawWalked(canvas, road, progress);
       } else {
-        final completedCount =
-            completedFlags.where((done) => done).length.clamp(0, itemCount);
-        if (completedCount > 0) {
-          final doneRatio =
-              ((completedCount - 1) / (itemCount - 1)).clamp(0.0, 1.0);
-          final greenPaint = Paint()
-            ..color = _OutlinePageState._green.withValues(alpha: 0.7)
-            ..strokeWidth = 3.2
-            ..style = PaintingStyle.stroke
-            ..strokeCap = StrokeCap.round
-            ..strokeJoin = StrokeJoin.round;
-          _drawPartial(
-            canvas,
-            road,
-            greenPaint,
-            math.min(progress, doneRatio),
-          );
-        }
+        // Faint sketched path for the whole trail, then a solid dirt-path
+        // overlay for the portion already walked.
+        _TrailRibbon.drawUnwalked(canvas, road, progress);
 
-        _drawSoftDashes(canvas, road, activePaint, progress);
+        final completedCount = completedFlags
+            .where((done) => done)
+            .length
+            .clamp(0, itemCount);
+        if (completedCount > 0) {
+          final doneRatio = ((completedCount - 1) / (itemCount - 1)).clamp(
+            0.0,
+            1.0,
+          );
+          _TrailRibbon.drawWalked(canvas, road, math.min(progress, doneRatio));
+        }
       }
     }
 
@@ -1500,38 +1605,6 @@ class _RoadPathPainter extends CustomPainter {
       final lastX = _nodeX(itemCount - 1, size.width);
       final exit = _segment(lastX, _nodeY(itemCount - 1), lastX, size.height);
       paintTrail(exit, solid: pathFullyComplete);
-    }
-  }
-
-  void _drawPartial(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    double progress,
-  ) {
-    for (final metric in path.computeMetrics()) {
-      final length = metric.length * progress.clamp(0.0, 1.0);
-      if (length <= 0) continue;
-      canvas.drawPath(metric.extractPath(0, length), paint);
-    }
-  }
-
-  void _drawSoftDashes(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    double progress,
-  ) {
-    const dashWidth = 5.0;
-    const dashSpace = 9.0;
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      final max = metric.length * progress.clamp(0.0, 1.0);
-      while (distance < max) {
-        final end = math.min(distance + dashWidth, max);
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance += dashWidth + dashSpace;
-      }
     }
   }
 
