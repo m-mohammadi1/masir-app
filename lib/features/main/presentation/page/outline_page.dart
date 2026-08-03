@@ -1199,19 +1199,31 @@ class _PathWaypoint extends StatelessWidget {
 
 /// Trophy waypoint at the end of a completed module — a wax-seal medallion
 /// with a short "completed" caption.
+///
+/// The medallion — not "medallion + caption" combined — is what the
+/// trail's line should visually end at. Stacking them in a plain `Column`
+/// would make this widget's reported center (and therefore the line's
+/// target) the midpoint of the whole block, which sits below the actual
+/// medallion once the caption's height is added in — the line would
+/// visibly run past the medallion into the caption. Using a `Stack` with
+/// the caption as a `Positioned` overflow annotation keeps the medallion
+/// itself as this widget's center, regardless of caption length.
 class _TrophyNode extends StatelessWidget {
   const _TrophyNode();
 
+  static const double _badgeSize = 60;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
       children: [
         Transform.rotate(
           angle: -0.06,
           child: Container(
-            width: 60,
-            height: 60,
+            width: _badgeSize,
+            height: _badgeSize,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -1235,12 +1247,20 @@ class _TrophyNode extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        const CustomText(
-          'این فصل کامل شد',
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: PaperTheme.success,
+        Positioned(
+          top: _badgeSize + 8,
+          left: 0,
+          right: 0,
+          child: OverflowBox(
+            maxWidth: double.infinity,
+            alignment: Alignment.center,
+            child: const CustomText(
+              'این فصل کامل شد',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: PaperTheme.success,
+            ),
+          ),
         ),
       ],
     );
@@ -1254,51 +1274,74 @@ class _TrophyNode extends StatelessWidget {
 /// — and so every unit — in the course is completed, then unlocks into a
 /// bigger, greener medallion than a per-chapter trophy since it caps the
 /// entire adventure, not just one leg of it.
+///
+/// Same reasoning as [_TrophyNode]: the badge itself, not "badge +
+/// caption" combined, is where the trail should visually end. The caption
+/// is a `Positioned` overflow annotation below it so it never pulls this
+/// widget's reported center away from the badge.
 class _CourseFinishNode extends StatelessWidget {
   final bool isComplete;
 
   const _CourseFinishNode({required this.isComplete});
 
+  static const double _lockedBadgeSize = 70;
+  static const double _doneBadgeSize = 78;
+
   @override
   Widget build(BuildContext context) {
     if (!isComplete) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
+      return Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
         children: [
           _DashedCircle(
-            size: 70,
+            size: _lockedBadgeSize,
             child: const Icon(
               Icons.flag_outlined,
               size: 28,
               color: PaperTheme.locked,
             ),
           ),
-          const SizedBox(height: 10),
-          const CustomText(
-            'پایان مسیر',
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: PaperTheme.locked,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 2),
-          const CustomText(
-            'با اتمام دوره باز می‌شود',
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: PaperTheme.inkMuted,
-            textAlign: TextAlign.center,
+          Positioned(
+            top: _lockedBadgeSize + 10,
+            left: 0,
+            right: 0,
+            child: OverflowBox(
+              maxWidth: double.infinity,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CustomText(
+                    'پایان مسیر',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: PaperTheme.locked,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 2),
+                  const CustomText(
+                    'با اتمام دوره باز می‌شود',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: PaperTheme.inkMuted,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       );
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
       children: [
         Container(
-          width: 78,
-          height: 78,
+          width: _doneBadgeSize,
+          height: _doneBadgeSize,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
@@ -1328,21 +1371,34 @@ class _CourseFinishNode extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 10),
-        const CustomText(
-          'دوره با موفقیت به پایان رسید!',
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: PaperTheme.success,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 2),
-        const CustomText(
-          'همه واحدها را با موفقیت گذراندی 🎉',
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: PaperTheme.inkMuted,
-          textAlign: TextAlign.center,
+        Positioned(
+          top: _doneBadgeSize + 10,
+          left: 0,
+          right: 0,
+          child: OverflowBox(
+            maxWidth: double.infinity,
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CustomText(
+                  'دوره با موفقیت به پایان رسید!',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: PaperTheme.success,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                const CustomText(
+                  'همه واحدها را با موفقیت گذراندی 🎉',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: PaperTheme.inkMuted,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
