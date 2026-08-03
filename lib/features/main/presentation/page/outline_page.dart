@@ -50,7 +50,7 @@ const double _kRoadNodeSize = 44;
 // on the timeline (so the trail still flows from one chapter into the
 // next) but never zigzag and never compete visually with the real
 // waypoints, which are paths and units.
-const double _kChapterNodeHeight = 92;
+const double _kChapterNodeHeight = 76;
 const double _kPathNodeHeight = 118;
 const double _kUnitNodeHeight = 118;
 const double _kTrophyNodeHeight = 112;
@@ -943,7 +943,7 @@ class _ChapterHeader extends StatelessWidget {
     final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: PaperTheme.cardPaper,
         borderRadius: BorderRadius.circular(14),
@@ -960,8 +960,8 @@ class _ChapterHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 32,
+            height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
