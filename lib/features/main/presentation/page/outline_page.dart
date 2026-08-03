@@ -477,9 +477,24 @@ class _OutlinePageState extends State<OutlinePage>
     // every course rendering the exact same pattern.
     final rng = math.Random(widget.id.hashCode);
     double jitter(double range) => (rng.nextDouble() * 2 - 1) * range;
-    // Each path/unit waypoint picks its side independently at random
-    // instead of strictly alternating left-right-left-right.
-    bool randomSide() => rng.nextBool();
+    // Each path/unit waypoint picks its side at random instead of strictly
+    // alternating left-right-left-right — but a plain coin flip can streak
+    // (3+ in a row on the same side), and since the seed is locked to this
+    // course's id, an unlucky streak would stick around forever for that
+    // course. Capping the run at 2 keeps the "not mechanical" feel while
+    // guaranteeing it never stops reading as a zigzag.
+    var zigzagLeft = rng.nextBool();
+    var zigzagStreak = 0;
+    bool randomSide() {
+      final mustSwitch = zigzagStreak >= 1;
+      if (mustSwitch || rng.nextBool()) {
+        zigzagLeft = !zigzagLeft;
+        zigzagStreak = 0;
+      } else {
+        zigzagStreak++;
+      }
+      return zigzagLeft;
+    }
 
     for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
       final module = modules[moduleIndex];
