@@ -55,16 +55,47 @@ ThemeData _buildTheme(Brightness brightness) {
       filled: true,
       fillColor: AppColor.surface,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: AppColor.border),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: AppColor.border),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+      ),
+    ),
+    // Raw Material buttons (a few screens reach for these directly instead
+    // of the custom button widgets) should still read as paper elements —
+    // a filled paper card with a hairline edge and a soft ink shadow —
+    // rather than the flat, shadowless Material default.
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        backgroundColor: AppColor.surface,
+        foregroundColor: AppColor.ink,
+        elevation: 1.5,
+        shadowColor: AppColor.ink.withValues(alpha: 0.16),
+        side: BorderSide(color: AppColor.border, width: 1.1),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColor.primary,
+        foregroundColor: AppColor.white,
+        elevation: 3,
+        shadowColor: AppColor.primary.withValues(alpha: 0.35),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: AppColor.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
   );

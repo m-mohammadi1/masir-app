@@ -70,25 +70,34 @@ class CustomOutlineButton extends StatelessWidget {
                 height: height,
                 width: width,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(buttonSizeRadius ?? 8),
-                  border:
-                      Border.all(color: borderColor ?? AppColor.border),
-                  color: backgroundColor ?? Colors.transparent,
+                  borderRadius: BorderRadius.circular(buttonSizeRadius ?? 14),
+                  border: Border.all(
+                    color: borderColor ?? AppColor.border,
+                    width: 1.1,
+                  ),
+                  color: backgroundColor ?? AppColor.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColor.ink.withValues(alpha: 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 alignment: Alignment.center,
-                child: child ??
+                child:
+                    child ??
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (icon != null) icon!,
+                        if (icon != null) ...[icon!, const SizedBox(width: 8)],
                         CustomText(
                           title ?? "",
                           fontSize: textStyle?.fontSize,
                           color: textStyle?.color,
                           fontWeight: textStyle?.fontWeight,
                         ),
-
                       ],
                     ),
               ),
