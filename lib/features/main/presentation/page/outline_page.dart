@@ -541,7 +541,7 @@ class _OutlinePageState extends State<OutlinePage>
             centered: false,
             isLeft: pathIsLeft,
             xJitter: jitter(0.055),
-            pinRadius: 26,
+            pinRadius: 28,
             curveKickA: jitter(22),
             curveKickB: jitter(22),
             incomingSolid: pathIncomingSolid,
@@ -1099,12 +1099,15 @@ class _StampBadge extends StatelessWidget {
   }
 }
 
-/// Path waypoint — a rounded-*square* marker (never a circle, so it can
-/// never be mistaken for a chapter's badge or a unit's pin) with its title
-/// in a pill tag beside it. Positioned in the same left/right zigzag as
-/// units (see `_buildTrailNodes`'s `randomSide`) instead of always
-/// sitting dead-center, so the trail keeps winding naturally through every
-/// path instead of snapping back to the middle each time.
+/// Path waypoint — a solid-*filled* rounded-square "milestone" badge (paper
+/// icon on a colored fill, ringed in paper like a sticker on the page),
+/// unmistakably heavier than a unit's light paper-on-paper outline pin. The
+/// filled treatment is what actually separates "this is a bigger
+/// checkpoint" from "this is one step" at a glance, on top of the
+/// square-vs-circle shape difference. Positioned in the same left/right
+/// zigzag as units (see `_buildTrailNodes`'s `randomSide`) instead of
+/// always sitting dead-center, so the trail keeps winding naturally
+/// through every path instead of snapping back to the middle each time.
 class _PathWaypoint extends StatelessWidget {
   final OutlinePathEntity path;
   final bool isLeft;
@@ -1123,25 +1126,25 @@ class _PathWaypoint extends StatelessWidget {
     final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
 
     final pin = Container(
-      width: 52,
-      height: 52,
+      width: 56,
+      height: 56,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: PaperTheme.cardPaper,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent, width: 2.2),
+        color: accent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: PaperTheme.cardPaper, width: 3),
         boxShadow: [
           BoxShadow(
-            color: accent.withValues(alpha: 0.18),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: accent.withValues(alpha: 0.32),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Icon(
-        isComplete ? Icons.flag_circle_rounded : Icons.route_outlined,
-        size: 24,
-        color: accent,
+        isComplete ? Icons.flag_circle_rounded : Icons.route_rounded,
+        size: 26,
+        color: PaperTheme.cardPaper,
       ),
     );
 
@@ -1149,7 +1152,7 @@ class _PathWaypoint extends StatelessWidget {
       constraints: BoxConstraints(maxWidth: maxLabelWidth),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: PaperTheme.cardPaper,
+        color: accent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withValues(alpha: 0.5)),
       ),
