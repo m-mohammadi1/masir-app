@@ -333,6 +333,60 @@ class _OutlinePageState extends State<OutlinePage>
     return true;
   }
 
+  /// Flattens the module list into a single scroll timeline, inserting an
+  /// [_InterModuleConnector] trail piece between consecutive chapters so the
+  /// whole course reads as one continuous adventure, not separate islands.
+  List<Widget> _buildModuleTimeline(
+    List<OutlineModuleEntity> modules,
+    String? currentUnitId,
+  ) {
+    final widgets = <Widget>[];
+
+    for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
+      final module = modules[moduleIndex];
+      final paths = module.paths ?? [];
+      final moduleProgress = _moduleProgress(module);
+      final isFullyCompleted = _isModuleFullyCompleted(module);
+      final hasNextModule = moduleIndex < modules.length - 1;
+
+      widgets.add(
+        _ModuleRoadmap(
+          module: module,
+          paths: paths,
+          moduleProgress: moduleProgress,
+          isFullyCompleted: isFullyCompleted,
+          moduleIndex: moduleIndex,
+          hasNextModule: hasNextModule,
+          currentUnitId: currentUnitId,
+          currentUnitKey: _currentUnitKey,
+          entrance: _entranceController,
+          getTypeLabel: _getTypeLabel,
+          getTypeIcon: _getTypeIcon,
+          onUnitTap: _onUnitTap,
+        ),
+      );
+
+      if (hasNextModule) {
+        final exit = _computeModuleExit(module, isFullyCompleted);
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: _InterModuleConnector(
+              fromUseCenter: exit.useCenter,
+              fromIsLeft: exit.isLeft,
+              isModuleComplete: isFullyCompleted,
+              entrance: _entranceController,
+            ),
+          ),
+        );
+      } else {
+        widgets.add(const SizedBox(height: 20));
+      }
+    }
+
+    return widgets;
+  }
+
   String? _findCurrentUnitId(List<OutlineModuleEntity> modules) {
     for (final module in modules) {
       for (final path in module.paths ?? []) {
@@ -392,34 +446,10 @@ class _OutlinePageState extends State<OutlinePage>
                                   bottom: 32,
                                   top: 4,
                                 ),
-                                children: List.generate(modules.length, (
-                                  moduleIndex,
-                                ) {
-                                  final module = modules[moduleIndex];
-                                  final paths = module.paths ?? [];
-                                  final moduleProgress = _moduleProgress(
-                                    module,
-                                  );
-                                  final isFullyCompleted =
-                                      _isModuleFullyCompleted(module);
-
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 20),
-                                    child: _ModuleRoadmap(
-                                      module: module,
-                                      paths: paths,
-                                      moduleProgress: moduleProgress,
-                                      isFullyCompleted: isFullyCompleted,
-                                      moduleIndex: moduleIndex,
-                                      currentUnitId: currentUnitId,
-                                      currentUnitKey: _currentUnitKey,
-                                      entrance: _entranceController,
-                                      getTypeLabel: _getTypeLabel,
-                                      getTypeIcon: _getTypeIcon,
-                                      onUnitTap: _onUnitTap,
-                                    ),
-                                  );
-                                }),
+                                children: _buildModuleTimeline(
+                                  modules,
+                                  currentUnitId,
+                                ),
                               ),
                             ),
                           ),
@@ -497,6 +527,124 @@ class _CourseProgressHeader extends StatelessWidget {
   }
 }
 
+/// Where a module's trail exits from, so the next module's connector can
+/// pick it up seamlessly: centered under the trophy medallion when the
+/// chapter is fully completed, otherwise from the last drawn unit's side.
+class _ModuleExitInfo {
+  final bool useCenter;
+  final bool isLeft;
+
+  const _ModuleExitInfo({required this.useCenter, required this.isLeft});
+}
+
+_ModuleExitInfo _computeModuleExit(
+  OutlineModuleEntity module,
+  bool isFullyCompleted,
+) {
+  if (isFullyCompleted) {
+    // Trail converges to the centered trophy medallion at the bottom.
+    return const _ModuleExitInfo(useCenter: true, isLeft: false);
+  }
+
+  final paths = module.paths ?? [];
+  final lastUnitsPathIndex = paths.lastIndexWhere(
+    (p) => (p.units ?? []).isNotEmpty,
+  );
+  if (lastUnitsPathIndex == -1) {
+    // No units anywhere in this module yet — fall back to a centered exit.
+    return const _ModuleExitInfo(useCenter: true, isLeft: false);
+  }
+
+  final lastUnits = paths[lastUnitsPathIndex].units ?? [];
+  final fromIsLeft = (lastUnits.length - 1 + lastUnitsPathIndex) % 2 == 0;
+  return _ModuleExitInfo(useCenter: false, isLeft: fromIsLeft);
+}
+
+// ---------------------------------------------------------------------------
+// Bridge between two consecutive chapters/modules.
+// ---------------------------------------------------------------------------
+
+class _InterModuleConnector extends StatelessWidget {
+  static const double _height = 56;
+
+  final bool fromUseCenter;
+  final bool fromIsLeft;
+  final bool isModuleComplete;
+  final Animation<double> entrance;
+
+  const _InterModuleConnector({
+    required this.fromUseCenter,
+    required this.fromIsLeft,
+    required this.isModuleComplete,
+    required this.entrance,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: entrance,
+      builder: (context, _) {
+        final progress = Curves.easeOutCubic.transform(entrance.value);
+        return CustomPaint(
+          painter: _InterModulePainter(
+            fromUseCenter: fromUseCenter,
+            fromIsLeft: fromIsLeft,
+            isModuleComplete: isModuleComplete,
+            progress: progress,
+          ),
+          child: const SizedBox(height: _height),
+        );
+      },
+    );
+  }
+}
+
+class _InterModulePainter extends CustomPainter {
+  final bool fromUseCenter;
+  final bool fromIsLeft;
+  final bool isModuleComplete;
+  final double progress;
+
+  _InterModulePainter({
+    required this.fromUseCenter,
+    required this.fromIsLeft,
+    required this.isModuleComplete,
+    required this.progress,
+  });
+
+  double _x(bool isLeft, double width) =>
+      isLeft ? width * _kRoadSideRatio : width * (1 - _kRoadSideRatio);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final startX = fromUseCenter ? size.width / 2 : _x(fromIsLeft, size.width);
+    // The next chapter's first path always starts its zigzag on the left
+    // (pathIndex 0 → zigzagOffset 0 → first unit isLeft == true).
+    final endX = _x(true, size.width);
+    const startY = 0.0;
+    final endY = size.height;
+    final dy = endY - startY;
+
+    final road = Path()
+      ..moveTo(startX, startY)
+      ..cubicTo(startX, startY + dy * 0.6, endX, endY - dy * 0.6, endX, endY);
+
+    if (isModuleComplete) {
+      _TrailRibbon.drawWalked(canvas, road, progress);
+    } else {
+      _TrailRibbon.drawUnwalked(canvas, road, progress);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _InterModulePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.fromUseCenter != fromUseCenter ||
+        oldDelegate.fromIsLeft != fromIsLeft ||
+        oldDelegate.isModuleComplete != isModuleComplete;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Module sheet ("chapter plate" + its path sections)
 // ---------------------------------------------------------------------------
@@ -507,6 +655,7 @@ class _ModuleRoadmap extends StatelessWidget {
   final int moduleProgress;
   final bool isFullyCompleted;
   final int moduleIndex;
+  final bool hasNextModule;
   final String? currentUnitId;
   final GlobalKey currentUnitKey;
   final Animation<double> entrance;
@@ -527,6 +676,7 @@ class _ModuleRoadmap extends StatelessWidget {
     required this.moduleProgress,
     required this.isFullyCompleted,
     required this.moduleIndex,
+    required this.hasNextModule,
     required this.currentUnitId,
     required this.currentUnitKey,
     required this.entrance,
@@ -575,6 +725,7 @@ class _ModuleRoadmap extends StatelessWidget {
             getTypeIcon: getTypeIcon,
             onUnitTap: onUnitTap,
             isFullyCompleted: isFullyCompleted,
+            hasNextModule: hasNextModule,
           ),
           const SizedBox(height: 10),
         ],
@@ -599,6 +750,7 @@ class _ModuleRoadmap extends StatelessWidget {
     })
     onUnitTap,
     required bool isFullyCompleted,
+    required bool hasNextModule,
   }) {
     final sections = <Widget>[];
     final lastUnitsPathIndex = paths.lastIndexWhere(
@@ -627,8 +779,13 @@ class _ModuleRoadmap extends StatelessWidget {
             pathIndex < paths.length - 1 &&
             (paths[pathIndex + 1].units ?? []).isNotEmpty;
         final startFromPathHeader = pathIndex == 0;
-        final connectToTrophy =
-            isFullyCompleted && pathIndex == lastUnitsPathIndex;
+        final isLastUnitsPath = pathIndex == lastUnitsPathIndex;
+        final connectToTrophy = isFullyCompleted && isLastUnitsPath;
+        // Last path of an unfinished module, but another chapter follows:
+        // let the trail run to the bottom so the inter-module connector can
+        // pick it up seamlessly instead of dangling mid-card.
+        final connectToNextModule =
+            !isFullyCompleted && isLastUnitsPath && hasNextModule;
 
         sections.add(
           Padding(
@@ -644,7 +801,8 @@ class _ModuleRoadmap extends StatelessWidget {
               onUnitTap: onUnitTap,
               staggerBase: moduleIndex * 0.15 + pathIndex * 0.08,
               extendFromTop: hasPrevBridge,
-              extendToBottom: hasNextBridge || connectToTrophy,
+              extendToBottom:
+                  hasNextBridge || connectToTrophy || connectToNextModule,
               // First path: trail grows out of path-header bottom-center.
               startFromCenter: startFromPathHeader,
               pathFullyComplete: _isPathFullyCompleted(path),
