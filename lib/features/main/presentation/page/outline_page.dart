@@ -458,10 +458,10 @@ class _OutlinePageState extends State<OutlinePage>
   /// Chapters are plain full-width title plates, not trail markers — they
   /// still sit on the timeline (so the trail keeps flowing from one module
   /// into the next), but they never zigzag and never compete visually with
-  /// the actual waypoints, which are paths and units. Paths and units share
-  /// one continuous left/right alternation (`zigzagCounter`) instead of
-  /// paths always snapping back to dead-center, which read as an artificial
-  /// hourglass rather than a winding trail.
+  /// the actual waypoints, which are paths and units. Paths and units each
+  /// pick their left/right side at random (`randomSide`) instead of always
+  /// snapping back to dead-center, which read as an artificial hourglass
+  /// rather than a winding trail.
   _NodeBuildResult _buildTrailNodes(
     List<OutlineModuleEntity> modules,
     String? currentUnitId,
@@ -469,13 +469,16 @@ class _OutlinePageState extends State<OutlinePage>
     final nodes = <_TrailNode>[];
     int? currentUnitIndex;
     bool? previousModuleFullyCompleted;
-    var zigzagCounter = 0;
 
-    // Fixed seed → same jitter every rebuild for the same course structure
-    // (no flicker when the bloc re-emits after a tap), but different from
-    // path to path so the trail reads as hand-drawn instead of mechanical.
+    // Fixed seed → same randomness every rebuild for the same course
+    // structure (no flicker when the bloc re-emits after a tap), but
+    // different from path to path so the trail reads as hand-drawn instead
+    // of mechanical.
     final rng = math.Random(1337);
     double jitter(double range) => (rng.nextDouble() * 2 - 1) * range;
+    // Each path/unit waypoint picks its side independently at random
+    // instead of strictly alternating left-right-left-right.
+    bool randomSide() => rng.nextBool();
 
     for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
       final module = modules[moduleIndex];
@@ -514,8 +517,7 @@ class _OutlinePageState extends State<OutlinePage>
             ? (pathFullyComplete || firstUnitDone)
             : _isPathFullyCompleted(paths[pathIndex - 1]);
 
-        final pathIsLeft = zigzagCounter % 2 == 0;
-        zigzagCounter++;
+        final pathIsLeft = randomSide();
 
         nodes.add(
           _TrailNode(
@@ -537,8 +539,7 @@ class _OutlinePageState extends State<OutlinePage>
 
         for (var unitIndex = 0; unitIndex < units.length; unitIndex++) {
           final unit = units[unitIndex];
-          final isLeft = zigzagCounter % 2 == 0;
-          zigzagCounter++;
+          final isLeft = randomSide();
           final isCompleted = unit.status == 'completed';
           final isLocked = unit.locked ?? false;
           final isCurrent = unit.id == currentUnitId;
@@ -1082,7 +1083,7 @@ class _StampBadge extends StatelessWidget {
 /// Path waypoint — a rounded-*square* marker (never a circle, so it can
 /// never be mistaken for a chapter's badge or a unit's pin) with its title
 /// in a pill tag beside it. Positioned in the same left/right zigzag as
-/// units (see `_buildTrailNodes`'s `zigzagCounter`) instead of always
+/// units (see `_buildTrailNodes`'s `randomSide`) instead of always
 /// sitting dead-center, so the trail keeps winding naturally through every
 /// path instead of snapping back to the middle each time.
 class _PathWaypoint extends StatelessWidget {
