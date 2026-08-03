@@ -212,6 +212,25 @@ class _TrailNode {
   final bool centered;
   final bool isLeft;
 
+  /// Small deterministic offset (fraction of canvas width) added to the
+  /// left/right zigzag position, so waypoints don't all sit on exactly the
+  /// same two vertical lines — this alone is most of what makes the trail
+  /// read as hand-drawn rather than mechanically repeated.
+  final double xJitter;
+
+  /// Radius of this waypoint's actual pin marker — units and paths use
+  /// differently-sized pins, and the zigzag slot needs the real radius to
+  /// land the line exactly on the pin's center rather than assuming one
+  /// fixed size for every marker type.
+  final double pinRadius;
+
+  /// Deterministic horizontal nudges for the two control points of the
+  /// cubic bezier leading into this node, so consecutive segments bow in
+  /// slightly different ways instead of every curve having identical
+  /// symmetric tension.
+  final double curveKickA;
+  final double curveKickB;
+
   /// Whether the segment *leading into* this node should be drawn as
   /// already-walked (green) rather than still-ahead (purple).
   final bool incomingSolid;
@@ -221,6 +240,10 @@ class _TrailNode {
     required this.height,
     this.centered = true,
     this.isLeft = false,
+    this.xJitter = 0,
+    this.pinRadius = _kRoadNodeSize / 2,
+    this.curveKickA = 0,
+    this.curveKickB = 0,
     required this.incomingSolid,
     required this.build,
   });
@@ -447,6 +470,12 @@ class _OutlinePageState extends State<OutlinePage>
     bool? previousModuleFullyCompleted;
     var zigzagCounter = 0;
 
+    // Fixed seed → same jitter every rebuild for the same course structure
+    // (no flicker when the bloc re-emits after a tap), but different from
+    // path to path so the trail reads as hand-drawn instead of mechanical.
+    final rng = math.Random(1337);
+    double jitter(double range) => (rng.nextDouble() * 2 - 1) * range;
+
     for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
       final module = modules[moduleIndex];
       final paths = module.paths ?? [];
@@ -458,6 +487,8 @@ class _OutlinePageState extends State<OutlinePage>
         _TrailNode(
           height: _kChapterNodeHeight,
           incomingSolid: previousModuleFullyCompleted ?? false,
+          curveKickA: jitter(16),
+          curveKickB: jitter(16),
           build: (_) => _ChapterHeader(
             index: moduleIndex,
             title: module.title ?? '',
@@ -490,6 +521,10 @@ class _OutlinePageState extends State<OutlinePage>
             height: _kPathNodeHeight,
             centered: false,
             isLeft: pathIsLeft,
+            xJitter: jitter(0.055),
+            pinRadius: 26,
+            curveKickA: jitter(22),
+            curveKickB: jitter(22),
             incomingSolid: pathIncomingSolid,
             build: (canvasWidth) => _PathWaypoint(
               path: path,
@@ -519,6 +554,9 @@ class _OutlinePageState extends State<OutlinePage>
               height: _kUnitNodeHeight,
               centered: false,
               isLeft: isLeft,
+              xJitter: jitter(0.05),
+              curveKickA: jitter(18),
+              curveKickB: jitter(18),
               incomingSolid: incomingSolid,
               build: (canvasWidth) => _RoadUnitNode(
                 title: unit.title ?? '',
@@ -546,6 +584,8 @@ class _OutlinePageState extends State<OutlinePage>
             _TrailNode(
               height: _kTrophyNodeHeight,
               incomingSolid: true,
+              curveKickA: jitter(16),
+              curveKickB: jitter(16),
               build: (_) => const _TrophyNode(),
             ),
           );
@@ -733,6 +773,8 @@ class _TrailCanvas extends StatelessWidget {
                         : _ZigZagSlot(
                             isLeft: nodes[i].isLeft,
                             width: width,
+                            xJitter: nodes[i].xJitter,
+                            pinRadius: nodes[i].pinRadius,
                             child: nodes[i].build(width),
                           ),
                   ),
@@ -752,20 +794,23 @@ class _TrailCanvas extends StatelessWidget {
 class _ZigZagSlot extends StatelessWidget {
   final bool isLeft;
   final double width;
+  final double xJitter;
+  final double pinRadius;
   final Widget child;
 
   const _ZigZagSlot({
     required this.isLeft,
     required this.width,
+    required this.xJitter,
+    required this.pinRadius,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    final nodeCenterX = isLeft
-        ? width * _kRoadSideRatio
-        : width * (1 - _kRoadSideRatio);
-    final nodeRadius = _kRoadNodeSize / 2;
+    final base = isLeft ? _kRoadSideRatio : (1 - _kRoadSideRatio);
+    final nodeCenterX = (base + xJitter) * width;
+    final nodeRadius = pinRadius;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -833,9 +878,8 @@ class _FullTrailPainter extends CustomPainter {
 
   double _x(_TrailNode node, double width) {
     if (node.centered) return width / 2;
-    return node.isLeft
-        ? width * _kRoadSideRatio
-        : width * (1 - _kRoadSideRatio);
+    final base = node.isLeft ? _kRoadSideRatio : (1 - _kRoadSideRatio);
+    return (base + node.xJitter) * width;
   }
 
   @override
@@ -846,10 +890,19 @@ class _FullTrailPainter extends CustomPainter {
       final x2 = _x(nodes[i], size.width);
       final y2 = centersY[i];
       final dy = y2 - y1;
+      final kickA = nodes[i].curveKickA;
+      final kickB = nodes[i].curveKickB;
 
       final segment = Path()
         ..moveTo(x1, y1)
-        ..cubicTo(x1, y1 + dy * 0.55, x2, y2 - dy * 0.55, x2, y2);
+        ..cubicTo(
+          x1 + kickA,
+          y1 + dy * 0.55,
+          x2 + kickB,
+          y2 - dy * 0.55,
+          x2,
+          y2,
+        );
 
       if (nodes[i].incomingSolid) {
         _TrailRibbon.drawWalked(canvas, segment);
