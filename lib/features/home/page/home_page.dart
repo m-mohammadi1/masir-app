@@ -41,13 +41,13 @@ class _HomePageState extends State<HomePage> {
     // the one selected right now, and we still want that course to show
     // up (marked as already registered) instead of silently vanishing.
     mySubscriptionsBloc.add(MySubscriptionsEvent.mySubscriptions());
+    // Also always fetched (not just as a first-time fallback): it's the
+    // only place we can resolve an institute's *name* for the "other
+    // institute" label on a subscribed course that isn't part of the
+    // currently selected institute.
+    myInstitutesBloc.add(MyInstitutesEvent.myInstitutes());
     if (HiveService.hasCurrentInstitute) {
       _loadCourses(HiveService.currentInstituteId!);
-    } else {
-      // First time in the app (or an older account created before this
-      // feature existed): fall back to the institute the student is
-      // already linked to.
-      myInstitutesBloc.add(MyInstitutesEvent.myInstitutes());
     }
   }
 
@@ -71,6 +71,11 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _bootstrapFromMyInstitutes(List data) async {
     if (!mounted) return;
+    // Now that MyInstitutesBloc is always fetched (also used for the
+    // "other institute" name label below), only actually auto-select an
+    // institute from it the first time — never override one the student
+    // already has selected.
+    if (HiveService.hasCurrentInstitute) return;
     if (data.isEmpty) {
       setState(() => _noInstituteFound = true);
       return;
@@ -162,77 +167,102 @@ class _HomePageState extends State<HomePage> {
         child: Center(child: CustomLoading()),
       );
     }
-    return BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(
-      bloc: mySubscriptionsBloc,
-      builder: (context, subState) {
-        final subscriptions =
-            subState.whenOrNull(success: (isLoading, data) => data) ??
-            const <MySubscriptionsModel>[];
-        final subscriptionByCourseId = <String, MySubscriptionsModel>{
-          for (final sub in subscriptions)
-            if (sub.courseId != null) sub.courseId!: sub,
+    return BlocBuilder<MyInstitutesBloc, MyInstitutesState>(
+      bloc: myInstitutesBloc,
+      builder: (context, myInstitutesState) {
+        // Only used to resolve a *name* for the obvious "other institute"
+        // label below — never to decide which courses to show.
+        final instituteNameById = <String, String>{
+          for (final institute
+              in myInstitutesState.whenOrNull(
+                    success: (isLoading, data) => data,
+                  ) ??
+                  const [])
+            if (institute.id != null && (institute.name ?? '').isNotEmpty)
+              institute.id!: institute.name!,
         };
 
-        return BlocBuilder<CoursesBloc, CoursesState>(
-          bloc: coursesBloc,
-          builder: (context, state) {
-            return state.when(
-              loading: (_) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: CustomLoading()),
-              ),
-              error: (_, message) => CustomError(message: message),
-              success: (isLoading, data) {
-                // A subscribed course must never just disappear — even if
-                // it belongs to a different institute than the one
-                // currently selected, or the institute's course list
-                // happens to leave it out for some other reason, fold it
-                // back in so the student can always reach it and see it's
-                // already registered.
-                final byId = <String, CoursesModel>{
-                  for (final course in data)
-                    if (course.id != null) course.id!: course,
-                };
-                for (final sub in subscriptions) {
-                  final course = sub.coursesModel;
-                  if (course?.id != null && !byId.containsKey(course!.id)) {
-                    byId[course.id!] = course;
-                  }
-                }
-                final merged = byId.values.toList()
-                  ..sort((a, b) {
-                    final aRank = subscriptionByCourseId.containsKey(a.id)
-                        ? 0
-                        : 1;
-                    final bRank = subscriptionByCourseId.containsKey(b.id)
-                        ? 0
-                        : 1;
-                    return aRank.compareTo(bRank);
-                  });
+        return BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(
+          bloc: mySubscriptionsBloc,
+          builder: (context, subState) {
+            final subscriptions =
+                subState.whenOrNull(success: (isLoading, data) => data) ??
+                const <MySubscriptionsModel>[];
+            final subscriptionByCourseId = <String, MySubscriptionsModel>{
+              for (final sub in subscriptions)
+                if (sub.courseId != null) sub.courseId!: sub,
+            };
 
-                if (merged.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: CustomText(
-                        "هنوز دوره‌ای منتشر نشده است.",
-                        color: AppColor.inkMuted,
-                      ),
-                    ),
-                  );
-                }
-                return Column(
-                  children: merged
-                      .map(
-                        (course) => Padding(
+            return BlocBuilder<CoursesBloc, CoursesState>(
+              bloc: coursesBloc,
+              builder: (context, state) {
+                return state.when(
+                  loading: (_) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(child: CustomLoading()),
+                  ),
+                  error: (_, message) => CustomError(message: message),
+                  success: (isLoading, data) {
+                    // Courses from another institute are never fetched or
+                    // shown here on their own — the institute-scoped list
+                    // only ever contains this institute's own courses. The
+                    // *only* exception is a course the student is already
+                    // registered in ("my courses"): that must never just
+                    // disappear because of an institute mismatch, so it's
+                    // folded back in here, but clearly labeled with its
+                    // real institute so it's obvious why it's showing up.
+                    final byId = <String, CoursesModel>{
+                      for (final course in data)
+                        if (course.id != null) course.id!: course,
+                    };
+                    for (final sub in subscriptions) {
+                      final course = sub.coursesModel;
+                      if (course?.id != null && !byId.containsKey(course!.id)) {
+                        byId[course.id!] = course;
+                      }
+                    }
+                    final merged = byId.values.toList()
+                      ..sort((a, b) {
+                        final aRank = subscriptionByCourseId.containsKey(a.id)
+                            ? 0
+                            : 1;
+                        final bRank = subscriptionByCourseId.containsKey(b.id)
+                            ? 0
+                            : 1;
+                        return aRank.compareTo(bRank);
+                      });
+
+                    if (merged.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: CustomText(
+                            "هنوز دوره‌ای منتشر نشده است.",
+                            color: AppColor.inkMuted,
+                          ),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: merged.map((course) {
+                        final isOtherInstitute =
+                            course.instituteId != null &&
+                            course.instituteId !=
+                                HiveService.currentInstituteId;
+                        return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: _InstituteCourseTile(
                             course: course,
                             subscription: subscriptionByCourseId[course.id],
+                            otherInstituteName: isOtherInstitute
+                                ? (instituteNameById[course.instituteId] ??
+                                      "مؤسسه‌ی دیگر")
+                                : null,
                           ),
-                        ),
-                      )
-                      .toList(),
+                        );
+                      }).toList(),
+                    );
+                  },
                 );
               },
             );
@@ -321,7 +351,17 @@ class _InstituteCourseTile extends StatelessWidget {
   /// a price/register affordance.
   final MySubscriptionsModel? subscription;
 
-  const _InstituteCourseTile({required this.course, this.subscription});
+  /// Set only when this course doesn't belong to the currently selected
+  /// institute (it's only ever shown here because the student is already
+  /// registered in it) — an obvious label so it's clear why a course from
+  /// another institute is mixed into this list.
+  final String? otherInstituteName;
+
+  const _InstituteCourseTile({
+    required this.course,
+    this.subscription,
+    this.otherInstituteName,
+  });
 
   void _open() {
     if (subscription != null) {
@@ -447,6 +487,41 @@ class _InstituteCourseTile extends StatelessWidget {
                             color: AppColor.ink,
                           ),
                         ),
+                        if (otherInstituteName != null) ...[
+                          4.h,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColor.inkFaint.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColor.border),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.apartment_rounded,
+                                  size: 11,
+                                  color: AppColor.inkMuted,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "دوره‌ی مؤسسه‌ی $otherInstituteName",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColor.inkMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         if ((course.description ?? '').isNotEmpty) ...[
                           4.h,
                           Text(
