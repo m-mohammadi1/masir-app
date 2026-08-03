@@ -1,8 +1,5 @@
 import 'package:injectable/injectable.dart';
 
-
-
-
 import 'package:easy_helper/easy_helper.dart';
 import '../../domain/entities/quiz_submit.dart';
 import '../models/quiz_submit_model.dart';
@@ -46,17 +43,22 @@ sealed class MainRemoteDataSource {
   Future<UnitsEntity> units({RequestUnitsModel? params});
 
   @factoryMethod
-  Future<OutlineCourseEntity> outlineCourse({RequestOutlineCourseModel? params});
+  Future<OutlineCourseEntity> outlineCourse({
+    RequestOutlineCourseModel? params,
+  });
 
   @factoryMethod
-  Future<SubscribeCourseEntity> subscribeCourse({RequestSubscribeCourseModel? params});
+  Future<SubscribeCourseEntity> subscribeCourse({
+    RequestSubscribeCourseModel? params,
+  });
 
   @factoryMethod
   Future<CourseDetailEntity> courseDetail({RequestCourseDetailModel? params});
 
-
   @factoryMethod
-  Future<List<MyInstitutesEntity>> myInstitutes({RequestMyInstitutesModel? params});
+  Future<List<MyInstitutesEntity>> myInstitutes({
+    RequestMyInstitutesModel? params,
+  });
 
   @factoryMethod
   Future<List<CoursesEntity>> courses({RequestCoursesModel? params});
@@ -65,7 +67,9 @@ sealed class MainRemoteDataSource {
   Future<List<InstitutesEntity>> institutes({RequestInstitutesModel? params});
 
   @factoryMethod
-  Future<List<MySubscriptionsEntity>> mySubscriptions({RequestMySubscriptionsModel? params});
+  Future<List<MySubscriptionsEntity>> mySubscriptions({
+    RequestMySubscriptionsModel? params,
+  });
   @factoryMethod
   Future<MainEntity> call({RequestMainModel? params});
 }
@@ -77,97 +81,115 @@ class MainRemoteDataSourceImpl implements MainRemoteDataSource {
 
   const MainRemoteDataSourceImpl({required this.restfulApi});
 
-@override
-Future<QuizSubmitResponseEntity> quizSubmit({RequestQuizSubmitModel? params}) async {
-  final hasAnswers = params?.answers.isNotEmpty == true;
-  var response = await restfulApi.post(
-    path: hasAnswers
-        ? 'units/${params?.id}/quiz-submit'
-        : 'units/${params?.id}/complete',
-    result: const QuizSubmitResponseModel().toResult,
-    request: params,
-  );
-  return response.result as QuizSubmitResponseModel;
-}
+  @override
+  Future<QuizSubmitResponseEntity> quizSubmit({
+    RequestQuizSubmitModel? params,
+  }) async {
+    final hasAnswers = params?.answers.isNotEmpty == true;
+    var response = await restfulApi.post(
+      path: hasAnswers
+          ? 'units/${params?.id}/quiz-submit'
+          : 'units/${params?.id}/complete',
+      result: const QuizSubmitResponseModel().toResult,
+      request: params,
+    );
+    return response.result as QuizSubmitResponseModel;
+  }
 
-@override
-Future<UnitsEntity> units({RequestUnitsModel? params}) async {
-  var response = await restfulApi.get(
-    path: 'units/${params?.id}',
-    result: const UnitsModel().toResult,
-  );
-  return response.result as UnitsModel;
-}
+  @override
+  Future<UnitsEntity> units({RequestUnitsModel? params}) async {
+    var response = await restfulApi.get(
+      path: 'units/${params?.id}',
+      result: const UnitsModel().toResult,
+    );
+    return response.result as UnitsModel;
+  }
 
-@override
-Future<OutlineCourseEntity> outlineCourse({RequestOutlineCourseModel? params}) async {
-  var response = await restfulApi.get(
-    path: 'courses/${params?.id}/outline',
-    result: const OutlineCourseModel().toResult,
-    // request: params,
-  );
-  return response.result as OutlineCourseModel;
-}
+  @override
+  Future<OutlineCourseEntity> outlineCourse({
+    RequestOutlineCourseModel? params,
+  }) async {
+    var response = await restfulApi.get(
+      path: 'courses/${params?.id}/outline',
+      result: const OutlineCourseModel().toResult,
+      // request: params,
+    );
+    return response.result as OutlineCourseModel;
+  }
 
-@override
-Future<SubscribeCourseEntity> subscribeCourse({RequestSubscribeCourseModel? params}) async {
-  var response = await restfulApi.post(
-    path: 'courses/${params?.id}/subscribe',
-    result: const SubscribeCourseModel().toResult,
-    // request: params,
-  );
-  return response.result as SubscribeCourseModel;
-}
+  @override
+  Future<SubscribeCourseEntity> subscribeCourse({
+    RequestSubscribeCourseModel? params,
+  }) async {
+    var response = await restfulApi.post(
+      path: 'courses/${params?.id}/subscribe',
+      result: const SubscribeCourseModel().toResult,
+      // request: params,
+    );
+    return response.result as SubscribeCourseModel;
+  }
 
-@override
-Future<CourseDetailEntity> courseDetail({RequestCourseDetailModel? params}) async {
-  var response = await restfulApi.get(
-    path: 'courses/${params?.id}',
-    result: const CourseDetailModel().toResult,
-    // request: params,
-  );
-  return response.result as CourseDetailModel;
-}
+  @override
+  Future<CourseDetailEntity> courseDetail({
+    RequestCourseDetailModel? params,
+  }) async {
+    var response = await restfulApi.get(
+      path: 'courses/${params?.id}',
+      result: const CourseDetailModel().toResult,
+      // request: params,
+    );
+    return response.result as CourseDetailModel;
+  }
 
-@override
-Future<List<MyInstitutesEntity>> myInstitutes({RequestMyInstitutesModel? params}) async {
-  var response = await restfulApi.get(
-    path: 'me',
-    result: const MyInstitutesModel().setResults(['data','institutes']),
-    // request: params,
-  );
-  return response.results!.cast<MyInstitutesModel>();
-}
+  @override
+  Future<List<MyInstitutesEntity>> myInstitutes({
+    RequestMyInstitutesModel? params,
+  }) async {
+    var response = await restfulApi.get(
+      path: 'me',
+      result: const MyInstitutesModel().setResults(['data', 'institutes']),
+      // request: params,
+    );
+    return response.results!.cast<MyInstitutesModel>();
+  }
 
-@override
-Future<List<CoursesEntity>> courses({RequestCoursesModel? params}) async {
-  var response = await restfulApi.get(
-    path: 'courses?page=1&per_page=200',
-    result: const CoursesModel().setResults(['data','items']),
-    // request: params,
-  );
-  return response.results!.cast<CoursesModel>();
-}
+  @override
+  Future<List<CoursesEntity>> courses({RequestCoursesModel? params}) async {
+    final instituteId = params?.instituteId;
+    final path = (instituteId != null && instituteId.isNotEmpty)
+        ? 'institutes/$instituteId/courses?page=1&per_page=200'
+        : 'courses?page=1&per_page=200';
+    var response = await restfulApi.get(
+      path: path,
+      result: const CoursesModel().setResults(['data', 'items']),
+      // request: params,
+    );
+    return response.results!.cast<CoursesModel>();
+  }
 
-@override
-Future<List<InstitutesEntity>> institutes({RequestInstitutesModel? params}) async {
-  var response = await restfulApi.get(
-    path: 'institutes?page=1&per_page=200',
-    result: const InstitutesModel().setResults(['data','items']),
-    // request: params,
-  );
-  return response.results!.cast<InstitutesModel>();
-}
+  @override
+  Future<List<InstitutesEntity>> institutes({
+    RequestInstitutesModel? params,
+  }) async {
+    var response = await restfulApi.get(
+      path: 'institutes?page=1&per_page=200',
+      result: const InstitutesModel().setResults(['data', 'items']),
+      // request: params,
+    );
+    return response.results!.cast<InstitutesModel>();
+  }
 
-@override
-Future<List<MySubscriptionsEntity>> mySubscriptions({RequestMySubscriptionsModel? params}) async {
-  var response = await restfulApi.get(
-    path: 'me/subscriptions?page=1&per_page=200',
-    result: const MySubscriptionsModel().setResults(['data' , 'items']),
-    // request: params,
-  );
-  return response.results!.cast<MySubscriptionsModel>();
-}
+  @override
+  Future<List<MySubscriptionsEntity>> mySubscriptions({
+    RequestMySubscriptionsModel? params,
+  }) async {
+    var response = await restfulApi.get(
+      path: 'me/subscriptions?page=1&per_page=200',
+      result: const MySubscriptionsModel().setResults(['data', 'items']),
+      // request: params,
+    );
+    return response.results!.cast<MySubscriptionsModel>();
+  }
 
   @override
   Future<MainEntity> call({RequestMainModel? params}) async {
