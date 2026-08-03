@@ -54,6 +54,7 @@ const double _kChapterNodeHeight = 76;
 const double _kPathNodeHeight = 118;
 const double _kUnitNodeHeight = 118;
 const double _kTrophyNodeHeight = 112;
+const double _kCourseFinishHeight = 150;
 
 // ---------------------------------------------------------------------------
 // The trail — drawn as a walkable path ribbon, not a thin line, so the
@@ -593,6 +594,21 @@ class _OutlinePageState extends State<OutlinePage>
       }
 
       previousModuleFullyCompleted = isModuleFullyCompleted;
+    }
+
+    // Whole-course finish line — only appears once every module (and so
+    // every unit) is completed. Distinct from the per-chapter trophy: this
+    // is the very last waypoint on the entire trail.
+    if (modules.isNotEmpty && modules.every(_isModuleFullyCompleted)) {
+      nodes.add(
+        _TrailNode(
+          height: _kCourseFinishHeight,
+          incomingSolid: true,
+          curveKickA: jitter(16),
+          curveKickB: jitter(16),
+          build: (_) => const _CourseFinishNode(),
+        ),
+      );
     }
 
     return _NodeBuildResult(nodes, currentUnitIndex);
@@ -1197,6 +1213,71 @@ class _TrophyNode extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: PaperTheme.success,
+        ),
+      ],
+    );
+  }
+}
+
+/// The finish line — the very last waypoint on the whole trail, shown once
+/// every module (and therefore every unit) in the course is completed.
+/// Bigger and greener than a per-chapter trophy since it caps the entire
+/// adventure, not just one leg of it.
+class _CourseFinishNode extends StatelessWidget {
+  const _CourseFinishNode();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 78,
+          height: 78,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: PaperTheme.cardPaper,
+            border: Border.all(color: PaperTheme.success, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: PaperTheme.success.withValues(alpha: 0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(6),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: PaperTheme.success.withValues(alpha: 0.35),
+              ),
+            ),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              size: 36,
+              color: PaperTheme.success,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        const CustomText(
+          'دوره با موفقیت به پایان رسید!',
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: PaperTheme.success,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 2),
+        const CustomText(
+          'همه واحدها را با موفقیت گذراندی 🎉',
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: PaperTheme.inkMuted,
+          textAlign: TextAlign.center,
         ),
       ],
     );
