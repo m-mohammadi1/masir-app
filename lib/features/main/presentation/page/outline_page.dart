@@ -333,14 +333,20 @@ class _OutlinePageState extends State<OutlinePage>
     return true;
   }
 
-  /// Flattens the module list into a single scroll timeline, inserting an
-  /// [_InterModuleConnector] trail piece between consecutive chapters so the
-  /// whole course reads as one continuous adventure, not separate islands.
+  /// Flattens every module into a single scroll timeline that reads as one
+  /// continuous adventure trail, first unit to last:
+  /// - Chapter 1's header sits at the very top with nothing above it.
+  /// - Every later chapter is preceded by an [_InterModuleConnector] trail
+  ///   segment leading straight up to its header. No module has its own
+  ///   card/border anymore — everything shares the same paper background —
+  ///   so arriving at a new chapter never looks like a disconnected line.
   List<Widget> _buildModuleTimeline(
     List<OutlineModuleEntity> modules,
     String? currentUnitId,
   ) {
     final widgets = <Widget>[];
+    OutlineModuleEntity? previousModule;
+    bool previousFullyCompleted = false;
 
     for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
       final module = modules[moduleIndex];
@@ -348,12 +354,40 @@ class _OutlinePageState extends State<OutlinePage>
       final moduleProgress = _moduleProgress(module);
       final isFullyCompleted = _isModuleFullyCompleted(module);
       final hasNextModule = moduleIndex < modules.length - 1;
+      final isComplete = isFullyCompleted || moduleProgress >= 100;
+
+      final headerBlock = _ChapterHeaderBlock(
+        moduleIndex: moduleIndex,
+        title: module.title ?? '',
+        progress: moduleProgress,
+        isComplete: isComplete,
+        firstPath: paths.isNotEmpty ? paths.first : null,
+      );
+
+      if (moduleIndex == 0) {
+        widgets.add(headerBlock);
+      } else {
+        final exit = _computeModuleExit(
+          previousModule!,
+          previousFullyCompleted,
+        );
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+            child: _InterModuleConnector(
+              fromUseCenter: exit.useCenter,
+              fromIsLeft: exit.isLeft,
+              isModuleComplete: previousFullyCompleted,
+              entrance: _entranceController,
+            ),
+          ),
+        );
+        widgets.add(headerBlock);
+      }
 
       widgets.add(
         _ModuleRoadmap(
-          module: module,
           paths: paths,
-          moduleProgress: moduleProgress,
           isFullyCompleted: isFullyCompleted,
           moduleIndex: moduleIndex,
           hasNextModule: hasNextModule,
@@ -366,24 +400,11 @@ class _OutlinePageState extends State<OutlinePage>
         ),
       );
 
-      if (hasNextModule) {
-        final exit = _computeModuleExit(module, isFullyCompleted);
-        widgets.add(
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: _InterModuleConnector(
-              fromUseCenter: exit.useCenter,
-              fromIsLeft: exit.isLeft,
-              isModuleComplete: isFullyCompleted,
-              entrance: _entranceController,
-            ),
-          ),
-        );
-      } else {
-        widgets.add(const SizedBox(height: 20));
-      }
+      previousModule = module;
+      previousFullyCompleted = isFullyCompleted;
     }
 
+    widgets.add(const SizedBox(height: 20));
     return widgets;
   }
 
@@ -562,10 +583,18 @@ _ModuleExitInfo _computeModuleExit(
 
 // ---------------------------------------------------------------------------
 // Bridge between two consecutive chapters/modules.
+//
+// Unlike `_InterPathConnector` (which paints behind a small path tag), this
+// stays a plain standalone trail segment that leads straight up to the next
+// chapter header's top edge. Threading the thick ribbon behind a whole title
+// row would read as clutter; instead the trail simply "arrives" at the
+// signpost, and the header's own first-path segment carries it onward from
+// the header's bottom — same paper background throughout, so nothing about
+// the transition looks like a new/disconnected line.
 // ---------------------------------------------------------------------------
 
 class _InterModuleConnector extends StatelessWidget {
-  static const double _height = 56;
+  static const double _height = 52;
 
   final bool fromUseCenter;
   final bool fromIsLeft;
@@ -618,16 +647,17 @@ class _InterModulePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final startX = fromUseCenter ? size.width / 2 : _x(fromIsLeft, size.width);
-    // The next chapter's first path always starts its zigzag on the left
-    // (pathIndex 0 → zigzagOffset 0 → first unit isLeft == true).
-    final endX = _x(true, size.width);
+    // Converges to the header block's center — matching the same
+    // "startFromCenter" convention every chapter's first path already uses
+    // to reach its own first unit, so the two segments read as one line.
+    final endX = size.width / 2;
     const startY = 0.0;
     final endY = size.height;
     final dy = endY - startY;
 
     final road = Path()
       ..moveTo(startX, startY)
-      ..cubicTo(startX, startY + dy * 0.6, endX, endY - dy * 0.6, endX, endY);
+      ..cubicTo(startX, startY + dy * 0.55, endX, endY - dy * 0.55, endX, endY);
 
     if (isModuleComplete) {
       _TrailRibbon.drawWalked(canvas, road, progress);
@@ -646,13 +676,60 @@ class _InterModulePainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Module sheet ("chapter plate" + its path sections)
+// Chapter header block — chapter plate + its first path's tag, rendered as
+// one unit right after the incoming connector (or at the very top, for the
+// first chapter) with zero gap in between.
+// ---------------------------------------------------------------------------
+
+class _ChapterHeaderBlock extends StatelessWidget {
+  final int moduleIndex;
+  final String title;
+  final int progress;
+  final bool isComplete;
+  final OutlinePathEntity? firstPath;
+
+  const _ChapterHeaderBlock({
+    required this.moduleIndex,
+    required this.title,
+    required this.progress,
+    required this.isComplete,
+    required this.firstPath,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ChapterPlateHeader(
+          index: moduleIndex,
+          title: title,
+          progress: progress,
+          isComplete: isComplete,
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 18),
+          child: _DashedDivider(),
+        ),
+        if (firstPath != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
+            child: _PathHeaderCard(path: firstPath!),
+          ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Module body — every path's trail after the chapter's header block. The
+// header itself is built and placed separately (see `_ChapterHeaderBlock`
+// and `_buildModuleTimeline`) so an incoming `_InterModuleConnector` can sit
+// right above it with no card/border anywhere to break the trail's flow.
 // ---------------------------------------------------------------------------
 
 class _ModuleRoadmap extends StatelessWidget {
-  final OutlineModuleEntity module;
   final List<OutlinePathEntity> paths;
-  final int moduleProgress;
   final bool isFullyCompleted;
   final int moduleIndex;
   final bool hasNextModule;
@@ -671,9 +748,7 @@ class _ModuleRoadmap extends StatelessWidget {
   onUnitTap;
 
   const _ModuleRoadmap({
-    required this.module,
     required this.paths,
-    required this.moduleProgress,
     required this.isFullyCompleted,
     required this.moduleIndex,
     required this.hasNextModule,
@@ -687,48 +762,22 @@ class _ModuleRoadmap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isComplete = isFullyCompleted || moduleProgress >= 100;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: PaperTheme.cardPaper,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: PaperTheme.paperEdge, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: PaperTheme.ink.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _ChapterPlateHeader(
-            index: moduleIndex,
-            title: module.title ?? '',
-            progress: moduleProgress,
-            isComplete: isComplete,
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 18),
-            child: _DashedDivider(),
-          ),
-          ..._buildPathSections(
-            paths: paths,
-            moduleIndex: moduleIndex,
-            currentUnitId: currentUnitId,
-            currentUnitKey: currentUnitKey,
-            entrance: entrance,
-            getTypeLabel: getTypeLabel,
-            getTypeIcon: getTypeIcon,
-            onUnitTap: onUnitTap,
-            isFullyCompleted: isFullyCompleted,
-            hasNextModule: hasNextModule,
-          ),
-          const SizedBox(height: 10),
-        ],
+    // No card/border here on purpose: a chapter is a *signpost* along the
+    // single continuous trail, not a boxed-off island. Every chapter shares
+    // the same page background so the path never visibly "restarts".
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: _buildPathSections(
+        paths: paths,
+        moduleIndex: moduleIndex,
+        currentUnitId: currentUnitId,
+        currentUnitKey: currentUnitKey,
+        entrance: entrance,
+        getTypeLabel: getTypeLabel,
+        getTypeIcon: getTypeIcon,
+        onUnitTap: onUnitTap,
+        isFullyCompleted: isFullyCompleted,
+        hasNextModule: hasNextModule,
       ),
     );
   }
@@ -762,15 +811,9 @@ class _ModuleRoadmap extends StatelessWidget {
       final units = path.units ?? [];
       final zigzagOffset = pathIndex;
 
-      // First path header sits above its units; later headers sit inside the bridge.
-      if (pathIndex == 0) {
-        sections.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
-            child: _PathHeaderCard(path: path),
-          ),
-        );
-      }
+      // The first path's header now lives in the shared chapter header
+      // block (built once per module, ahead of the trail) — later headers
+      // still sit inside their inter-path bridge.
 
       if (units.isNotEmpty) {
         final hasPrevBridge =
