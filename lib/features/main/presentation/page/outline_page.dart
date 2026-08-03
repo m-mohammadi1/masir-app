@@ -16,22 +16,49 @@ import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
-/// Horizontal inset for zigzag nodes / trail (matches painter & widgets).
+// ---------------------------------------------------------------------------
+// ARCHITECTURE NOTE
+//
+// Earlier iterations built this roadmap out of many independent widgets
+// (one CustomPaint per module bridge, per path bridge, per zigzag) that each
+// guessed a neighbor's on-screen X position from their *own* local width and
+// padding. Any mismatch between two widgets' assumptions — different insets,
+// text wrapping to an extra line, a rounding difference — broke the visual
+// connection between them. That's why lines kept looking disjointed however
+// many one-off fixes were applied.
+//
+// This version renders the *entire* course as a single flat list of
+// waypoints (chapter → path → units → path → … → trophy → chapter → …),
+// computes every waypoint's (x, y) center exactly once, then draws the whole
+// trail with one CustomPainter and lays every node out with one Stack using
+// those same numbers. The line and the markers are mathematically
+// guaranteed to agree, because they read from the same source of truth.
+// ---------------------------------------------------------------------------
+
+/// Horizontal inset for zigzag unit nodes (fraction of the canvas width).
 /// Kept moderate (not 0.5) so the route still zigzags, but gentle enough
 /// that a thick trail reads as a winding path rather than a coiling snake.
 const double _kRoadSideRatio = 0.30;
 const double _kRoadNodeSize = 44;
 
+// Fixed vertical space reserved for each waypoint type. Generous on
+// purpose — text is always capped with `maxLines` + ellipsis, so these are
+// safe upper bounds, not tight fits, and there's no risk of the guessed
+// height ever being too small for the actual content.
+const double _kChapterNodeHeight = 150;
+const double _kPathNodeHeight = 122;
+const double _kUnitNodeHeight = 118;
+const double _kTrophyNodeHeight = 112;
+
 // ---------------------------------------------------------------------------
 // The trail — drawn as a walkable path ribbon, not a thin line, so the
-// roadmap reads as an actual route rather than a graph. It's one continuous
-// ribbon throughout; only the color changes between the part still ahead
-// (purple) and the part already adventured (green).
+// roadmap reads as an actual route rather than a graph. Only the color
+// changes between the part still ahead (purple) and the part already
+// adventured (green).
 //
 // Each piece only strokes its two long edges (never the flat cut ends), and
-// caps are plain filled circles with no outline — so wherever two pieces
-// meet (module bridges, path headers) the colors blend instead of forming
-// a visible ring/knot.
+// caps are plain filled circles with no outline — so wherever two segments
+// meet the colors blend instead of forming a visible ring/knot.
 // ---------------------------------------------------------------------------
 
 class _TrailRibbon {
@@ -41,22 +68,20 @@ class _TrailRibbon {
   static const double _sampleStep = 8.0;
 
   /// The portion of [source] already adventured — solid green.
-  static void drawWalked(Canvas canvas, Path source, double progress) {
+  static void drawWalked(Canvas canvas, Path source) {
     _drawSolid(
       canvas,
       source,
-      progress,
       fill: PaperTheme.trailWalked,
       edge: PaperTheme.trailWalkedEdge,
     );
   }
 
   /// The portion of [source] not yet adventured — solid purple.
-  static void drawUnwalked(Canvas canvas, Path source, double progress) {
+  static void drawUnwalked(Canvas canvas, Path source) {
     _drawSolid(
       canvas,
       source,
-      progress,
       fill: PaperTheme.trailUnwalked,
       edge: PaperTheme.trailUnwalkedEdge,
     );
@@ -64,12 +89,10 @@ class _TrailRibbon {
 
   static void _drawSolid(
     Canvas canvas,
-    Path source,
-    double progress, {
+    Path source, {
     required Color fill,
     required Color edge,
   }) {
-    final clamped = progress.clamp(0.0, 1.0);
     final fillPaint = Paint()
       ..color = fill
       ..style = PaintingStyle.fill;
@@ -80,9 +103,13 @@ class _TrailRibbon {
       ..strokeCap = StrokeCap.round;
 
     for (final metric in source.computeMetrics()) {
-      final length = metric.length * clamped;
-      if (length <= 0.5) continue;
-      _paintPiece(canvas, metric.extractPath(0, length), fillPaint, edgePaint);
+      if (metric.length <= 0.5) continue;
+      _paintPiece(
+        canvas,
+        metric.extractPath(0, metric.length),
+        fillPaint,
+        edgePaint,
+      );
     }
   }
 
@@ -169,6 +196,52 @@ class _RibbonPoints {
   const _RibbonPoints(this.left, this.right, this.startCenter, this.endCenter);
 }
 
+// ---------------------------------------------------------------------------
+// Waypoint model — the single source of truth for both the line and the
+// markers. `centered` waypoints (chapter/path/trophy) sit on the vertical
+// midline; zigzag waypoints (units) alternate left/right.
+// ---------------------------------------------------------------------------
+
+class _TrailNode {
+  final double height;
+  final bool centered;
+  final bool isLeft;
+
+  /// Whether the segment *leading into* this node should be drawn as
+  /// already-walked (green) rather than still-ahead (purple).
+  final bool incomingSolid;
+  final Widget Function(double canvasWidth) build;
+
+  const _TrailNode({
+    required this.height,
+    this.centered = true,
+    this.isLeft = false,
+    required this.incomingSolid,
+    required this.build,
+  });
+}
+
+class _NodeBuildResult {
+  final List<_TrailNode> nodes;
+  final int? currentUnitIndex;
+
+  const _NodeBuildResult(this.nodes, this.currentUnitIndex);
+}
+
+List<double> _computeCentersY(List<_TrailNode> nodes) {
+  final centers = <double>[];
+  var y = 0.0;
+  for (final node in nodes) {
+    centers.add(y + node.height / 2);
+    y += node.height;
+  }
+  return centers;
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
 class OutlinePage extends StatefulWidget {
   final String title, id;
   static const String routeName = "/outline";
@@ -184,10 +257,8 @@ class _OutlinePageState extends State<OutlinePage>
   final bloc = inject<OutlineCourseBloc>();
   late final AnimationController _entranceController;
   final _scrollController = ScrollController();
-  final _currentUnitKey = GlobalKey();
   bool _hasPlayedEntrance = false;
   bool _hasScrolledToCurrent = false;
-  int _scrollRetryCount = 0;
 
   @override
   void initState() {
@@ -209,32 +280,30 @@ class _OutlinePageState extends State<OutlinePage>
     _entranceController.forward(from: 0);
   }
 
-  void _scrollToCurrentUnitOnce() {
+  /// Scrolls straight to the current unit's precomputed Y — no GlobalKey,
+  /// no `ensureVisible` retry loop. The position is known analytically the
+  /// moment the node list is built, so this can never fail to find it.
+  void _scrollToCurrentUnitOnce(_NodeBuildResult result) {
     if (_hasScrolledToCurrent) return;
-
-    final targetContext = _currentUnitKey.currentContext;
-    if (targetContext == null) {
-      if (_scrollRetryCount >= 12) {
-        _hasScrolledToCurrent = true;
-        return;
-      }
-      _scrollRetryCount++;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToCurrentUnitOnce();
-      });
+    final index = result.currentUnitIndex;
+    if (index == null) {
+      _hasScrolledToCurrent = true;
       return;
     }
-
     _hasScrolledToCurrent = true;
+
+    final targetY = _computeCentersY(result.nodes)[index];
     Future.delayed(const Duration(milliseconds: 200), () {
-      if (!mounted) return;
-      final ctx = _currentUnitKey.currentContext;
-      if (ctx == null || !ctx.mounted) return;
-      Scrollable.ensureVisible(
-        ctx,
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      final target = (targetY - position.viewportDimension * 0.35).clamp(
+        0.0,
+        position.maxScrollExtent,
+      );
+      _scrollController.animateTo(
+        target,
         duration: const Duration(milliseconds: 850),
         curve: Curves.easeInOutCubic,
-        alignment: 0.35,
       );
     });
   }
@@ -299,7 +368,6 @@ class _OutlinePageState extends State<OutlinePage>
 
     // Re-enable auto-scroll to the next current unit after returning.
     _hasScrolledToCurrent = false;
-    _scrollRetryCount = 0;
 
     bloc.add(
       OutlineCourseEvent.outlineCourse(
@@ -333,78 +401,10 @@ class _OutlinePageState extends State<OutlinePage>
     return true;
   }
 
-  /// Flattens every module into a single scroll timeline that reads as one
-  /// continuous adventure trail, first unit to last. Chapters and paths are
-  /// compact centered *nodes* on that trail (see [_ChapterNode], [_PathNode])
-  /// instead of wide cards, so the roadmap stays proportionate even when a
-  /// chapter has only a couple of units. Chapter 1's node sits at the very
-  /// top; every later chapter is preceded by a [_NodeConnector] leading
-  /// straight up to it — no boxed card anywhere to break the trail's flow.
-  List<Widget> _buildModuleTimeline(
-    List<OutlineModuleEntity> modules,
-    String? currentUnitId,
-  ) {
-    final widgets = <Widget>[];
-    OutlineModuleEntity? previousModule;
-    bool previousFullyCompleted = false;
-
-    for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
-      final module = modules[moduleIndex];
-      final paths = module.paths ?? [];
-      final moduleProgress = _moduleProgress(module);
-      final isFullyCompleted = _isModuleFullyCompleted(module);
-      final hasNextModule = moduleIndex < modules.length - 1;
-      final isComplete = isFullyCompleted || moduleProgress >= 100;
-
-      final chapterNode = _ChapterNode(
-        index: moduleIndex,
-        title: module.title ?? '',
-        progress: moduleProgress,
-        isComplete: isComplete,
-      );
-
-      if (moduleIndex == 0) {
-        widgets.add(chapterNode);
-      } else {
-        final exit = _computeModuleExit(
-          previousModule!,
-          previousFullyCompleted,
-        );
-        widgets.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-            child: _NodeConnector(
-              fromUseCenter: exit.useCenter,
-              fromIsLeft: exit.isLeft,
-              isComplete: previousFullyCompleted,
-              entrance: _entranceController,
-              child: chapterNode,
-            ),
-          ),
-        );
-      }
-
-      widgets.add(
-        _ModuleRoadmap(
-          paths: paths,
-          isFullyCompleted: isFullyCompleted,
-          moduleIndex: moduleIndex,
-          hasNextModule: hasNextModule,
-          currentUnitId: currentUnitId,
-          currentUnitKey: _currentUnitKey,
-          entrance: _entranceController,
-          getTypeLabel: _getTypeLabel,
-          getTypeIcon: _getTypeIcon,
-          onUnitTap: _onUnitTap,
-        ),
-      );
-
-      previousModule = module;
-      previousFullyCompleted = isFullyCompleted;
-    }
-
-    widgets.add(const SizedBox(height: 20));
-    return widgets;
+  bool _isPathFullyCompleted(OutlinePathEntity path) {
+    final units = path.units ?? [];
+    if (units.isEmpty) return (path.pathProgressPercent ?? 0) >= 100;
+    return units.every((u) => u.status == 'completed');
   }
 
   String? _findCurrentUnitId(List<OutlineModuleEntity> modules) {
@@ -418,6 +418,120 @@ class _OutlinePageState extends State<OutlinePage>
       }
     }
     return null;
+  }
+
+  /// Flattens every module into one ordered waypoint list: chapter → its
+  /// first path → that path's units → next path → … → trophy (if the
+  /// chapter is fully complete) → next chapter → … This is the *only* place
+  /// that decides ordering, sizing, and left/right/center placement, so the
+  /// painter and the widgets can never disagree about where anything is.
+  _NodeBuildResult _buildTrailNodes(
+    List<OutlineModuleEntity> modules,
+    String? currentUnitId,
+  ) {
+    final nodes = <_TrailNode>[];
+    int? currentUnitIndex;
+    bool? previousModuleFullyCompleted;
+
+    for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
+      final module = modules[moduleIndex];
+      final paths = module.paths ?? [];
+      final moduleProgress = _moduleProgress(module);
+      final isModuleFullyCompleted = _isModuleFullyCompleted(module);
+      final chapterIsComplete = isModuleFullyCompleted || moduleProgress >= 100;
+
+      nodes.add(
+        _TrailNode(
+          height: _kChapterNodeHeight,
+          incomingSolid: previousModuleFullyCompleted ?? false,
+          build: (_) => _ChapterNode(
+            index: moduleIndex,
+            title: module.title ?? '',
+            progress: moduleProgress,
+            isComplete: chapterIsComplete,
+          ),
+        ),
+      );
+
+      final lastUnitsPathIndex = paths.lastIndexWhere(
+        (p) => (p.units ?? []).isNotEmpty,
+      );
+
+      for (var pathIndex = 0; pathIndex < paths.length; pathIndex++) {
+        final path = paths[pathIndex];
+        final units = path.units ?? [];
+        final pathFullyComplete = _isPathFullyCompleted(path);
+        final firstUnitDone =
+            units.isNotEmpty && units.first.status == 'completed';
+
+        final pathIncomingSolid = pathIndex == 0
+            ? (pathFullyComplete || firstUnitDone)
+            : _isPathFullyCompleted(paths[pathIndex - 1]);
+
+        nodes.add(
+          _TrailNode(
+            height: _kPathNodeHeight,
+            incomingSolid: pathIncomingSolid,
+            build: (_) => _PathNode(path: path),
+          ),
+        );
+
+        for (var unitIndex = 0; unitIndex < units.length; unitIndex++) {
+          final unit = units[unitIndex];
+          final isLeft = (unitIndex + pathIndex) % 2 == 0;
+          final isCompleted = unit.status == 'completed';
+          final isLocked = unit.locked ?? false;
+          final isCurrent = unit.id == currentUnitId;
+          final unitType = unit.type ?? '';
+
+          final incomingSolid = unitIndex == 0
+              ? (pathFullyComplete || firstUnitDone)
+              : isCompleted;
+
+          if (isCurrent) currentUnitIndex = nodes.length;
+
+          nodes.add(
+            _TrailNode(
+              height: _kUnitNodeHeight,
+              centered: false,
+              isLeft: isLeft,
+              incomingSolid: incomingSolid,
+              build: (canvasWidth) => _RoadUnitNode(
+                title: unit.title ?? '',
+                typeLabel: _getTypeLabel(unitType),
+                icon: _getTypeIcon(unitType),
+                isCompleted: isCompleted,
+                isLocked: isLocked,
+                isCurrent: isCurrent,
+                isLeft: isLeft,
+                maxLabelWidth: (canvasWidth * 0.44).clamp(80.0, 130.0),
+                onTap: () => _onUnitTap(
+                  id: unit.id,
+                  type: unitType,
+                  title: unit.title,
+                  status: unit.status,
+                  locked: isLocked,
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (isModuleFullyCompleted && pathIndex == lastUnitsPathIndex) {
+          nodes.add(
+            _TrailNode(
+              height: _kTrophyNodeHeight,
+              incomingSolid: true,
+              build: (_) => const _TrophyNode(),
+            ),
+          );
+        }
+      }
+
+      previousModuleFullyCompleted = isModuleFullyCompleted;
+    }
+
+    return _NodeBuildResult(nodes, currentUnitIndex);
   }
 
   @override
@@ -441,15 +555,12 @@ class _OutlinePageState extends State<OutlinePage>
                     final courseProgress = data.courseProgressPercent ?? 0;
                     final modules = data.modules ?? [];
                     final currentUnitId = _findCurrentUnitId(modules);
+                    final result = _buildTrailNodes(modules, currentUnitId);
 
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (!mounted) return;
                       _playEntranceOnce();
-                      if (currentUnitId != null) {
-                        _scrollToCurrentUnitOnce();
-                      } else {
-                        _hasScrolledToCurrent = true;
-                      }
+                      _scrollToCurrentUnitOnce(result);
                     });
 
                     return Expanded(
@@ -459,16 +570,18 @@ class _OutlinePageState extends State<OutlinePage>
                           const SizedBox(height: 16),
                           Expanded(
                             child: PaperBackdrop(
-                              child: ListView(
+                              child: SingleChildScrollView(
                                 controller: _scrollController,
                                 physics: const BouncingScrollPhysics(),
-                                padding: const EdgeInsets.only(
-                                  bottom: 32,
-                                  top: 4,
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  4,
+                                  12,
+                                  32,
                                 ),
-                                children: _buildModuleTimeline(
-                                  modules,
-                                  currentUnitId,
+                                child: _TrailCanvas(
+                                  nodes: result.nodes,
+                                  entrance: _entranceController,
                                 ),
                               ),
                             ),
@@ -547,80 +660,135 @@ class _CourseProgressHeader extends StatelessWidget {
   }
 }
 
-/// Where a module's trail exits from, so the next module's connector can
-/// pick it up seamlessly: centered under the trophy medallion when the
-/// chapter is fully completed, otherwise from the last drawn unit's side.
-class _ModuleExitInfo {
-  final bool useCenter;
+// ---------------------------------------------------------------------------
+// The canvas — one Stack, one coordinate space, for the whole course.
+// ---------------------------------------------------------------------------
+
+class _TrailCanvas extends StatelessWidget {
+  final List<_TrailNode> nodes;
+  final Animation<double> entrance;
+
+  const _TrailCanvas({required this.nodes, required this.entrance});
+
+  @override
+  Widget build(BuildContext context) {
+    if (nodes.isEmpty) return const SizedBox.shrink();
+
+    final centersY = _computeCentersY(nodes);
+    final totalHeight = centersY.last + nodes.last.height / 2;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return SizedBox(
+          width: width,
+          height: totalHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _FullTrailPainter(nodes: nodes, centersY: centersY),
+                ),
+              ),
+              for (var i = 0; i < nodes.length; i++)
+                Positioned(
+                  top: centersY[i] - nodes[i].height / 2,
+                  left: 0,
+                  right: 0,
+                  height: nodes[i].height,
+                  child: _TrailNodeEntrance(
+                    index: i,
+                    entrance: entrance,
+                    child: nodes[i].centered
+                        ? OverflowBox(
+                            maxHeight: double.infinity,
+                            alignment: Alignment.center,
+                            child: nodes[i].build(width),
+                          )
+                        : _ZigZagSlot(
+                            isLeft: nodes[i].isLeft,
+                            width: width,
+                            child: nodes[i].build(width),
+                          ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Places a zigzag unit's pin exactly on the trail's left/right line by
+/// pinning the pin's edge (not the whole row, which also has a label of
+/// variable width) at the computed fraction of the canvas width — the same
+/// fraction the painter uses for that side, so pin and line always meet.
+class _ZigZagSlot extends StatelessWidget {
   final bool isLeft;
+  final double width;
+  final Widget child;
 
-  const _ModuleExitInfo({required this.useCenter, required this.isLeft});
+  const _ZigZagSlot({
+    required this.isLeft,
+    required this.width,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final nodeCenterX = isLeft
+        ? width * _kRoadSideRatio
+        : width * (1 - _kRoadSideRatio);
+    final nodeRadius = _kRoadNodeSize / 2;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: 0,
+          bottom: 0,
+          left: isLeft ? nodeCenterX - nodeRadius : null,
+          right: isLeft ? null : width - nodeCenterX - nodeRadius,
+          child: Align(alignment: Alignment.center, child: child),
+        ),
+      ],
+    );
+  }
 }
 
-_ModuleExitInfo _computeModuleExit(
-  OutlineModuleEntity module,
-  bool isFullyCompleted,
-) {
-  if (isFullyCompleted) {
-    // Trail converges to the centered trophy medallion at the bottom.
-    return const _ModuleExitInfo(useCenter: true, isLeft: false);
-  }
-
-  final paths = module.paths ?? [];
-  final lastUnitsPathIndex = paths.lastIndexWhere(
-    (p) => (p.units ?? []).isNotEmpty,
-  );
-  if (lastUnitsPathIndex == -1) {
-    // No units anywhere in this module yet — fall back to a centered exit.
-    return const _ModuleExitInfo(useCenter: true, isLeft: false);
-  }
-
-  final lastUnits = paths[lastUnitsPathIndex].units ?? [];
-  final fromIsLeft = (lastUnits.length - 1 + lastUnitsPathIndex) % 2 == 0;
-  return _ModuleExitInfo(useCenter: false, isLeft: fromIsLeft);
-}
-
-// ---------------------------------------------------------------------------
-// Generic trail connector — every module/path/trophy waypoint is now a
-// compact centered "node" (like a bead on a string) instead of a wide card,
-// so a single connector shape covers every transition: it paints the ribbon
-// straight through to the node's center, with the node layered on top.
-// Nodes stay small enough that this reads as "the path runs behind the
-// marker", never as a disconnected new line.
-// ---------------------------------------------------------------------------
-
-class _NodeConnector extends StatelessWidget {
-  static const double _topPadding = 26;
-
-  final bool fromUseCenter;
-  final bool fromIsLeft;
-  final bool isComplete;
+/// Fade + rise-in for a waypoint, staggered by its position in the flat
+/// list. Purely cosmetic (opacity/translate) — it never touches layout, so
+/// it can't be a source of misalignment.
+class _TrailNodeEntrance extends StatelessWidget {
+  final int index;
   final Animation<double> entrance;
   final Widget child;
 
-  const _NodeConnector({
-    required this.fromUseCenter,
-    required this.fromIsLeft,
-    required this.isComplete,
+  const _TrailNodeEntrance({
+    required this.index,
     required this.entrance,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
+    final start = (index * 0.02).clamp(0.0, 0.85);
+    final end = (start + 0.35).clamp(0.0, 1.0);
+
     return AnimatedBuilder(
       animation: entrance,
       builder: (context, _) {
-        final progress = Curves.easeOutCubic.transform(entrance.value);
-        return CustomPaint(
-          painter: _NodeConnectorPainter(
-            fromUseCenter: fromUseCenter,
-            fromIsLeft: fromIsLeft,
-            isComplete: isComplete,
-            progress: progress,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.only(top: _topPadding),
+        final t = Interval(
+          start,
+          end,
+          curve: Curves.easeOutBack,
+        ).transform(entrance.value).clamp(0.0, 1.0);
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, (1 - t) * 14),
             child: child,
           ),
         );
@@ -629,249 +797,51 @@ class _NodeConnector extends StatelessWidget {
   }
 }
 
-class _NodeConnectorPainter extends CustomPainter {
-  final bool fromUseCenter;
-  final bool fromIsLeft;
-  final bool isComplete;
-  final double progress;
+/// Draws the entire course's trail in a single pass by connecting every
+/// consecutive pair of waypoint centers. Because it reads from the exact
+/// same `nodes`/`centersY` the Stack above positions widgets with, there is
+/// no possible mismatch between where the line goes and where a node sits.
+class _FullTrailPainter extends CustomPainter {
+  final List<_TrailNode> nodes;
+  final List<double> centersY;
 
-  _NodeConnectorPainter({
-    required this.fromUseCenter,
-    required this.fromIsLeft,
-    required this.isComplete,
-    required this.progress,
-  });
+  _FullTrailPainter({required this.nodes, required this.centersY});
 
-  double _x(bool isLeft, double width) =>
-      isLeft ? width * _kRoadSideRatio : width * (1 - _kRoadSideRatio);
+  double _x(_TrailNode node, double width) {
+    if (node.centered) return width / 2;
+    return node.isLeft
+        ? width * _kRoadSideRatio
+        : width * (1 - _kRoadSideRatio);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final startX = fromUseCenter ? size.width / 2 : _x(fromIsLeft, size.width);
-    // Every node is centered, so the ribbon always converges on the middle.
-    final endX = size.width / 2;
-    const startY = 0.0;
-    final endY = size.height;
-    final dy = endY - startY;
+    for (var i = 1; i < nodes.length; i++) {
+      final x1 = _x(nodes[i - 1], size.width);
+      final y1 = centersY[i - 1];
+      final x2 = _x(nodes[i], size.width);
+      final y2 = centersY[i];
+      final dy = y2 - y1;
 
-    final road = Path()
-      ..moveTo(startX, startY)
-      ..cubicTo(startX, startY + dy * 0.55, endX, endY - dy * 0.55, endX, endY);
+      final segment = Path()
+        ..moveTo(x1, y1)
+        ..cubicTo(x1, y1 + dy * 0.55, x2, y2 - dy * 0.55, x2, y2);
 
-    if (isComplete) {
-      _TrailRibbon.drawWalked(canvas, road, progress);
-    } else {
-      _TrailRibbon.drawUnwalked(canvas, road, progress);
+      if (nodes[i].incomingSolid) {
+        _TrailRibbon.drawWalked(canvas, segment);
+      } else {
+        _TrailRibbon.drawUnwalked(canvas, segment);
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _NodeConnectorPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.fromUseCenter != fromUseCenter ||
-        oldDelegate.fromIsLeft != fromIsLeft ||
-        oldDelegate.isComplete != isComplete;
-  }
+  bool shouldRepaint(covariant _FullTrailPainter oldDelegate) => true;
 }
 
 // ---------------------------------------------------------------------------
-// Module body — every path's trail after the chapter's header block. The
-// header itself is built and placed separately (see `_ChapterHeaderBlock`
-// and `_buildModuleTimeline`) so an incoming `_InterModuleConnector` can sit
-// right above it with no card/border anywhere to break the trail's flow.
+// Waypoint widgets — pure visuals, no positioning logic of their own.
 // ---------------------------------------------------------------------------
-
-class _ModuleRoadmap extends StatelessWidget {
-  final List<OutlinePathEntity> paths;
-  final bool isFullyCompleted;
-  final int moduleIndex;
-  final bool hasNextModule;
-  final String? currentUnitId;
-  final GlobalKey currentUnitKey;
-  final Animation<double> entrance;
-  final String Function(String) getTypeLabel;
-  final IconData Function(String) getTypeIcon;
-  final Future<void> Function({
-    required String? id,
-    required String? type,
-    required String? title,
-    required String? status,
-    required bool locked,
-  })
-  onUnitTap;
-
-  const _ModuleRoadmap({
-    required this.paths,
-    required this.isFullyCompleted,
-    required this.moduleIndex,
-    required this.hasNextModule,
-    required this.currentUnitId,
-    required this.currentUnitKey,
-    required this.entrance,
-    required this.getTypeLabel,
-    required this.getTypeIcon,
-    required this.onUnitTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // No card/border here on purpose: a chapter is a *signpost* along the
-    // single continuous trail, not a boxed-off island. Every chapter shares
-    // the same page background so the path never visibly "restarts".
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: _buildPathSections(
-        paths: paths,
-        moduleIndex: moduleIndex,
-        currentUnitId: currentUnitId,
-        currentUnitKey: currentUnitKey,
-        entrance: entrance,
-        getTypeLabel: getTypeLabel,
-        getTypeIcon: getTypeIcon,
-        onUnitTap: onUnitTap,
-        isFullyCompleted: isFullyCompleted,
-        hasNextModule: hasNextModule,
-      ),
-    );
-  }
-
-  List<Widget> _buildPathSections({
-    required List<OutlinePathEntity> paths,
-    required int moduleIndex,
-    required String? currentUnitId,
-    required GlobalKey currentUnitKey,
-    required Animation<double> entrance,
-    required String Function(String) getTypeLabel,
-    required IconData Function(String) getTypeIcon,
-    required Future<void> Function({
-      required String? id,
-      required String? type,
-      required String? title,
-      required String? status,
-      required bool locked,
-    })
-    onUnitTap,
-    required bool isFullyCompleted,
-    required bool hasNextModule,
-  }) {
-    final sections = <Widget>[];
-    final lastUnitsPathIndex = paths.lastIndexWhere(
-      (p) => (p.units ?? []).isNotEmpty,
-    );
-
-    for (var pathIndex = 0; pathIndex < paths.length; pathIndex++) {
-      final path = paths[pathIndex];
-      final units = path.units ?? [];
-      final zigzagOffset = pathIndex;
-
-      if (pathIndex == 0) {
-        // The chapter node hands the trail straight to this module's first
-        // waypoint — green as soon as that path's first unit is done.
-        final firstUnitDone =
-            units.isNotEmpty && units.first.status == 'completed';
-        sections.add(
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: _NodeConnector(
-              fromUseCenter: true,
-              fromIsLeft: false,
-              isComplete: _isPathFullyCompleted(path) || firstUnitDone,
-              entrance: entrance,
-              child: _PathNode(path: path),
-            ),
-          ),
-        );
-      }
-
-      if (units.isNotEmpty) {
-        final hasNextBridge =
-            pathIndex < paths.length - 1 &&
-            (paths[pathIndex + 1].units ?? []).isNotEmpty;
-        final isLastUnitsPath = pathIndex == lastUnitsPathIndex;
-        final connectToTrophy = isFullyCompleted && isLastUnitsPath;
-        // Last path of an unfinished module, but another chapter follows:
-        // let the trail run to the bottom so the inter-module connector can
-        // pick it up seamlessly instead of dangling mid-air.
-        final connectToNextModule =
-            !isFullyCompleted && isLastUnitsPath && hasNextModule;
-
-        sections.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-            child: _ZigZagRoadmap(
-              units: units,
-              zigzagOffset: zigzagOffset,
-              currentUnitId: currentUnitId,
-              currentUnitKey: currentUnitKey,
-              entrance: entrance,
-              getTypeLabel: getTypeLabel,
-              getTypeIcon: getTypeIcon,
-              onUnitTap: onUnitTap,
-              staggerBase: moduleIndex * 0.15 + pathIndex * 0.08,
-              extendToBottom:
-                  hasNextBridge || connectToTrophy || connectToNextModule,
-              pathFullyComplete: _isPathFullyCompleted(path),
-            ),
-          ),
-        );
-
-        if (connectToTrophy) {
-          final fromIsLeft = (units.length - 1 + zigzagOffset) % 2 == 0;
-          sections.add(
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _NodeConnector(
-                fromUseCenter: false,
-                fromIsLeft: fromIsLeft,
-                isComplete: true,
-                entrance: entrance,
-                child: const _TrophyNode(),
-              ),
-            ),
-          );
-        }
-      }
-
-      // Bridge: last unit of this path → next path's waypoint node.
-      if (pathIndex < paths.length - 1) {
-        final nextPath = paths[pathIndex + 1];
-        final nextUnits = nextPath.units ?? [];
-        if (units.isNotEmpty && nextUnits.isNotEmpty) {
-          final fromIsLeft = (units.length - 1 + zigzagOffset) % 2 == 0;
-          final pathComplete = _isPathFullyCompleted(path);
-
-          sections.add(
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _NodeConnector(
-                fromUseCenter: false,
-                fromIsLeft: fromIsLeft,
-                isComplete: pathComplete,
-                entrance: entrance,
-                child: _PathNode(path: nextPath),
-              ),
-            ),
-          );
-        } else {
-          sections.add(
-            Padding(
-              padding: const EdgeInsets.only(top: 20),
-              child: _PathNode(path: nextPath),
-            ),
-          );
-        }
-      }
-    }
-
-    return sections;
-  }
-
-  bool _isPathFullyCompleted(OutlinePathEntity path) {
-    final units = path.units ?? [];
-    if (units.isEmpty) return (path.pathProgressPercent ?? 0) >= 100;
-    return units.every((u) => u.status == 'completed');
-  }
-}
 
 /// Chapter waypoint — a big numbered/checked stamp with its title and
 /// status centered below, sized like a bead on the trail (not a wide card)
@@ -977,10 +947,6 @@ class _StampBadge extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Path waypoint ("trail marker")
-// ---------------------------------------------------------------------------
-
 /// Path waypoint — a medium route/flag icon with title and status centered
 /// below it, matching the chapter node's proportions on a smaller scale.
 class _PathNode extends StatelessWidget {
@@ -1038,12 +1004,8 @@ class _PathNode extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Trophy waypoint at the end of a completed module.
-// ---------------------------------------------------------------------------
-
-/// Trophy waypoint — a wax-seal medallion with a short "completed" caption,
-/// reached via the same [_NodeConnector] every other waypoint uses.
+/// Trophy waypoint at the end of a completed module — a wax-seal medallion
+/// with a short "completed" caption.
 class _TrophyNode extends StatelessWidget {
   const _TrophyNode();
 
@@ -1092,167 +1054,7 @@ class _TrophyNode extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Units of a single path, laid out in a zigzag along a trail.
-// ---------------------------------------------------------------------------
-
-class _ZigZagRoadmap extends StatefulWidget {
-  final List<OutlineUnitEntity> units;
-  final int zigzagOffset;
-  final String? currentUnitId;
-  final GlobalKey currentUnitKey;
-  final Animation<double> entrance;
-  final double staggerBase;
-  final String Function(String) getTypeLabel;
-  final IconData Function(String) getTypeIcon;
-  final Future<void> Function({
-    required String? id,
-    required String? type,
-    required String? title,
-    required String? status,
-    required bool locked,
-  })
-  onUnitTap;
-  final bool extendToBottom;
-  final bool pathFullyComplete;
-
-  const _ZigZagRoadmap({
-    required this.units,
-    required this.zigzagOffset,
-    required this.currentUnitId,
-    required this.currentUnitKey,
-    required this.entrance,
-    required this.staggerBase,
-    required this.getTypeLabel,
-    required this.getTypeIcon,
-    required this.onUnitTap,
-    this.extendToBottom = false,
-    this.pathFullyComplete = false,
-  });
-
-  @override
-  State<_ZigZagRoadmap> createState() => _ZigZagRoadmapState();
-}
-
-class _ZigZagRoadmapState extends State<_ZigZagRoadmap> {
-  static const double _nodeHeight = 118;
-
-  @override
-  Widget build(BuildContext context) {
-    final count = widget.units.length;
-    final completedFlags = widget.units
-        .map((u) => u.status == 'completed')
-        .toList();
-
-    return AnimatedBuilder(
-      animation: widget.entrance,
-      builder: (context, _) {
-        return SizedBox(
-          height: count * _nodeHeight,
-          child: CustomPaint(
-            painter: _RoadPathPainter(
-              itemCount: count,
-              itemHeight: _nodeHeight,
-              zigzagOffset: widget.zigzagOffset,
-              progress: Curves.easeOutCubic.transform(widget.entrance.value),
-              completedFlags: completedFlags,
-              extendToBottom: widget.extendToBottom,
-              pathFullyComplete: widget.pathFullyComplete,
-            ),
-            child: Column(
-              children: List.generate(count, (index) {
-                final unit = widget.units[index];
-                final isLeft = (index + widget.zigzagOffset) % 2 == 0;
-                final isCompleted = unit.status == 'completed';
-                final isLocked = unit.locked ?? false;
-                final isCurrent = unit.id == widget.currentUnitId;
-                final unitType = unit.type ?? '';
-
-                final start = (widget.staggerBase + index * 0.07).clamp(
-                  0.0,
-                  0.85,
-                );
-                final end = (start + 0.35).clamp(0.0, 1.0);
-                final t = Interval(
-                  start,
-                  end,
-                  curve: Curves.easeOutBack,
-                ).transform(widget.entrance.value);
-
-                return SizedBox(
-                  height: _nodeHeight,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth;
-                      final nodeCenterX = isLeft
-                          ? width * _kRoadSideRatio
-                          : width * (1 - _kRoadSideRatio);
-                      final nodeRadius = _kRoadNodeSize / 2;
-
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned(
-                            top: 0,
-                            bottom: 0,
-                            // Keep circle center on the trail at every width.
-                            left: isLeft ? nodeCenterX - nodeRadius : null,
-                            right: isLeft
-                                ? null
-                                : width - nodeCenterX - nodeRadius,
-                            child: Align(
-                              alignment: Alignment.center,
-                              child: Transform.translate(
-                                offset: Offset(
-                                  (1 - t) * (isLeft ? -30 : 30),
-                                  (1 - t) * 18,
-                                ),
-                                child: Opacity(
-                                  opacity: t.clamp(0.0, 1.0),
-                                  child: KeyedSubtree(
-                                    key: isCurrent
-                                        ? widget.currentUnitKey
-                                        : null,
-                                    child: _RoadUnitNode(
-                                      title: unit.title ?? '',
-                                      typeLabel: widget.getTypeLabel(unitType),
-                                      icon: widget.getTypeIcon(unitType),
-                                      isCompleted: isCompleted,
-                                      isLocked: isLocked,
-                                      isCurrent: isCurrent,
-                                      isLeft: isLeft,
-                                      maxLabelWidth: (width * 0.44).clamp(
-                                        80.0,
-                                        130.0,
-                                      ),
-                                      onTap: () => widget.onUnitTap(
-                                        id: unit.id,
-                                        type: unitType,
-                                        title: unit.title,
-                                        status: unit.status,
-                                        locked: isLocked,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                );
-              }),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// A single "waypoint" — pin/stamp marker plus its paper label tag.
+/// A single unit "waypoint" — pin/stamp marker plus its paper label tag.
 class _RoadUnitNode extends StatelessWidget {
   final String title;
   final String typeLabel;
@@ -1451,121 +1253,4 @@ class _DashedCirclePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) => false;
-}
-
-// ---------------------------------------------------------------------------
-// The trail itself (unit-to-unit + entry/exit bridges).
-// ---------------------------------------------------------------------------
-
-class _RoadPathPainter extends CustomPainter {
-  final int itemCount;
-  final double itemHeight;
-  final int zigzagOffset;
-  final double progress;
-  final List<bool> completedFlags;
-  final bool extendToBottom;
-  final bool pathFullyComplete;
-
-  _RoadPathPainter({
-    required this.itemCount,
-    required this.itemHeight,
-    required this.zigzagOffset,
-    required this.progress,
-    required this.completedFlags,
-    this.extendToBottom = false,
-    this.pathFullyComplete = false,
-  });
-
-  double _nodeX(int index, double width) {
-    final isLeft = (index + zigzagOffset) % 2 == 0;
-    return isLeft ? width * _kRoadSideRatio : width * (1 - _kRoadSideRatio);
-  }
-
-  double _nodeY(int index) => index * itemHeight + itemHeight / 2;
-
-  Path _segment(double x1, double y1, double x2, double y2) {
-    final dy = y2 - y1;
-    return Path()
-      ..moveTo(x1, y1)
-      ..cubicTo(x1, y1 + dy * 0.55, x2, y2 - dy * 0.55, x2, y2);
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (itemCount < 1) return;
-
-    void paintTrail(Path road, {required bool solid}) {
-      if (solid) {
-        _TrailRibbon.drawWalked(canvas, road, progress);
-      } else {
-        _TrailRibbon.drawUnwalked(canvas, road, progress);
-      }
-    }
-
-    // From the path node's bottom-center → first unit. Every path now has a
-    // waypoint node directly above it, so this always runs. Turns green as
-    // soon as the first unit itself is done, not only once the whole path
-    // is finished — otherwise it would rarely ever color in.
-    final entry = _segment(size.width / 2, 0, _nodeX(0, size.width), _nodeY(0));
-    final firstUnitDone = completedFlags.isNotEmpty && completedFlags.first;
-    paintTrail(entry, solid: pathFullyComplete || firstUnitDone);
-
-    // Unit-to-unit trail.
-    if (itemCount >= 2) {
-      final road = Path()..moveTo(_nodeX(0, size.width), _nodeY(0));
-
-      for (int i = 0; i < itemCount - 1; i++) {
-        final startX = _nodeX(i, size.width);
-        final endX = _nodeX(i + 1, size.width);
-        final startY = _nodeY(i);
-        final endY = _nodeY(i + 1);
-        final dy = endY - startY;
-
-        road.cubicTo(
-          startX,
-          startY + dy * 0.55,
-          endX,
-          endY - dy * 0.55,
-          endX,
-          endY,
-        );
-      }
-
-      if (pathFullyComplete) {
-        _TrailRibbon.drawWalked(canvas, road, progress);
-      } else {
-        // Faint sketched path for the whole trail, then a solid dirt-path
-        // overlay for the portion already walked.
-        _TrailRibbon.drawUnwalked(canvas, road, progress);
-
-        final completedCount = completedFlags
-            .where((done) => done)
-            .length
-            .clamp(0, itemCount);
-        if (completedCount > 0) {
-          final doneRatio = ((completedCount - 1) / (itemCount - 1)).clamp(
-            0.0,
-            1.0,
-          );
-          _TrailRibbon.drawWalked(canvas, road, math.min(progress, doneRatio));
-        }
-      }
-    }
-
-    // Outgoing bridge from last unit → next path.
-    if (extendToBottom) {
-      final lastX = _nodeX(itemCount - 1, size.width);
-      final exit = _segment(lastX, _nodeY(itemCount - 1), lastX, size.height);
-      paintTrail(exit, solid: pathFullyComplete);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _RoadPathPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.itemCount != itemCount ||
-        oldDelegate.zigzagOffset != zigzagOffset ||
-        oldDelegate.extendToBottom != extendToBottom ||
-        oldDelegate.pathFullyComplete != pathFullyComplete;
-  }
 }
