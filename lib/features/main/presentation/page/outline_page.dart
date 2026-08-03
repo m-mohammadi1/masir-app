@@ -541,7 +541,7 @@ class _OutlinePageState extends State<OutlinePage>
             centered: false,
             isLeft: pathIsLeft,
             xJitter: jitter(0.055),
-            pinRadius: 28,
+            pinRadius: 25,
             curveKickA: jitter(22),
             curveKickB: jitter(22),
             incomingSolid: pathIncomingSolid,
@@ -1125,25 +1125,30 @@ class _PathWaypoint extends StatelessWidget {
     final isComplete = pathProgress >= 100;
     final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
 
+    // A gently muted fill (not the raw saturated accent) so it stays
+    // heavier than a unit's outline pin without looking like a harsh block
+    // of color dropped onto a soft paper page.
+    final fill = Color.lerp(accent, PaperTheme.cardPaper, 0.22)!;
+
     final pin = Container(
-      width: 56,
-      height: 56,
+      width: 50,
+      height: 50,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: accent,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: PaperTheme.cardPaper, width: 3),
+        color: fill,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: PaperTheme.cardPaper, width: 2),
         boxShadow: [
           BoxShadow(
-            color: accent.withValues(alpha: 0.32),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: accent.withValues(alpha: 0.18),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Icon(
         isComplete ? Icons.flag_circle_rounded : Icons.route_rounded,
-        size: 26,
+        size: 22,
         color: PaperTheme.cardPaper,
       ),
     );
@@ -1152,9 +1157,9 @@ class _PathWaypoint extends StatelessWidget {
       constraints: BoxConstraints(maxWidth: maxLabelWidth),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.1),
+        color: accent.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: accent.withValues(alpha: 0.5)),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: isLeft
