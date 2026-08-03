@@ -613,17 +613,20 @@ class _OutlinePageState extends State<OutlinePage>
       previousModuleFullyCompleted = isModuleFullyCompleted;
     }
 
-    // Whole-course finish line — only appears once every module (and so
-    // every unit) is completed. Distinct from the per-chapter trophy: this
-    // is the very last waypoint on the entire trail.
-    if (modules.isNotEmpty && modules.every(_isModuleFullyCompleted)) {
+    // Whole-course finish line — always the very last waypoint on the
+    // trail, so the destination is revealed from the moment the roadmap
+    // loads instead of only appearing once you happen to finish. It stays
+    // locked-looking (like a locked unit) until every module — and so
+    // every unit — is actually completed.
+    if (modules.isNotEmpty) {
+      final courseComplete = modules.every(_isModuleFullyCompleted);
       nodes.add(
         _TrailNode(
           height: _kCourseFinishHeight,
-          incomingSolid: true,
+          incomingSolid: courseComplete,
           curveKickA: jitter(16),
           curveKickB: jitter(16),
-          build: (_) => const _CourseFinishNode(),
+          build: (_) => _CourseFinishNode(isComplete: courseComplete),
         ),
       );
     }
@@ -1236,15 +1239,52 @@ class _TrophyNode extends StatelessWidget {
   }
 }
 
-/// The finish line — the very last waypoint on the whole trail, shown once
-/// every module (and therefore every unit) in the course is completed.
-/// Bigger and greener than a per-chapter trophy since it caps the entire
-/// adventure, not just one leg of it.
+/// The finish line — always the very last waypoint on the whole trail, so
+/// the destination is revealed from the moment the roadmap loads instead
+/// of only appearing once you happen to finish. It sits there as a locked
+/// goal (same dashed-outline language as a locked unit) until every module
+/// — and so every unit — in the course is completed, then unlocks into a
+/// bigger, greener medallion than a per-chapter trophy since it caps the
+/// entire adventure, not just one leg of it.
 class _CourseFinishNode extends StatelessWidget {
-  const _CourseFinishNode();
+  final bool isComplete;
+
+  const _CourseFinishNode({required this.isComplete});
 
   @override
   Widget build(BuildContext context) {
+    if (!isComplete) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _DashedCircle(
+            size: 70,
+            child: const Icon(
+              Icons.flag_outlined,
+              size: 28,
+              color: PaperTheme.locked,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const CustomText(
+            'پایان مسیر',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: PaperTheme.locked,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 2),
+          const CustomText(
+            'با اتمام دوره باز می‌شود',
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: PaperTheme.inkMuted,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
