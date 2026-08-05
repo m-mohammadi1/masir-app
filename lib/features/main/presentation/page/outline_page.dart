@@ -483,17 +483,13 @@ class _OutlinePageState extends State<OutlinePage>
     // course's id, an unlucky streak would stick around forever for that
     // course. Capping the run at 2 keeps the "not mechanical" feel while
     // guaranteeing it never stops reading as a zigzag.
-    var zigzagLeft = rng.nextBool();
-    var zigzagStreak = 0;
-    bool randomSide() {
-      final mustSwitch = zigzagStreak >= 1;
-      if (mustSwitch || rng.nextBool()) {
-        zigzagLeft = !zigzagLeft;
-        zigzagStreak = 0;
-      } else {
-        zigzagStreak++;
-      }
-      return zigzagLeft;
+    // Structured zigzag: always alternate sides (left, right, left, right…)
+    // in the order the path/unit waypoints are added.
+    var nextIsLeft = true;
+    bool structuredSide() {
+      final side = nextIsLeft;
+      nextIsLeft = !nextIsLeft;
+      return side;
     }
 
     for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
@@ -533,7 +529,7 @@ class _OutlinePageState extends State<OutlinePage>
             ? (pathFullyComplete || firstUnitDone)
             : _isPathFullyCompleted(paths[pathIndex - 1]);
 
-        final pathIsLeft = randomSide();
+        final pathIsLeft = structuredSide();
 
         nodes.add(
           _TrailNode(
@@ -555,7 +551,7 @@ class _OutlinePageState extends State<OutlinePage>
 
         for (var unitIndex = 0; unitIndex < units.length; unitIndex++) {
           final unit = units[unitIndex];
-          final isLeft = randomSide();
+          final isLeft = structuredSide();
           final isCompleted = unit.status == 'completed';
           final isLocked = unit.locked ?? false;
           final isCurrent = unit.id == currentUnitId;
