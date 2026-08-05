@@ -20,7 +20,7 @@ import 'package:mohammad/widgets/custom_text.dart';
 // ARCHITECTURE NOTE
 //
 // Earlier iterations built this roadmap out of many independent widgets
-// (one CustomPaint per module bridge, per path bridge, per segment) that each
+// (one CustomPaint per module bridge, per path bridge, per zigzag) that each
 // guessed a neighbor's on-screen X position from their *own* local width and
 // padding. Any mismatch between two widgets' assumptions — different insets,
 // text wrapping to an extra line, a rounding difference — broke the visual
@@ -29,13 +29,16 @@ import 'package:mohammad/widgets/custom_text.dart';
 //
 // This version renders the *entire* course as a single flat list of
 // waypoints (chapter → path → units → path → … → trophy → chapter → …),
-// computes every waypoint's (x, y) center exactly once on a vertical center
-// spine, then draws the whole trail with one CustomPainter and lays every
-// node out with one Stack using those same numbers. The line and the
-// markers are mathematically guaranteed to agree, because they read from
-// the same source of truth.
+// computes every waypoint's (x, y) center exactly once, then draws the whole
+// trail with one CustomPainter and lays every node out with one Stack using
+// those same numbers. The line and the markers are mathematically
+// guaranteed to agree, because they read from the same source of truth.
 // ---------------------------------------------------------------------------
 
+/// Horizontal inset for zigzag unit nodes (fraction of the canvas width).
+/// Kept moderate (not 0.5) so the route still zigzags, but gentle enough
+/// that a thick trail reads as a winding path rather than a coiling snake.
+const double _kRoadSideRatio = 0.30;
 const double _kRoadNodeSize = 44;
 
 // Fixed vertical space reserved for each waypoint type. Generous on
@@ -45,20 +48,13 @@ const double _kRoadNodeSize = 44;
 //
 // Chapters are plain full-width title plates, not trail markers — they sit
 // on the timeline (so the trail still flows from one chapter into the
-// next) but never compete visually with the real waypoints (paths/units),
-// which follow a gentle meandering spine with alternating roadside labels.
+// next) but never zigzag and never compete visually with the real
+// waypoints, which are paths and units.
 const double _kChapterNodeHeight = 76;
 const double _kPathNodeHeight = 118;
 const double _kUnitNodeHeight = 118;
 const double _kTrophyNodeHeight = 112;
 const double _kCourseFinishHeight = 150;
-
-/// Subtle horizontal drift from the midline (fraction of canvas width).
-/// Moderate so the trail has a clear curve without becoming a zigzag wave.
-const double _kMeanderAmplitude = 0.20;
-
-/// How slowly that drift evolves (nodes per half-cycle). Higher = smoother.
-const double _kMeanderPeriod = 8;
 
 // ---------------------------------------------------------------------------
 // The trail — drawn as a walkable path ribbon, not a thin line, so the
@@ -208,26 +204,33 @@ class _RibbonPoints {
 
 // ---------------------------------------------------------------------------
 // Waypoint model — the single source of truth for both the line and the
-// markers. Pins follow a subtle, slow drift around the vertical midline so
-// the ribbon can stay one smooth spline. Chapter plates stay full-width;
-// path/unit labels alternate left/right opposite the previous labeled waypoint.
+// markers. `centered` waypoints (chapter/path/trophy) sit on the vertical
+// midline; zigzag waypoints (units) alternate left/right.
 // ---------------------------------------------------------------------------
 
 class _TrailNode {
   final double height;
+  final bool centered;
+  final bool isLeft;
 
-  /// Horizontal position of this waypoint's pin as a fraction of canvas
-  /// width (0.5 = midline). Driven by a sine meander so consecutive pins
-  /// form a curved path rather than a ruler-straight stack.
-  final double xFraction;
+  /// Small deterministic offset (fraction of canvas width) added to the
+  /// left/right zigzag position, so waypoints don't all sit on exactly the
+  /// same two vertical lines — this alone is most of what makes the trail
+  /// read as hand-drawn rather than mechanically repeated.
+  final double xJitter;
 
-  /// When true, the widget is laid out full-width (chapter header). The
-  /// ribbon still uses [xFraction] so the curve continues through the plate.
-  final bool fullWidth;
-
-  /// Pin radius used to place the widget so its pin center lands on
-  /// [xFraction]. Ignored when [fullWidth] is true.
+  /// Radius of this waypoint's actual pin marker — units and paths use
+  /// differently-sized pins, and the zigzag slot needs the real radius to
+  /// land the line exactly on the pin's center rather than assuming one
+  /// fixed size for every marker type.
   final double pinRadius;
+
+  /// Deterministic horizontal nudges for the two control points of the
+  /// cubic bezier leading into this node, so consecutive segments bow in
+  /// slightly different ways instead of every curve having identical
+  /// symmetric tension.
+  final double curveKickA;
+  final double curveKickB;
 
   /// Whether the segment *leading into* this node should be drawn as
   /// already-walked (green) rather than still-ahead (purple).
@@ -236,9 +239,12 @@ class _TrailNode {
 
   const _TrailNode({
     required this.height,
-    this.xFraction = 0.5,
-    this.fullWidth = false,
+    this.centered = true,
+    this.isLeft = false,
+    this.xJitter = 0,
     this.pinRadius = _kRoadNodeSize / 2,
+    this.curveKickA = 0,
+    this.curveKickB = 0,
     required this.incomingSolid,
     required this.build,
   });
@@ -443,10 +449,19 @@ class _OutlinePageState extends State<OutlinePage>
     return null;
   }
 
-  /// Builds the curved center-spine trail: chapter plates → path milestones →
-  /// units → optional trophy → next chapter → … → course finish. Pins follow
-  /// a gentle sine meander (one continuous lane). Path/unit labels alternate
-  /// left/right so each sits opposite the previous one.
+  /// Flattens every module into one ordered waypoint list: chapter → its
+  /// first path → that path's units → next path → … → trophy (if the
+  /// chapter is fully complete) → next chapter → … This is the *only* place
+  /// that decides ordering, sizing, and left/right/center placement, so the
+  /// painter and the widgets can never disagree about where anything is.
+  ///
+  /// Chapters are plain full-width title plates, not trail markers — they
+  /// still sit on the timeline (so the trail keeps flowing from one module
+  /// into the next), but they never zigzag and never compete visually with
+  /// the actual waypoints, which are paths and units. Paths and units each
+  /// pick their left/right side at random (`randomSide`) instead of always
+  /// snapping back to dead-center, which read as an artificial hourglass
+  /// rather than a winding trail.
   _NodeBuildResult _buildTrailNodes(
     List<OutlineModuleEntity> modules,
     String? currentUnitId,
@@ -455,15 +470,30 @@ class _OutlinePageState extends State<OutlinePage>
     int? currentUnitIndex;
     bool? previousModuleFullyCompleted;
 
-    // Alternate roadside labels: each path/unit flips from the previous.
-    var labelOnRight = true;
-
-    double meanderX(int index) {
-      // Tiny, slow drift off-center — pins stay near the midline so the
-      // trail can be one smooth line. Labels still alternate left/right.
-      return (0.5 +
-              math.sin(index * math.pi / _kMeanderPeriod) * _kMeanderAmplitude)
-          .clamp(0.5 - _kMeanderAmplitude, 0.5 + _kMeanderAmplitude);
+    // Fixed seed → same randomness every rebuild for the same course
+    // structure (no flicker when the bloc re-emits after a tap), and seeded
+    // from this course's own id — not a fixed constant — so every course
+    // keeps its own distinct trail shape across app sessions instead of
+    // every course rendering the exact same pattern.
+    final rng = math.Random(widget.id.hashCode);
+    double jitter(double range) => (rng.nextDouble() * 2 - 1) * range;
+    // Each path/unit waypoint picks its side at random instead of strictly
+    // alternating left-right-left-right — but a plain coin flip can streak
+    // (3+ in a row on the same side), and since the seed is locked to this
+    // course's id, an unlucky streak would stick around forever for that
+    // course. Capping the run at 2 keeps the "not mechanical" feel while
+    // guaranteeing it never stops reading as a zigzag.
+    var zigzagLeft = rng.nextBool();
+    var zigzagStreak = 0;
+    bool randomSide() {
+      final mustSwitch = zigzagStreak >= 1;
+      if (mustSwitch || rng.nextBool()) {
+        zigzagLeft = !zigzagLeft;
+        zigzagStreak = 0;
+      } else {
+        zigzagStreak++;
+      }
+      return zigzagLeft;
     }
 
     for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
@@ -476,9 +506,9 @@ class _OutlinePageState extends State<OutlinePage>
       nodes.add(
         _TrailNode(
           height: _kChapterNodeHeight,
-          xFraction: meanderX(nodes.length),
-          fullWidth: true,
           incomingSolid: previousModuleFullyCompleted ?? false,
+          curveKickA: jitter(16),
+          curveKickB: jitter(16),
           build: (_) => _ChapterHeader(
             index: moduleIndex,
             title: module.title ?? '',
@@ -503,25 +533,29 @@ class _OutlinePageState extends State<OutlinePage>
             ? (pathFullyComplete || firstUnitDone)
             : _isPathFullyCompleted(paths[pathIndex - 1]);
 
-        final pathLabelRight = labelOnRight;
-        labelOnRight = !labelOnRight;
+        final pathIsLeft = randomSide();
 
         nodes.add(
           _TrailNode(
             height: _kPathNodeHeight,
-            xFraction: meanderX(nodes.length),
+            centered: false,
+            isLeft: pathIsLeft,
+            xJitter: jitter(0.055),
             pinRadius: 25,
+            curveKickA: jitter(22),
+            curveKickB: jitter(22),
             incomingSolid: pathIncomingSolid,
             build: (canvasWidth) => _PathWaypoint(
               path: path,
-              labelOnRight: pathLabelRight,
-              maxLabelWidth: (canvasWidth * 0.38).clamp(90.0, 140.0),
+              isLeft: pathIsLeft,
+              maxLabelWidth: (canvasWidth * 0.46).clamp(90.0, 150.0),
             ),
           ),
         );
 
         for (var unitIndex = 0; unitIndex < units.length; unitIndex++) {
           final unit = units[unitIndex];
+          final isLeft = randomSide();
           final isCompleted = unit.status == 'completed';
           final isLocked = unit.locked ?? false;
           final isCurrent = unit.id == currentUnitId;
@@ -533,14 +567,14 @@ class _OutlinePageState extends State<OutlinePage>
 
           if (isCurrent) currentUnitIndex = nodes.length;
 
-          final unitLabelRight = labelOnRight;
-          labelOnRight = !labelOnRight;
-
           nodes.add(
             _TrailNode(
               height: _kUnitNodeHeight,
-              xFraction: meanderX(nodes.length),
-              pinRadius: _kRoadNodeSize / 2,
+              centered: false,
+              isLeft: isLeft,
+              xJitter: jitter(0.05),
+              curveKickA: jitter(18),
+              curveKickB: jitter(18),
               incomingSolid: incomingSolid,
               build: (canvasWidth) => _RoadUnitNode(
                 title: unit.title ?? '',
@@ -549,8 +583,8 @@ class _OutlinePageState extends State<OutlinePage>
                 isCompleted: isCompleted,
                 isLocked: isLocked,
                 isCurrent: isCurrent,
-                labelOnRight: unitLabelRight,
-                maxLabelWidth: (canvasWidth * 0.36).clamp(80.0, 120.0),
+                isLeft: isLeft,
+                maxLabelWidth: (canvasWidth * 0.44).clamp(80.0, 130.0),
                 onTap: () => _onUnitTap(
                   id: unit.id,
                   type: unitType,
@@ -567,9 +601,9 @@ class _OutlinePageState extends State<OutlinePage>
           nodes.add(
             _TrailNode(
               height: _kTrophyNodeHeight,
-              xFraction: meanderX(nodes.length),
-              pinRadius: 30,
               incomingSolid: true,
+              curveKickA: jitter(16),
+              curveKickB: jitter(16),
               build: (_) => const _TrophyNode(),
             ),
           );
@@ -579,14 +613,19 @@ class _OutlinePageState extends State<OutlinePage>
       previousModuleFullyCompleted = isModuleFullyCompleted;
     }
 
+    // Whole-course finish line — always the very last waypoint on the
+    // trail, so the destination is revealed from the moment the roadmap
+    // loads instead of only appearing once you happen to finish. It stays
+    // locked-looking (like a locked unit) until every module — and so
+    // every unit — is actually completed.
     if (modules.isNotEmpty) {
       final courseComplete = modules.every(_isModuleFullyCompleted);
       nodes.add(
         _TrailNode(
           height: _kCourseFinishHeight,
-          xFraction: meanderX(nodes.length),
-          pinRadius: courseComplete ? 39 : 35,
           incomingSolid: courseComplete,
+          curveKickA: jitter(16),
+          curveKickB: jitter(16),
           build: (_) => _CourseFinishNode(isComplete: courseComplete),
         ),
       );
@@ -761,15 +800,16 @@ class _TrailCanvas extends StatelessWidget {
                   child: _TrailNodeEntrance(
                     index: i,
                     entrance: entrance,
-                    child: nodes[i].fullWidth
+                    child: nodes[i].centered
                         ? OverflowBox(
                             maxHeight: double.infinity,
                             alignment: Alignment.center,
                             child: nodes[i].build(width),
                           )
-                        : _SpineSlot(
+                        : _ZigZagSlot(
+                            isLeft: nodes[i].isLeft,
                             width: width,
-                            xFraction: nodes[i].xFraction,
+                            xJitter: nodes[i].xJitter,
                             pinRadius: nodes[i].pinRadius,
                             child: nodes[i].build(width),
                           ),
@@ -783,32 +823,39 @@ class _TrailCanvas extends StatelessWidget {
   }
 }
 
-/// Places a pin-centered waypoint on the meandering spine by aligning the
-/// pin's center to [xFraction] of the canvas width — the same fraction the
-/// painter uses — so the ribbon and marker always meet.
-class _SpineSlot extends StatelessWidget {
+/// Places a zigzag unit's pin exactly on the trail's left/right line by
+/// pinning the pin's edge (not the whole row, which also has a label of
+/// variable width) at the computed fraction of the canvas width — the same
+/// fraction the painter uses for that side, so pin and line always meet.
+class _ZigZagSlot extends StatelessWidget {
+  final bool isLeft;
   final double width;
-  final double xFraction;
+  final double xJitter;
   final double pinRadius;
   final Widget child;
 
-  const _SpineSlot({
+  const _ZigZagSlot({
+    required this.isLeft,
     required this.width,
-    required this.xFraction,
+    required this.xJitter,
     required this.pinRadius,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    final nodeCenterX = xFraction * width;
+    final base = isLeft ? _kRoadSideRatio : (1 - _kRoadSideRatio);
+    final nodeCenterX = (base + xJitter) * width;
+    final nodeRadius = pinRadius;
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Positioned(
           top: 0,
           bottom: 0,
-          left: nodeCenterX - pinRadius,
+          left: isLeft ? nodeCenterX - nodeRadius : null,
+          right: isLeft ? null : width - nodeCenterX - nodeRadius,
           child: Align(alignment: Alignment.center, child: child),
         ),
       ],
@@ -855,49 +902,45 @@ class _TrailNodeEntrance extends StatelessWidget {
   }
 }
 
-/// Draws the entire course trail as one continuous smooth spline through
-/// every waypoint center (Catmull-Rom → cubic). Segment color still flips
-/// walked/unwalked per edge, but geometry is a single flowing line — no
-/// per-segment C-bulges that read as a zigzag wave.
+/// Draws the entire course's trail in a single pass by connecting every
+/// consecutive pair of waypoint centers. Because it reads from the exact
+/// same `nodes`/`centersY` the Stack above positions widgets with, there is
+/// no possible mismatch between where the line goes and where a node sits.
 class _FullTrailPainter extends CustomPainter {
   final List<_TrailNode> nodes;
   final List<double> centersY;
 
   _FullTrailPainter({required this.nodes, required this.centersY});
 
-  double _x(_TrailNode node, double width) => node.xFraction * width;
+  double _x(_TrailNode node, double width) {
+    if (node.centered) return width / 2;
+    final base = node.isLeft ? _kRoadSideRatio : (1 - _kRoadSideRatio);
+    return (base + node.xJitter) * width;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (nodes.length < 2) return;
-
-    final pts = <Offset>[
-      for (var i = 0; i < nodes.length; i++)
-        Offset(_x(nodes[i], size.width), centersY[i]),
-    ];
-
-    for (var i = 0; i < pts.length - 1; i++) {
-      final p0 = pts[i == 0 ? 0 : i - 1];
-      final p1 = pts[i];
-      final p2 = pts[i + 1];
-      final p3 = pts[i + 2 < pts.length ? i + 2 : pts.length - 1];
-
-      // Catmull-Rom → cubic Bezier (tension 1). Control points blend with
-      // neighbors so consecutive segments share tangent — one smooth ribbon.
-      final c1 = Offset(
-        p1.dx + (p2.dx - p0.dx) / 6,
-        p1.dy + (p2.dy - p0.dy) / 6,
-      );
-      final c2 = Offset(
-        p2.dx - (p3.dx - p1.dx) / 6,
-        p2.dy - (p3.dy - p1.dy) / 6,
-      );
+    for (var i = 1; i < nodes.length; i++) {
+      final x1 = _x(nodes[i - 1], size.width);
+      final y1 = centersY[i - 1];
+      final x2 = _x(nodes[i], size.width);
+      final y2 = centersY[i];
+      final dy = y2 - y1;
+      final kickA = nodes[i].curveKickA;
+      final kickB = nodes[i].curveKickB;
 
       final segment = Path()
-        ..moveTo(p1.dx, p1.dy)
-        ..cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, p2.dx, p2.dy);
+        ..moveTo(x1, y1)
+        ..cubicTo(
+          x1 + kickA,
+          y1 + dy * 0.55,
+          x2 + kickB,
+          y2 - dy * 0.55,
+          x2,
+          y2,
+        );
 
-      if (nodes[i + 1].incomingSolid) {
+      if (nodes[i].incomingSolid) {
         _TrailRibbon.drawWalked(canvas, segment);
       } else {
         _TrailRibbon.drawUnwalked(canvas, segment);
@@ -1056,33 +1099,40 @@ class _StampBadge extends StatelessWidget {
   }
 }
 
-/// Path waypoint — solid-filled milestone on the meandering spine. The pin
-/// is the Stack's only sized child (so the trail targets pin center); the
-/// label hangs to the left or right opposite the previous labeled waypoint.
+/// Path waypoint — a solid-*filled* rounded-square "milestone" badge (paper
+/// icon on a colored fill, ringed in paper like a sticker on the page),
+/// unmistakably heavier than a unit's light paper-on-paper outline pin. The
+/// filled treatment is what actually separates "this is a bigger
+/// checkpoint" from "this is one step" at a glance, on top of the
+/// square-vs-circle shape difference. Positioned in the same left/right
+/// zigzag as units (see `_buildTrailNodes`'s `randomSide`) instead of
+/// always sitting dead-center, so the trail keeps winding naturally
+/// through every path instead of snapping back to the middle each time.
 class _PathWaypoint extends StatelessWidget {
   final OutlinePathEntity path;
-  final bool labelOnRight;
+  final bool isLeft;
   final double maxLabelWidth;
 
   const _PathWaypoint({
     required this.path,
-    required this.labelOnRight,
+    required this.isLeft,
     required this.maxLabelWidth,
   });
-
-  static const double _pinSize = 50;
 
   @override
   Widget build(BuildContext context) {
     final pathProgress = path.pathProgressPercent ?? 0;
     final isComplete = pathProgress >= 100;
     final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
+
+    // A gently muted fill (not the raw saturated accent) so it stays
+    // heavier than a unit's outline pin without looking like a harsh block
+    // of color dropped onto a soft paper page.
     final fill = Color.lerp(accent, PaperTheme.cardPaper, 0.22)!;
-    final alignEnd = labelOnRight;
 
     final pin = Container(
-      width: _pinSize,
-      height: _pinSize,
+      width: 50,
+      height: 50,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: fill,
@@ -1112,9 +1162,9 @@ class _PathWaypoint extends StatelessWidget {
         border: Border.all(color: accent.withValues(alpha: 0.35)),
       ),
       child: Column(
-        crossAxisAlignment: alignEnd
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: isLeft
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
           CustomText(
@@ -1122,7 +1172,7 @@ class _PathWaypoint extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: PaperTheme.ink,
-            textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+            textAlign: isLeft ? TextAlign.left : TextAlign.right,
             maxLines: 2,
           ),
           const SizedBox(height: 2),
@@ -1131,23 +1181,18 @@ class _PathWaypoint extends StatelessWidget {
             fontSize: 11,
             fontWeight: FontWeight.bold,
             color: accent,
-            textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+            textAlign: isLeft ? TextAlign.left : TextAlign.right,
           ),
         ],
       ),
     );
 
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.center,
-      children: [
-        pin,
-        Positioned(
-          left: labelOnRight ? _pinSize + 10 : null,
-          right: labelOnRight ? null : _pinSize + 10,
-          child: label,
-        ),
-      ],
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      textDirection: TextDirection.ltr,
+      children: isLeft
+          ? [pin, const SizedBox(width: 10), label]
+          : [label, const SizedBox(width: 10), pin],
     );
   }
 }
@@ -1360,9 +1405,7 @@ class _CourseFinishNode extends StatelessWidget {
   }
 }
 
-/// A single unit waypoint on the meandering spine. Label side alternates
-/// opposite the previous path/unit so consecutive signs face each other
-/// across the trail.
+/// A single unit "waypoint" — pin/stamp marker plus its paper label tag.
 class _RoadUnitNode extends StatelessWidget {
   final String title;
   final String typeLabel;
@@ -1370,7 +1413,7 @@ class _RoadUnitNode extends StatelessWidget {
   final bool isCompleted;
   final bool isLocked;
   final bool isCurrent;
-  final bool labelOnRight;
+  final bool isLeft;
   final double maxLabelWidth;
   final VoidCallback onTap;
 
@@ -1381,7 +1424,7 @@ class _RoadUnitNode extends StatelessWidget {
     required this.isCompleted,
     required this.isLocked,
     required this.isCurrent,
-    required this.labelOnRight,
+    required this.isLeft,
     required this.maxLabelWidth,
     required this.onTap,
   });
@@ -1389,7 +1432,6 @@ class _RoadUnitNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget pin;
-    final alignEnd = labelOnRight;
 
     if (isCompleted) {
       pin = _StampBadge(
@@ -1451,8 +1493,9 @@ class _RoadUnitNode extends StatelessWidget {
       );
     }
 
+    final tagRotation = isLeft ? -0.035 : 0.035;
     final label = Transform.rotate(
-      angle: labelOnRight ? 0.035 : -0.035,
+      angle: tagRotation,
       child: Container(
         constraints: BoxConstraints(maxWidth: maxLabelWidth),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1464,9 +1507,9 @@ class _RoadUnitNode extends StatelessWidget {
           ),
         ),
         child: Column(
-          crossAxisAlignment: alignEnd
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
+          crossAxisAlignment: isLeft
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
             CustomText(
@@ -1474,7 +1517,7 @@ class _RoadUnitNode extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: isLocked ? PaperTheme.locked : PaperTheme.ink,
-              textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+              textAlign: isLeft ? TextAlign.left : TextAlign.right,
               maxLines: 2,
             ),
             const SizedBox(height: 2),
@@ -1482,7 +1525,7 @@ class _RoadUnitNode extends StatelessWidget {
               typeLabel,
               fontSize: 11,
               color: PaperTheme.inkMuted,
-              textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+              textAlign: isLeft ? TextAlign.left : TextAlign.right,
             ),
           ],
         ),
@@ -1491,17 +1534,12 @@ class _RoadUnitNode extends StatelessWidget {
 
     return OnClick(
       onTap: isLocked ? null : onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          pin,
-          Positioned(
-            left: labelOnRight ? _kRoadNodeSize + 10 : null,
-            right: labelOnRight ? null : _kRoadNodeSize + 10,
-            child: label,
-          ),
-        ],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        textDirection: TextDirection.ltr,
+        children: isLeft
+            ? [pin, const SizedBox(width: 10), label]
+            : [label, const SizedBox(width: 10), pin],
       ),
     );
   }
