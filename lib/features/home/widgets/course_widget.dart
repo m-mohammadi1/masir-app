@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/helper/custom_colors.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
 class CourseCard extends StatelessWidget {
@@ -28,12 +29,12 @@ class CourseCard extends StatelessWidget {
             height: 110,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColor.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xffE7DEF8)),
+              border: Border.all(color: AppColor.border),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xff6C2BD9).withValues(alpha: .08),
+                  color: AppColor.primary.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 3),
                 ),
@@ -51,14 +52,14 @@ class CourseCard extends StatelessWidget {
                         textAlign: TextAlign.right,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xff2F2146),
+                        color: AppColor.ink,
                       ),
                       const SizedBox(height: 10),
                       CustomText(
                         description,
                         textAlign: TextAlign.right,
                         fontSize: 14,
-                        color: Color(0xff6E6884),
+                        color: AppColor.inkMuted,
                         fontWeight: FontWeight.w500,
                       ),
                     ],
@@ -69,10 +70,10 @@ class CourseCard extends StatelessWidget {
                   width: 74,
                   height: 74,
                   decoration: BoxDecoration(
-                    color: const Color(0xffF3EBFF),
+                    color: AppColor.primaryTint,
                     borderRadius: BorderRadius.circular(22),
                   ),
-                  child: Icon(icon, size: 34, color: const Color(0xff7C3AED)),
+                  child: Icon(icon, size: 34, color: AppColor.primary),
                 ),
               ],
             ),

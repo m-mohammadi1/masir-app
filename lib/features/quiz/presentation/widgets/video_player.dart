@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/helper/custom_colors.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:video_player/video_player.dart';
 
@@ -22,23 +23,25 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   bool _hasError = false;
   bool _showControls = true;
 
-  static const Color _accent = Color(0xff7C3AED);
+  static Color get _accent => AppColor.primary;
 
   @override
   void initState() {
     super.initState();
     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
-      ..initialize().then((_) {
-        if (!mounted) return;
-        setState(() => _initialized = true);
-        if (widget.autoPlay) {
-          _controller.play();
-        }
-      }).catchError((error, stack) {
-        debugPrint('Video play error: $error\n$stack');
-        if (!mounted) return;
-        setState(() => _hasError = true);
-      });
+      ..initialize()
+          .then((_) {
+            if (!mounted) return;
+            setState(() => _initialized = true);
+            if (widget.autoPlay) {
+              _controller.play();
+            }
+          })
+          .catchError((error, stack) {
+            debugPrint('Video play error: $error\n$stack');
+            if (!mounted) return;
+            setState(() => _hasError = true);
+          });
 
     _controller.addListener(_onUpdate);
   }
@@ -74,10 +77,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
       borderRadius: BorderRadius.circular(12),
       child: ColoredBox(
         color: Colors.black,
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: _buildBody(),
-        ),
+        child: AspectRatio(aspectRatio: 16 / 9, child: _buildBody()),
       ),
     );
   }
@@ -94,9 +94,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     }
 
     if (!_initialized) {
-      return const Center(
-        child: CircularProgressIndicator(color: _accent),
-      );
+      return Center(child: CircularProgressIndicator(color: _accent));
     }
 
     final value = _controller.value;

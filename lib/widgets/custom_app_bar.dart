@@ -8,14 +8,21 @@ class CustomAppBar extends StatelessWidget {
   final String title;
   final Widget? icon;
   final Function? backAction;
+  final double topSpacing;
 
-  const CustomAppBar({super.key, required this.title, this.icon, this.backAction});
+  const CustomAppBar({
+    super.key,
+    required this.title,
+    this.icon,
+    this.backAction,
+    this.topSpacing = 20,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        20.h,
+        SizedBox(height: topSpacing),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.start,
@@ -23,10 +30,7 @@ class CustomAppBar extends StatelessWidget {
             CustomBackButton(backAction: backAction),
             8.w,
             CustomText(title, fontWeight: FontWeight.w500),
-            if (icon != null) ...[
-              Spacer(),
-              icon!
-            ],
+            if (icon != null) ...[Spacer(), icon!],
           ],
         ),
       ],

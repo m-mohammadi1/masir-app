@@ -29,11 +29,19 @@ class ExitModal extends StatelessWidget {
           Container(
             height: 48,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: AppColor.borderF9,
+              borderRadius: BorderRadius.circular(14),
+              color: AppColor.primaryTint,
+              border: Border.all(
+                color: AppColor.primary.withValues(alpha: 0.25),
+                width: 1.1,
+              ),
             ),
             child: Center(
-              child: CustomText("تاییدیه", fontWeight: FontWeight.w500),
+              child: CustomText(
+                "تاییدیه",
+                fontWeight: FontWeight.w500,
+                color: AppColor.primary,
+              ),
             ),
           ),
           16.h,

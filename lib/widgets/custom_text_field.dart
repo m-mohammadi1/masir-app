@@ -48,7 +48,7 @@ class CustomTextField extends StatelessWidget {
     this.leftWidget,
     this.line = 1,
     this.maxLength,
-    this.textFieldRadius = 12,
+    this.textFieldRadius = 14,
     this.style,
     this.labelStyle,
     this.errorMessage,
@@ -104,89 +104,101 @@ class CustomTextField extends StatelessWidget {
               splashColor: Colors.transparent,
               highlightColor: Colors.transparent,
             ),
-            child: TextField(
-              textInputAction: action,
-              inputFormatters: inputFormatters,
-              textDirection: textDirection,
-              maxLines: line,
-              onChanged: onChanged,
-              enabled: (enabled == true && onTap == null),
-              decoration: InputDecoration(
-                fillColor: backgroundColor ?? Colors.white,
-                hintTextDirection: textDirection,
-                focusColor: Colors.transparent,
-                hoverColor: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(textFieldRadius),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColor.ink.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                textInputAction: action,
+                inputFormatters: inputFormatters,
+                textDirection: textDirection,
+                maxLines: line,
+                onChanged: onChanged,
+                enabled: (enabled == true && onTap == null),
+                decoration: InputDecoration(
+                  fillColor: backgroundColor ?? AppColor.surface,
+                  hintTextDirection: textDirection,
+                  focusColor: Colors.transparent,
+                  hoverColor: Colors.transparent,
 
-                filled: true,
-                // focusColor: Colors.transparent,
-                contentPadding: contentPadding ?? const EdgeInsets.all(14),
-                counterText: "",
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: !errorMessage.isNullOrEmpty
-                        ? AppColor.error
-                        : borderColor ?? AppColor.primary,
-                    width: 1.2,
+                  filled: true,
+                  // focusColor: Colors.transparent,
+                  contentPadding: contentPadding ?? const EdgeInsets.all(14),
+                  counterText: "",
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: !errorMessage.isNullOrEmpty
+                          ? AppColor.error
+                          : borderColor ?? AppColor.primary,
+                      width: 1.2,
+                    ),
+                    borderRadius: BorderRadius.circular(textFieldRadius),
                   ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: !errorMessage.isNullOrEmpty
-                        ? AppColor.error
-                        : borderColor ?? AppColor.border,
-                    width: 1.2,
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: !errorMessage.isNullOrEmpty
+                          ? AppColor.error
+                          : borderColor ?? AppColor.border,
+                      width: 1.2,
+                    ),
+                    borderRadius: BorderRadius.circular(textFieldRadius),
                   ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                disabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: !errorMessage.isNullOrEmpty
-                        ? AppColor.error
-                        : borderColor ?? AppColor.border,
-                    width: 1.2,
+                  disabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: !errorMessage.isNullOrEmpty
+                          ? AppColor.error
+                          : borderColor ?? AppColor.border,
+                      width: 1.2,
+                    ),
+                    borderRadius: BorderRadius.circular(textFieldRadius),
                   ),
-                  borderRadius: BorderRadius.circular(10),
+                  prefixIcon: prefixIcon,
+                  suffixIcon: suffixIcon,
+                  suffixIconConstraints: suffixBoxConstraints,
+                  prefixIconConstraints: prefixBoxConstraints,
+                  hintText: hint,
+                  hintStyle:
+                      hintStyle ??
+                      customTextStyle(
+                        color: AppColor.text92,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                      ),
                 ),
-                prefixIcon: prefixIcon,
-                suffixIcon: suffixIcon,
-                suffixIconConstraints: suffixBoxConstraints,
-                prefixIconConstraints: prefixBoxConstraints,
-                hintText: hint,
-                hintStyle:
-                    hintStyle ??
+                style:
+                    style ??
                     customTextStyle(
-                      color: AppColor.text92,
-                      fontSize: 12,
+                      color: AppColor.text,
+                      fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
+                controller: controller,
+                keyboardType: type,
+                maxLength: maxLength,
+                obscureText: isPassword,
+                obscuringCharacter: "*",
+                focusNode: currentFocus,
+                autofocus: false,
+                onSubmitted: (value) {
+                  if (nextFocus != null) {
+                    FocusScope.of(context).requestFocus(nextFocus);
+                    Future.delayed(Duration(milliseconds: 100), () {
+                      Scrollable.ensureVisible(
+                        context,
+                        duration: Duration(milliseconds: 300),
+                        alignment: 0.3,
+                      );
+                    });
+                  }
+                },
               ),
-              style:
-                  style ??
-                  customTextStyle(
-                    color: AppColor.text,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-              controller: controller,
-              keyboardType: type,
-              maxLength: maxLength,
-              obscureText: isPassword,
-              obscuringCharacter: "*",
-              focusNode: currentFocus,
-              autofocus: false,
-              onSubmitted: (value) {
-                if (nextFocus != null) {
-                  FocusScope.of(context).requestFocus(nextFocus);
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    Scrollable.ensureVisible(
-                      context,
-                      duration: Duration(milliseconds: 300),
-                      alignment: 0.3,
-                    );
-                  });
-                }
-              },
             ),
           ),
         ),

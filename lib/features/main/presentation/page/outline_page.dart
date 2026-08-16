@@ -7,15 +7,269 @@ import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/request_outline_course_model.dart';
 import 'package:mohammad/features/main/domain/entities/outline_course.dart';
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
+import 'package:mohammad/core/helper/custom_colors.dart';
+import 'package:mohammad/core/helper/paper_surface.dart';
+import 'package:mohammad/features/main/presentation/page/outline/roadmap/paper_theme.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
-/// Horizontal inset for zigzag nodes / road path (matches painter & widgets).
-const double _kRoadSideRatio = 0.18;
-const double _kRoadNodeSize = 64;
+// ---------------------------------------------------------------------------
+// ARCHITECTURE NOTE
+//
+// Earlier iterations built this roadmap out of many independent widgets
+// (one CustomPaint per module bridge, per path bridge, per zigzag) that each
+// guessed a neighbor's on-screen X position from their *own* local width and
+// padding. Any mismatch between two widgets' assumptions — different insets,
+// text wrapping to an extra line, a rounding difference — broke the visual
+// connection between them. That's why lines kept looking disjointed however
+// many one-off fixes were applied.
+//
+// This version renders the *entire* course as a single flat list of
+// waypoints (chapter → path → units → path → … → trophy → chapter → …),
+// computes every waypoint's (x, y) center exactly once, then draws the whole
+// trail with one CustomPainter and lays every node out with one Stack using
+// those same numbers. The line and the markers are mathematically
+// guaranteed to agree, because they read from the same source of truth.
+// ---------------------------------------------------------------------------
+
+/// Horizontal inset for zigzag unit nodes (fraction of the canvas width).
+/// Kept moderate (not 0.5) so the route still zigzags, but gentle enough
+/// that a thick trail reads as a winding path rather than a coiling snake.
+const double _kRoadSideRatio = 0.30;
+const double _kRoadNodeSize = 44;
+
+// Fixed vertical space reserved for each waypoint type. Generous on
+// purpose — text is always capped with `maxLines` + ellipsis, so these are
+// safe upper bounds, not tight fits, and there's no risk of the guessed
+// height ever being too small for the actual content.
+//
+// Chapters are plain full-width title plates, not trail markers — they sit
+// on the timeline (so the trail still flows from one chapter into the
+// next) but never zigzag and never compete visually with the real
+// waypoints, which are paths and units.
+const double _kChapterNodeHeight = 76;
+const double _kPathNodeHeight = 118;
+const double _kUnitNodeHeight = 118;
+const double _kTrophyNodeHeight = 112;
+const double _kCourseFinishHeight = 150;
+
+// ---------------------------------------------------------------------------
+// The trail — drawn as a walkable path ribbon, not a thin line, so the
+// roadmap reads as an actual route rather than a graph. Only the color
+// changes between the part still ahead (purple) and the part already
+// adventured (green).
+//
+// Each piece only strokes its two long edges (never the flat cut ends), and
+// caps are plain filled circles with no outline — so wherever two segments
+// meet the colors blend instead of forming a visible ring/knot.
+// ---------------------------------------------------------------------------
+
+class _TrailRibbon {
+  const _TrailRibbon._();
+
+  static const double halfWidth = 6.5;
+  static const double _sampleStep = 8.0;
+
+  /// The portion of [source] already adventured — solid green.
+  static void drawWalked(Canvas canvas, Path source) {
+    _drawSolid(
+      canvas,
+      source,
+      fill: PaperTheme.trailWalked,
+      edge: PaperTheme.trailWalkedEdge,
+    );
+  }
+
+  /// The portion of [source] not yet adventured — solid purple.
+  static void drawUnwalked(Canvas canvas, Path source) {
+    _drawSolid(
+      canvas,
+      source,
+      fill: PaperTheme.trailUnwalked,
+      edge: PaperTheme.trailUnwalkedEdge,
+    );
+  }
+
+  static void _drawSolid(
+    Canvas canvas,
+    Path source, {
+    required Color fill,
+    required Color edge,
+  }) {
+    final fillPaint = Paint()
+      ..color = fill
+      ..style = PaintingStyle.fill;
+    final edgePaint = Paint()
+      ..color = edge
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+
+    for (final metric in source.computeMetrics()) {
+      if (metric.length <= 0.5) continue;
+      _paintPiece(
+        canvas,
+        metric.extractPath(0, metric.length),
+        fillPaint,
+        edgePaint,
+      );
+    }
+  }
+
+  static void _paintPiece(
+    Canvas canvas,
+    Path piece,
+    Paint fillPaint,
+    Paint edgePaint,
+  ) {
+    final points = _samplePoints(piece);
+    if (points == null) return;
+
+    final fillPath = Path()..moveTo(points.left.first.dx, points.left.first.dy);
+    for (final p in points.left.skip(1)) {
+      fillPath.lineTo(p.dx, p.dy);
+    }
+    for (final p in points.right.reversed) {
+      fillPath.lineTo(p.dx, p.dy);
+    }
+    fillPath.close();
+    canvas.drawPath(fillPath, fillPaint);
+
+    final leftEdge = Path()..moveTo(points.left.first.dx, points.left.first.dy);
+    for (final p in points.left.skip(1)) {
+      leftEdge.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(leftEdge, edgePaint);
+
+    final rightEdge = Path()
+      ..moveTo(points.right.first.dx, points.right.first.dy);
+    for (final p in points.right.skip(1)) {
+      rightEdge.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(rightEdge, edgePaint);
+
+    canvas.drawCircle(points.startCenter, halfWidth, fillPaint);
+    canvas.drawCircle(points.endCenter, halfWidth, fillPaint);
+  }
+
+  static _RibbonPoints? _samplePoints(Path path) {
+    final leftPts = <Offset>[];
+    final rightPts = <Offset>[];
+    Offset? startCenter;
+    Offset? endCenter;
+
+    for (final metric in path.computeMetrics()) {
+      final len = metric.length;
+      if (len <= 0) continue;
+
+      var d = 0.0;
+      while (d < len) {
+        final tangent = metric.getTangentForOffset(d);
+        if (tangent != null) {
+          final normal = Offset(-tangent.vector.dy, tangent.vector.dx);
+          leftPts.add(tangent.position + normal * halfWidth);
+          rightPts.add(tangent.position - normal * halfWidth);
+          startCenter ??= tangent.position;
+        }
+        d += _sampleStep;
+      }
+
+      final endTangent = metric.getTangentForOffset(len);
+      if (endTangent != null) {
+        final normal = Offset(-endTangent.vector.dy, endTangent.vector.dx);
+        leftPts.add(endTangent.position + normal * halfWidth);
+        rightPts.add(endTangent.position - normal * halfWidth);
+        endCenter = endTangent.position;
+      }
+    }
+
+    if (leftPts.length < 2 || startCenter == null || endCenter == null) {
+      return null;
+    }
+    return _RibbonPoints(leftPts, rightPts, startCenter, endCenter);
+  }
+}
+
+class _RibbonPoints {
+  final List<Offset> left;
+  final List<Offset> right;
+  final Offset startCenter;
+  final Offset endCenter;
+
+  const _RibbonPoints(this.left, this.right, this.startCenter, this.endCenter);
+}
+
+// ---------------------------------------------------------------------------
+// Waypoint model — the single source of truth for both the line and the
+// markers. `centered` waypoints (chapter/path/trophy) sit on the vertical
+// midline; zigzag waypoints (units) alternate left/right.
+// ---------------------------------------------------------------------------
+
+class _TrailNode {
+  final double height;
+  final bool centered;
+  final bool isLeft;
+
+  /// Small deterministic offset (fraction of canvas width) added to the
+  /// left/right zigzag position, so waypoints don't all sit on exactly the
+  /// same two vertical lines — this alone is most of what makes the trail
+  /// read as hand-drawn rather than mechanically repeated.
+  final double xJitter;
+
+  /// Radius of this waypoint's actual pin marker — units and paths use
+  /// differently-sized pins, and the zigzag slot needs the real radius to
+  /// land the line exactly on the pin's center rather than assuming one
+  /// fixed size for every marker type.
+  final double pinRadius;
+
+  /// Deterministic horizontal nudges for the two control points of the
+  /// cubic bezier leading into this node, so consecutive segments bow in
+  /// slightly different ways instead of every curve having identical
+  /// symmetric tension.
+  final double curveKickA;
+  final double curveKickB;
+
+  /// Whether the segment *leading into* this node should be drawn as
+  /// already-walked (green) rather than still-ahead (purple).
+  final bool incomingSolid;
+  final Widget Function(double canvasWidth) build;
+
+  const _TrailNode({
+    required this.height,
+    this.centered = true,
+    this.isLeft = false,
+    this.xJitter = 0,
+    this.pinRadius = _kRoadNodeSize / 2,
+    this.curveKickA = 0,
+    this.curveKickB = 0,
+    required this.incomingSolid,
+    required this.build,
+  });
+}
+
+class _NodeBuildResult {
+  final List<_TrailNode> nodes;
+  final int? currentUnitIndex;
+
+  const _NodeBuildResult(this.nodes, this.currentUnitIndex);
+}
+
+List<double> _computeCentersY(List<_TrailNode> nodes) {
+  final centers = <double>[];
+  var y = 0.0;
+  for (final node in nodes) {
+    centers.add(y + node.height / 2);
+    y += node.height;
+  }
+  return centers;
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 class OutlinePage extends StatefulWidget {
   final String title, id;
@@ -32,20 +286,8 @@ class _OutlinePageState extends State<OutlinePage>
   final bloc = inject<OutlineCourseBloc>();
   late final AnimationController _entranceController;
   final _scrollController = ScrollController();
-  final _currentUnitKey = GlobalKey();
   bool _hasPlayedEntrance = false;
   bool _hasScrolledToCurrent = false;
-  int _scrollRetryCount = 0;
-
-  static const _purple = Color(0xff7C3AED);
-  static const _purpleSoft = Color(0xffE7DEF8);
-  static const _purpleBg = Color(0xffF3EBFF);
-  static const _textDark = Color(0xff2F2146);
-  static const _textMuted = Color(0xff6E6884);
-  static const _green = Color(0xff4CAF50);
-  static const _greenBg = Color(0xffE8F5E9);
-  static const _greenSoft = Color(0xffC8E6C9);
-  static const _locked = Color(0xff9E96B0);
 
   @override
   void initState() {
@@ -67,32 +309,30 @@ class _OutlinePageState extends State<OutlinePage>
     _entranceController.forward(from: 0);
   }
 
-  void _scrollToCurrentUnitOnce() {
+  /// Scrolls straight to the current unit's precomputed Y — no GlobalKey,
+  /// no `ensureVisible` retry loop. The position is known analytically the
+  /// moment the node list is built, so this can never fail to find it.
+  void _scrollToCurrentUnitOnce(_NodeBuildResult result) {
     if (_hasScrolledToCurrent) return;
-
-    final targetContext = _currentUnitKey.currentContext;
-    if (targetContext == null) {
-      if (_scrollRetryCount >= 12) {
-        _hasScrolledToCurrent = true;
-        return;
-      }
-      _scrollRetryCount++;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToCurrentUnitOnce();
-      });
+    final index = result.currentUnitIndex;
+    if (index == null) {
+      _hasScrolledToCurrent = true;
       return;
     }
-
     _hasScrolledToCurrent = true;
+
+    final targetY = _computeCentersY(result.nodes)[index];
     Future.delayed(const Duration(milliseconds: 200), () {
-      if (!mounted) return;
-      final ctx = _currentUnitKey.currentContext;
-      if (ctx == null || !ctx.mounted) return;
-      Scrollable.ensureVisible(
-        ctx,
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      final target = (targetY - position.viewportDimension * 0.35).clamp(
+        0.0,
+        position.maxScrollExtent,
+      );
+      _scrollController.animateTo(
+        target,
         duration: const Duration(milliseconds: 850),
         curve: Curves.easeInOutCubic,
-        alignment: 0.35,
       );
     });
   }
@@ -157,7 +397,6 @@ class _OutlinePageState extends State<OutlinePage>
 
     // Re-enable auto-scroll to the next current unit after returning.
     _hasScrolledToCurrent = false;
-    _scrollRetryCount = 0;
 
     bloc.add(
       OutlineCourseEvent.outlineCourse(
@@ -191,6 +430,12 @@ class _OutlinePageState extends State<OutlinePage>
     return true;
   }
 
+  bool _isPathFullyCompleted(OutlinePathEntity path) {
+    final units = path.units ?? [];
+    if (units.isEmpty) return (path.pathProgressPercent ?? 0) >= 100;
+    return units.every((u) => u.status == 'completed');
+  }
+
   String? _findCurrentUnitId(List<OutlineModuleEntity> modules) {
     for (final module in modules) {
       for (final path in module.paths ?? []) {
@@ -204,15 +449,198 @@ class _OutlinePageState extends State<OutlinePage>
     return null;
   }
 
+  /// Flattens every module into one ordered waypoint list: chapter → its
+  /// first path → that path's units → next path → … → trophy (if the
+  /// chapter is fully complete) → next chapter → … This is the *only* place
+  /// that decides ordering, sizing, and left/right/center placement, so the
+  /// painter and the widgets can never disagree about where anything is.
+  ///
+  /// Chapters are plain full-width title plates, not trail markers — they
+  /// still sit on the timeline (so the trail keeps flowing from one module
+  /// into the next), but they never zigzag and never compete visually with
+  /// the actual waypoints, which are paths and units. Paths and units each
+  /// pick their left/right side at random (`randomSide`) instead of always
+  /// snapping back to dead-center, which read as an artificial hourglass
+  /// rather than a winding trail.
+  _NodeBuildResult _buildTrailNodes(
+    List<OutlineModuleEntity> modules,
+    String? currentUnitId,
+  ) {
+    final nodes = <_TrailNode>[];
+    int? currentUnitIndex;
+    bool? previousModuleFullyCompleted;
+
+    // Fixed seed → same randomness every rebuild for the same course
+    // structure (no flicker when the bloc re-emits after a tap), and seeded
+    // from this course's own id — not a fixed constant — so every course
+    // keeps its own distinct trail shape across app sessions instead of
+    // every course rendering the exact same pattern.
+    final rng = math.Random(widget.id.hashCode);
+    double jitter(double range) => (rng.nextDouble() * 2 - 1) * range;
+    // Each path/unit waypoint picks its side at random instead of strictly
+    // alternating left-right-left-right — but a plain coin flip can streak
+    // (3+ in a row on the same side), and since the seed is locked to this
+    // course's id, an unlucky streak would stick around forever for that
+    // course. Capping the run at 2 keeps the "not mechanical" feel while
+    // guaranteeing it never stops reading as a zigzag.
+    // Structured zigzag: always alternate sides (left, right, left, right…)
+    // in the order the path/unit waypoints are added.
+    var nextIsLeft = true;
+    bool structuredSide() {
+      final side = nextIsLeft;
+      nextIsLeft = !nextIsLeft;
+      return side;
+    }
+
+    for (var moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
+      final module = modules[moduleIndex];
+      final paths = module.paths ?? [];
+      final moduleProgress = _moduleProgress(module);
+      final isModuleFullyCompleted = _isModuleFullyCompleted(module);
+      final chapterIsComplete = isModuleFullyCompleted || moduleProgress >= 100;
+
+      nodes.add(
+        _TrailNode(
+          height: _kChapterNodeHeight,
+          incomingSolid: previousModuleFullyCompleted ?? false,
+          curveKickA: jitter(16),
+          curveKickB: jitter(16),
+          build: (_) => _ChapterHeader(
+            index: moduleIndex,
+            title: module.title ?? '',
+            progress: moduleProgress,
+            isComplete: chapterIsComplete,
+          ),
+        ),
+      );
+
+      final lastUnitsPathIndex = paths.lastIndexWhere(
+        (p) => (p.units ?? []).isNotEmpty,
+      );
+
+      for (var pathIndex = 0; pathIndex < paths.length; pathIndex++) {
+        final path = paths[pathIndex];
+        final units = path.units ?? [];
+        final pathFullyComplete = _isPathFullyCompleted(path);
+        final firstUnitDone =
+            units.isNotEmpty && units.first.status == 'completed';
+
+        final pathIncomingSolid = pathIndex == 0
+            ? (pathFullyComplete || firstUnitDone)
+            : _isPathFullyCompleted(paths[pathIndex - 1]);
+
+        final pathIsLeft = structuredSide();
+
+        nodes.add(
+          _TrailNode(
+            height: _kPathNodeHeight,
+            centered: false,
+            isLeft: pathIsLeft,
+            xJitter: jitter(0.055),
+            pinRadius: 25,
+            curveKickA: jitter(22),
+            curveKickB: jitter(22),
+            incomingSolid: pathIncomingSolid,
+            build: (canvasWidth) => _PathWaypoint(
+              path: path,
+              isLeft: pathIsLeft,
+              maxLabelWidth: (canvasWidth * 0.46).clamp(90.0, 150.0),
+            ),
+          ),
+        );
+
+        for (var unitIndex = 0; unitIndex < units.length; unitIndex++) {
+          final unit = units[unitIndex];
+          final isLeft = structuredSide();
+          final isCompleted = unit.status == 'completed';
+          final isLocked = unit.locked ?? false;
+          final isCurrent = unit.id == currentUnitId;
+          final unitType = unit.type ?? '';
+
+          final incomingSolid = unitIndex == 0
+              ? (pathFullyComplete || firstUnitDone)
+              : isCompleted;
+
+          if (isCurrent) currentUnitIndex = nodes.length;
+
+          nodes.add(
+            _TrailNode(
+              height: _kUnitNodeHeight,
+              centered: false,
+              isLeft: isLeft,
+              xJitter: jitter(0.05),
+              curveKickA: jitter(18),
+              curveKickB: jitter(18),
+              incomingSolid: incomingSolid,
+              build: (canvasWidth) => _RoadUnitNode(
+                title: unit.title ?? '',
+                typeLabel: _getTypeLabel(unitType),
+                icon: _getTypeIcon(unitType),
+                isCompleted: isCompleted,
+                isLocked: isLocked,
+                isCurrent: isCurrent,
+                isLeft: isLeft,
+                maxLabelWidth: (canvasWidth * 0.44).clamp(80.0, 130.0),
+                onTap: () => _onUnitTap(
+                  id: unit.id,
+                  type: unitType,
+                  title: unit.title,
+                  status: unit.status,
+                  locked: isLocked,
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (isModuleFullyCompleted && pathIndex == lastUnitsPathIndex) {
+          nodes.add(
+            _TrailNode(
+              height: _kTrophyNodeHeight,
+              incomingSolid: true,
+              curveKickA: jitter(16),
+              curveKickB: jitter(16),
+              build: (_) => const _TrophyNode(),
+            ),
+          );
+        }
+      }
+
+      previousModuleFullyCompleted = isModuleFullyCompleted;
+    }
+
+    // Whole-course finish line — always the very last waypoint on the
+    // trail, so the destination is revealed from the moment the roadmap
+    // loads instead of only appearing once you happen to finish. It stays
+    // locked-looking (like a locked unit) until every module — and so
+    // every unit — is actually completed.
+    if (modules.isNotEmpty) {
+      final courseComplete = modules.every(_isModuleFullyCompleted);
+      nodes.add(
+        _TrailNode(
+          height: _kCourseFinishHeight,
+          incomingSolid: courseComplete,
+          curveKickA: jitter(16),
+          curveKickB: jitter(16),
+          build: (_) => _CourseFinishNode(isComplete: courseComplete),
+        ),
+      );
+    }
+
+    return _NodeBuildResult(nodes, currentUnitIndex);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: BaseScreen(
+        usePaperGrain: false,
+        backgroundColor: AppColor.background,
         body: Column(
           children: [
-            CustomAppBar(title: widget.title),
-            20.h,
+            CustomAppBar(title: widget.title, topSpacing: 4),
+            10.h,
             BlocBuilder<OutlineCourseBloc, OutlineCourseState>(
               bloc: bloc,
               builder: (context, state) {
@@ -223,53 +651,35 @@ class _OutlinePageState extends State<OutlinePage>
                     final courseProgress = data.courseProgressPercent ?? 0;
                     final modules = data.modules ?? [];
                     final currentUnitId = _findCurrentUnitId(modules);
+                    final result = _buildTrailNodes(modules, currentUnitId);
 
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (!mounted) return;
                       _playEntranceOnce();
-                      if (currentUnitId != null) {
-                        _scrollToCurrentUnitOnce();
-                      } else {
-                        _hasScrolledToCurrent = true;
-                      }
+                      _scrollToCurrentUnitOnce(result);
                     });
 
                     return Expanded(
                       child: Column(
                         children: [
                           _CourseProgressHeader(progress: courseProgress),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 10),
                           Expanded(
-                            child: ListView(
-                              controller: _scrollController,
-                              physics: const BouncingScrollPhysics(),
-                              padding: const EdgeInsets.only(bottom: 32),
-                              children: List.generate(modules.length, (
-                                moduleIndex,
-                              ) {
-                                final module = modules[moduleIndex];
-                                final paths = module.paths ?? [];
-                                final moduleProgress = _moduleProgress(module);
-                                final isFullyCompleted =
-                                    _isModuleFullyCompleted(module);
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 20),
-                                  child: _ModuleRoadmap(
-                                    module: module,
-                                    paths: paths,
-                                    moduleProgress: moduleProgress,
-                                    isFullyCompleted: isFullyCompleted,
-                                    moduleIndex: moduleIndex,
-                                    currentUnitId: currentUnitId,
-                                    currentUnitKey: _currentUnitKey,
-                                    entrance: _entranceController,
-                                    getTypeLabel: _getTypeLabel,
-                                    getTypeIcon: _getTypeIcon,
-                                    onUnitTap: _onUnitTap,
-                                  ),
-                                );
-                              }),
+                            child: PaperBackdrop(
+                              child: SingleChildScrollView(
+                                controller: _scrollController,
+                                physics: const BouncingScrollPhysics(),
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  0,
+                                  12,
+                                  32,
+                                ),
+                                child: _TrailCanvas(
+                                  nodes: result.nodes,
+                                  entrance: _entranceController,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -286,6 +696,10 @@ class _OutlinePageState extends State<OutlinePage>
   }
 }
 
+// ---------------------------------------------------------------------------
+// Course header ("ledger" card)
+// ---------------------------------------------------------------------------
+
 class _CourseProgressHeader extends StatelessWidget {
   final int progress;
 
@@ -293,408 +707,34 @@ class _CourseProgressHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const CustomText(
-              'پیشرفت دوره',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: _OutlinePageState._textDark,
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _OutlinePageState._purple,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: CustomText(
-                '%$progress',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress / 100.0,
-            minHeight: 6,
-            backgroundColor: _OutlinePageState._purpleSoft,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              _OutlinePageState._purple,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ModuleRoadmap extends StatelessWidget {
-  final OutlineModuleEntity module;
-  final List<OutlinePathEntity> paths;
-  final int moduleProgress;
-  final bool isFullyCompleted;
-  final int moduleIndex;
-  final String? currentUnitId;
-  final GlobalKey currentUnitKey;
-  final Animation<double> entrance;
-  final String Function(String) getTypeLabel;
-  final IconData Function(String) getTypeIcon;
-  final Future<void> Function({
-    required String? id,
-    required String? type,
-    required String? title,
-    required String? status,
-    required bool locked,
-  }) onUnitTap;
-
-  const _ModuleRoadmap({
-    required this.module,
-    required this.paths,
-    required this.moduleProgress,
-    required this.isFullyCompleted,
-    required this.moduleIndex,
-    required this.currentUnitId,
-    required this.currentUnitKey,
-    required this.entrance,
-    required this.getTypeLabel,
-    required this.getTypeIcon,
-    required this.onUnitTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isComplete = isFullyCompleted || moduleProgress >= 100;
-
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _OutlinePageState._purpleSoft),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: PaperTheme.cardPaper,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: PaperTheme.paperEdge),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerRight,
-                end: Alignment.centerLeft,
-                colors: isComplete
-                    ? const [
-                        Color(0xffE8F5E9),
-                        Color(0xffF1F8E9),
-                      ]
-                    : const [
-                        Color(0xffF3EBFF),
-                        Color(0xffFAF7FF),
-                      ],
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: isComplete
-                        ? _OutlinePageState._green
-                        : _OutlinePageState._purple,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isComplete
-                                ? _OutlinePageState._green
-                                : _OutlinePageState._purple)
-                            .withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    isComplete ? Icons.check_rounded : Icons.menu_book_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CustomText(
-                        module.title ?? '',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: _OutlinePageState._textDark,
-                      ),
-                      const SizedBox(height: 2),
-                      CustomText(
-                        isComplete
-                            ? 'فصل کامل شده'
-                            : 'پیشرفت فصل $moduleProgress٪',
-                        fontSize: 12,
-                        color: _OutlinePageState._textMuted,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isComplete
-                          ? _OutlinePageState._greenSoft
-                          : _OutlinePageState._purpleSoft,
-                    ),
-                  ),
-                  child: CustomText(
-                    '$moduleProgress٪',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: isComplete
-                        ? _OutlinePageState._green
-                        : _OutlinePageState._purple,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: moduleProgress / 100.0,
-              minHeight: 3,
-              backgroundColor: _OutlinePageState._purpleSoft.withValues(
-                alpha: 0.5,
-              ),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isComplete
-                    ? _OutlinePageState._green
-                    : _OutlinePageState._purple,
-              ),
-            ),
-          ),
-          ..._buildPathSections(
-            paths: paths,
-            moduleIndex: moduleIndex,
-            currentUnitId: currentUnitId,
-            currentUnitKey: currentUnitKey,
-            entrance: entrance,
-            getTypeLabel: getTypeLabel,
-            getTypeIcon: getTypeIcon,
-            onUnitTap: onUnitTap,
-            isFullyCompleted: isFullyCompleted,
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildPathSections({
-    required List<OutlinePathEntity> paths,
-    required int moduleIndex,
-    required String? currentUnitId,
-    required GlobalKey currentUnitKey,
-    required Animation<double> entrance,
-    required String Function(String) getTypeLabel,
-    required IconData Function(String) getTypeIcon,
-    required Future<void> Function({
-      required String? id,
-      required String? type,
-      required String? title,
-      required String? status,
-      required bool locked,
-    }) onUnitTap,
-    required bool isFullyCompleted,
-  }) {
-    final sections = <Widget>[];
-    final lastUnitsPathIndex = paths.lastIndexWhere(
-      (p) => (p.units ?? []).isNotEmpty,
-    );
-
-    for (var pathIndex = 0; pathIndex < paths.length; pathIndex++) {
-      final path = paths[pathIndex];
-      final units = path.units ?? [];
-      final zigzagOffset = pathIndex;
-
-      // First path header sits above its units; later headers sit inside the bridge.
-      if (pathIndex == 0) {
-        sections.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
-            child: _PathHeaderCard(path: path),
-          ),
-        );
-      }
-
-      if (units.isNotEmpty) {
-        final hasPrevBridge = pathIndex > 0 &&
-            (paths[pathIndex - 1].units ?? []).isNotEmpty;
-        final hasNextBridge = pathIndex < paths.length - 1 &&
-            (paths[pathIndex + 1].units ?? []).isNotEmpty;
-        final startFromPathHeader = pathIndex == 0;
-        final connectToTrophy =
-            isFullyCompleted && pathIndex == lastUnitsPathIndex;
-
-        sections.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-            child: _ZigZagRoadmap(
-              units: units,
-              zigzagOffset: zigzagOffset,
-              currentUnitId: currentUnitId,
-              currentUnitKey: currentUnitKey,
-              entrance: entrance,
-              getTypeLabel: getTypeLabel,
-              getTypeIcon: getTypeIcon,
-              onUnitTap: onUnitTap,
-              staggerBase: moduleIndex * 0.15 + pathIndex * 0.08,
-              extendFromTop: hasPrevBridge,
-              extendToBottom: hasNextBridge || connectToTrophy,
-              // First path: trail grows out of path-header bottom-center.
-              startFromCenter: startFromPathHeader,
-              pathFullyComplete: _isPathFullyCompleted(path),
-              entryBridgeSolid: hasPrevBridge
-                  ? _isPathFullyCompleted(paths[pathIndex - 1])
-                  : false,
-            ),
-          ),
-        );
-
-        if (connectToTrophy) {
-          final fromIsLeft =
-              (units.length - 1 + zigzagOffset) % 2 == 0;
-          sections.add(
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _TrophyConnector(
-                fromIsLeft: fromIsLeft,
-                entrance: entrance,
-              ),
-            ),
-          );
-        }
-      }
-
-      // Bridge: last unit of this path → first unit of the next path.
-      if (pathIndex < paths.length - 1) {
-        final nextPath = paths[pathIndex + 1];
-        final nextUnits = nextPath.units ?? [];
-        if (units.isNotEmpty && nextUnits.isNotEmpty) {
-          final fromIsLeft =
-              (units.length - 1 + zigzagOffset) % 2 == 0;
-          final toIsLeft = (pathIndex + 1) % 2 == 0;
-          final pathComplete = _isPathFullyCompleted(path);
-
-          sections.add(
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _InterPathConnector(
-                fromIsLeft: fromIsLeft,
-                toIsLeft: toIsLeft,
-                isPathComplete: pathComplete,
-                entrance: entrance,
-                child: _PathHeaderCard(path: nextPath),
-              ),
-            ),
-          );
-        } else {
-          sections.add(
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 16, 12, 4),
-              child: _PathHeaderCard(path: nextPath),
-            ),
-          );
-        }
-      }
-    }
-
-    return sections;
-  }
-
-  bool _isPathFullyCompleted(OutlinePathEntity path) {
-    final units = path.units ?? [];
-    if (units.isEmpty) return (path.pathProgressPercent ?? 0) >= 100;
-    return units.every((u) => u.status == 'completed');
-  }
-}
-
-class _PathHeaderCard extends StatelessWidget {
-  final OutlinePathEntity path;
-
-  const _PathHeaderCard({required this.path});
-
-  @override
-  Widget build(BuildContext context) {
-    final pathProgress = path.pathProgressPercent ?? 0;
-    final isComplete = pathProgress >= 100;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: isComplete
-            ? _OutlinePageState._greenBg.withValues(alpha: 0.6)
-            : const Color(0xffFAF8FC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isComplete
-              ? _OutlinePageState._greenSoft
-              : _OutlinePageState._purpleSoft,
-        ),
-      ),
-      child: Column(
-        children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                isComplete ? Icons.flag_rounded : Icons.alt_route_rounded,
-                size: 18,
-                color: isComplete
-                    ? _OutlinePageState._green
-                    : _OutlinePageState._purple,
+              const CustomText(
+                'مسیر یادگیری',
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: PaperTheme.ink,
               ),
-              const SizedBox(width: 8),
-              Expanded(
+              _StampBadge(
+                size: 32,
+                ringColor: PaperTheme.accent,
                 child: CustomText(
-                  path.title ?? '',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: _OutlinePageState._textDark,
+                  '$progress٪',
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: PaperTheme.ink,
                 ),
-              ),
-              CustomText(
-                '$pathProgress٪',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: isComplete
-                    ? _OutlinePageState._green
-                    : _OutlinePageState._purple,
               ),
             ],
           ),
@@ -702,13 +742,11 @@ class _PathHeaderCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: pathProgress / 100.0,
-              minHeight: 4,
-              backgroundColor: _OutlinePageState._purpleSoft,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isComplete
-                    ? _OutlinePageState._green
-                    : _OutlinePageState._purple,
+              value: progress / 100.0,
+              minHeight: 6,
+              backgroundColor: PaperTheme.inkFaint.withValues(alpha: 0.3),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                PaperTheme.accent,
               ),
             ),
           ),
@@ -718,60 +756,62 @@ class _PathHeaderCard extends StatelessWidget {
   }
 }
 
-class _TrophyConnector extends StatelessWidget {
-  static const double _topGap = 44;
-  static const double _circleSize = 72;
+// ---------------------------------------------------------------------------
+// The canvas — one Stack, one coordinate space, for the whole course.
+// ---------------------------------------------------------------------------
 
-  final bool fromIsLeft;
+class _TrailCanvas extends StatelessWidget {
+  final List<_TrailNode> nodes;
   final Animation<double> entrance;
 
-  const _TrophyConnector({
-    required this.fromIsLeft,
-    required this.entrance,
-  });
+  const _TrailCanvas({required this.nodes, required this.entrance});
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: entrance,
-      builder: (context, _) {
-        final progress = Curves.easeOutCubic.transform(entrance.value);
-        return CustomPaint(
-          painter: _TrophyPathPainter(
-            fromIsLeft: fromIsLeft,
-            progress: progress,
-            topGap: _topGap,
-            circleSize: _circleSize,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.only(top: _topGap, bottom: 20),
-            child: Center(
-              child: Container(
-                width: _circleSize,
-                height: _circleSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  border: Border.all(
-                    color: _OutlinePageState._purple,
-                    width: 3,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _OutlinePageState._purple.withValues(alpha: 0.18),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(12),
-                child: const Image(
-                  image: AssetImage('assets/png/chapter_trophy.png'),
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
+    if (nodes.isEmpty) return const SizedBox.shrink();
+
+    final centersY = _computeCentersY(nodes);
+    final totalHeight = centersY.last + nodes.last.height / 2;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return SizedBox(
+          width: width,
+          height: totalHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _FullTrailPainter(nodes: nodes, centersY: centersY),
                 ),
               ),
-            ),
+              for (var i = 0; i < nodes.length; i++)
+                Positioned(
+                  top: centersY[i] - nodes[i].height / 2,
+                  left: 0,
+                  right: 0,
+                  height: nodes[i].height,
+                  child: _TrailNodeEntrance(
+                    index: i,
+                    entrance: entrance,
+                    child: nodes[i].centered
+                        ? OverflowBox(
+                            maxHeight: double.infinity,
+                            alignment: Alignment.center,
+                            child: nodes[i].build(width),
+                          )
+                        : _ZigZagSlot(
+                            isLeft: nodes[i].isLeft,
+                            width: width,
+                            xJitter: nodes[i].xJitter,
+                            pinRadius: nodes[i].pinRadius,
+                            child: nodes[i].build(width),
+                          ),
+                  ),
+                ),
+            ],
           ),
         );
       },
@@ -779,116 +819,77 @@ class _TrophyConnector extends StatelessWidget {
   }
 }
 
-class _TrophyPathPainter extends CustomPainter {
-  final bool fromIsLeft;
-  final double progress;
-  final double topGap;
-  final double circleSize;
+/// Places a zigzag unit's pin exactly on the trail's left/right line by
+/// pinning the pin's edge (not the whole row, which also has a label of
+/// variable width) at the computed fraction of the canvas width — the same
+/// fraction the painter uses for that side, so pin and line always meet.
+class _ZigZagSlot extends StatelessWidget {
+  final bool isLeft;
+  final double width;
+  final double xJitter;
+  final double pinRadius;
+  final Widget child;
 
-  _TrophyPathPainter({
-    required this.fromIsLeft,
-    required this.progress,
-    required this.topGap,
-    required this.circleSize,
+  const _ZigZagSlot({
+    required this.isLeft,
+    required this.width,
+    required this.xJitter,
+    required this.pinRadius,
+    required this.child,
   });
 
-  double _x(bool isLeft, double width) =>
-      isLeft ? width * _kRoadSideRatio : width * (1 - _kRoadSideRatio);
-
   @override
-  void paint(Canvas canvas, Size size) {
-    final startX = _x(fromIsLeft, size.width);
-    final endX = size.width / 2;
-    final startY = 0.0;
-    // Connect to the center of the trophy circle, like unit nodes.
-    final endY = topGap + circleSize / 2;
-    final dy = endY - startY;
+  Widget build(BuildContext context) {
+    final base = isLeft ? _kRoadSideRatio : (1 - _kRoadSideRatio);
+    final nodeCenterX = (base + xJitter) * width;
+    final nodeRadius = pinRadius;
 
-    final road = Path()
-      ..moveTo(startX, startY)
-      ..cubicTo(
-        startX,
-        startY + dy * 0.55,
-        endX,
-        endY - dy * 0.45,
-        endX,
-        endY,
-      );
-
-    final glowPaint = Paint()
-      ..color = _OutlinePageState._purple.withValues(alpha: 0.10)
-      ..strokeWidth = 10
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
-    final basePaint = Paint()
-      ..color = _OutlinePageState._purpleSoft.withValues(alpha: 0.85)
-      ..strokeWidth = 4.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final solidPaint = Paint()
-      ..color = _OutlinePageState._purple
-      ..strokeWidth = 3.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    void drawPartial(Path path, Paint paint) {
-      for (final metric in path.computeMetrics()) {
-        final length = metric.length * progress.clamp(0.0, 1.0);
-        if (length <= 0) continue;
-        canvas.drawPath(metric.extractPath(0, length), paint);
-      }
-    }
-
-    drawPartial(road, glowPaint);
-    drawPartial(road, basePaint);
-    drawPartial(road, solidPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _TrophyPathPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.fromIsLeft != fromIsLeft ||
-        oldDelegate.topGap != topGap ||
-        oldDelegate.circleSize != circleSize;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: 0,
+          bottom: 0,
+          left: isLeft ? nodeCenterX - nodeRadius : null,
+          right: isLeft ? null : width - nodeCenterX - nodeRadius,
+          child: Align(alignment: Alignment.center, child: child),
+        ),
+      ],
+    );
   }
 }
 
-class _InterPathConnector extends StatelessWidget {
-  final bool fromIsLeft;
-  final bool toIsLeft;
-  final bool isPathComplete;
+/// Fade + rise-in for a waypoint, staggered by its position in the flat
+/// list. Purely cosmetic (opacity/translate) — it never touches layout, so
+/// it can't be a source of misalignment.
+class _TrailNodeEntrance extends StatelessWidget {
+  final int index;
   final Animation<double> entrance;
   final Widget child;
 
-  const _InterPathConnector({
-    required this.fromIsLeft,
-    required this.toIsLeft,
-    required this.isPathComplete,
+  const _TrailNodeEntrance({
+    required this.index,
     required this.entrance,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
+    final start = (index * 0.02).clamp(0.0, 0.85);
+    final end = (start + 0.35).clamp(0.0, 1.0);
+
     return AnimatedBuilder(
       animation: entrance,
       builder: (context, _) {
-        final progress = Curves.easeOutCubic.transform(entrance.value);
-        return CustomPaint(
-          painter: _InterPathPainter(
-            fromIsLeft: fromIsLeft,
-            toIsLeft: toIsLeft,
-            isPathComplete: isPathComplete,
-            progress: progress,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+        final t = Interval(
+          start,
+          end,
+          curve: Curves.easeOutBack,
+        ).transform(entrance.value).clamp(0.0, 1.0);
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, (1 - t) * 14),
             child: child,
           ),
         );
@@ -897,281 +898,511 @@ class _InterPathConnector extends StatelessWidget {
   }
 }
 
-class _InterPathPainter extends CustomPainter {
-  final bool fromIsLeft;
-  final bool toIsLeft;
-  final bool isPathComplete;
-  final double progress;
+/// Draws the entire course's trail in a single pass by connecting every
+/// consecutive pair of waypoint centers. Because it reads from the exact
+/// same `nodes`/`centersY` the Stack above positions widgets with, there is
+/// no possible mismatch between where the line goes and where a node sits.
+class _FullTrailPainter extends CustomPainter {
+  final List<_TrailNode> nodes;
+  final List<double> centersY;
 
-  _InterPathPainter({
-    required this.fromIsLeft,
-    required this.toIsLeft,
-    required this.isPathComplete,
-    required this.progress,
-  });
+  _FullTrailPainter({required this.nodes, required this.centersY});
 
-  double _x(bool isLeft, double width) =>
-      isLeft ? width * _kRoadSideRatio : width * (1 - _kRoadSideRatio);
+  double _x(_TrailNode node, double width) {
+    if (node.centered) return width / 2;
+    final base = node.isLeft ? _kRoadSideRatio : (1 - _kRoadSideRatio);
+    return (base + node.xJitter) * width;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final startX = _x(fromIsLeft, size.width);
-    final endX = _x(toIsLeft, size.width);
-    final startY = 0.0;
-    final endY = size.height;
-    final dy = endY - startY;
+    for (var i = 1; i < nodes.length; i++) {
+      final x1 = _x(nodes[i - 1], size.width);
+      final y1 = centersY[i - 1];
+      final x2 = _x(nodes[i], size.width);
+      final y2 = centersY[i];
+      final dy = y2 - y1;
+      final kickA = nodes[i].curveKickA;
+      final kickB = nodes[i].curveKickB;
 
-    // Gentler S-curve so the bridge turns more gradually behind the header.
-    final road = Path()
-      ..moveTo(startX, startY)
-      ..cubicTo(
-        startX,
-        startY + dy * 0.7,
-        endX,
-        endY - dy * 0.7,
-        endX,
-        endY,
-      );
+      final segment = Path()
+        ..moveTo(x1, y1)
+        ..cubicTo(
+          x1 + kickA,
+          y1 + dy * 0.55,
+          x2 + kickB,
+          y2 - dy * 0.55,
+          x2,
+          y2,
+        );
 
-    final glowPaint = Paint()
-      ..color = _OutlinePageState._purple.withValues(alpha: 0.10)
-      ..strokeWidth = 10
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
-    final basePaint = Paint()
-      ..color = _OutlinePageState._purpleSoft.withValues(alpha: 0.85)
-      ..strokeWidth = 4.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    _drawPartial(canvas, road, glowPaint, progress);
-    _drawPartial(canvas, road, basePaint, progress);
-
-    if (isPathComplete) {
-      final solidPaint = Paint()
-        ..color = _OutlinePageState._purple
-        ..strokeWidth = 3.2
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round;
-      _drawPartial(canvas, road, solidPaint, progress);
-    } else {
-      final dashedPaint = Paint()
-        ..color = _OutlinePageState._purple.withValues(alpha: 0.55)
-        ..strokeWidth = 3.2
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round;
-      _drawSoftDashes(canvas, road, dashedPaint, progress);
-    }
-  }
-
-  void _drawPartial(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    double progress,
-  ) {
-    for (final metric in path.computeMetrics()) {
-      final length = metric.length * progress.clamp(0.0, 1.0);
-      if (length <= 0) continue;
-      canvas.drawPath(metric.extractPath(0, length), paint);
-    }
-  }
-
-  void _drawSoftDashes(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    double progress,
-  ) {
-    const dashWidth = 5.0;
-    const dashSpace = 9.0;
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      final max = metric.length * progress.clamp(0.0, 1.0);
-      while (distance < max) {
-        final end = math.min(distance + dashWidth, max);
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance += dashWidth + dashSpace;
+      if (nodes[i].incomingSolid) {
+        _TrailRibbon.drawWalked(canvas, segment);
+      } else {
+        _TrailRibbon.drawUnwalked(canvas, segment);
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _InterPathPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.fromIsLeft != fromIsLeft ||
-        oldDelegate.toIsLeft != toIsLeft ||
-        oldDelegate.isPathComplete != isPathComplete;
-  }
+  bool shouldRepaint(covariant _FullTrailPainter oldDelegate) => true;
 }
 
-class _ZigZagRoadmap extends StatefulWidget {
-  final List<OutlineUnitEntity> units;
-  final int zigzagOffset;
-  final String? currentUnitId;
-  final GlobalKey currentUnitKey;
-  final Animation<double> entrance;
-  final double staggerBase;
-  final String Function(String) getTypeLabel;
-  final IconData Function(String) getTypeIcon;
-  final Future<void> Function({
-    required String? id,
-    required String? type,
-    required String? title,
-    required String? status,
-    required bool locked,
-  }) onUnitTap;
-  final bool extendFromTop;
-  final bool extendToBottom;
-  final bool startFromCenter;
-  final bool pathFullyComplete;
-  final bool entryBridgeSolid;
+// ---------------------------------------------------------------------------
+// Waypoint widgets — pure visuals, no positioning logic of their own.
+// ---------------------------------------------------------------------------
 
-  const _ZigZagRoadmap({
-    required this.units,
-    required this.zigzagOffset,
-    required this.currentUnitId,
-    required this.currentUnitKey,
-    required this.entrance,
-    required this.staggerBase,
-    required this.getTypeLabel,
-    required this.getTypeIcon,
-    required this.onUnitTap,
-    this.extendFromTop = false,
-    this.extendToBottom = false,
-    this.startFromCenter = false,
-    this.pathFullyComplete = false,
-    this.entryBridgeSolid = false,
+/// Chapter title plate — a full-width header card, *not* a trail marker.
+/// It still sits on the timeline (so the trail keeps flowing between
+/// modules), but it reads as a section title. All "waypoint" styling is
+/// reserved for paths and units, which is what should actually look like
+/// beads on the trail.
+class _ChapterHeader extends StatelessWidget {
+  final int index;
+  final String title;
+  final int progress;
+  final bool isComplete;
+
+  const _ChapterHeader({
+    required this.index,
+    required this.title,
+    required this.progress,
+    required this.isComplete,
   });
 
   @override
-  State<_ZigZagRoadmap> createState() => _ZigZagRoadmapState();
-}
-
-class _ZigZagRoadmapState extends State<_ZigZagRoadmap> {
-  static const double _nodeHeight = 118;
-
-  @override
   Widget build(BuildContext context) {
-    final count = widget.units.length;
-    final completedFlags = widget.units
-        .map((u) => u.status == 'completed')
-        .toList();
+    final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
 
-    return AnimatedBuilder(
-      animation: widget.entrance,
-      builder: (context, _) {
-        return SizedBox(
-          height: count * _nodeHeight,
-          child: CustomPaint(
-            painter: _RoadPathPainter(
-              itemCount: count,
-              itemHeight: _nodeHeight,
-              zigzagOffset: widget.zigzagOffset,
-              progress: Curves.easeOutCubic.transform(widget.entrance.value),
-              completedFlags: completedFlags,
-              extendFromTop: widget.extendFromTop,
-              extendToBottom: widget.extendToBottom,
-              startFromCenter: widget.startFromCenter,
-              pathFullyComplete: widget.pathFullyComplete,
-              entryBridgeSolid: widget.entryBridgeSolid,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: PaperTheme.cardPaper,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: PaperTheme.paperEdge),
+        boxShadow: [
+          BoxShadow(
+            color: PaperTheme.ink.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: PaperTheme.cardPaper,
+              border: Border.all(color: accent, width: 1.8),
             ),
-            child: Column(
-              children: List.generate(count, (index) {
-                final unit = widget.units[index];
-                final isLeft = (index + widget.zigzagOffset) % 2 == 0;
-                final isCompleted = unit.status == 'completed';
-                final isLocked = unit.locked ?? false;
-                final isCurrent = unit.id == widget.currentUnitId;
-                final unitType = unit.type ?? '';
-
-                final start = (widget.staggerBase + index * 0.07).clamp(0.0, 0.85);
-                final end = (start + 0.35).clamp(0.0, 1.0);
-                final t = Interval(
-                  start,
-                  end,
-                  curve: Curves.easeOutBack,
-                ).transform(widget.entrance.value);
-
-                return SizedBox(
-                  height: _nodeHeight,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth;
-                      final nodeCenterX = isLeft
-                          ? width * _kRoadSideRatio
-                          : width * (1 - _kRoadSideRatio);
-                      final nodeRadius = _kRoadNodeSize / 2;
-
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned(
-                            top: 0,
-                            bottom: 0,
-                            // Keep circle center on the road path at every width.
-                            left: isLeft ? nodeCenterX - nodeRadius : null,
-                            right: isLeft
-                                ? null
-                                : width - nodeCenterX - nodeRadius,
-                            child: Align(
-                              alignment: Alignment.center,
-                              child: Transform.translate(
-                                offset: Offset(
-                                  (1 - t) * (isLeft ? -40 : 40),
-                                  (1 - t) * 24,
-                                ),
-                                child: Opacity(
-                                  opacity: t.clamp(0.0, 1.0),
-                                  child: KeyedSubtree(
-                                    key: isCurrent
-                                        ? widget.currentUnitKey
-                                        : null,
-                                    child: _RoadUnitNode(
-                                      title: unit.title ?? '',
-                                      typeLabel:
-                                          widget.getTypeLabel(unitType),
-                                      icon: widget.getTypeIcon(unitType),
-                                      isCompleted: isCompleted,
-                                      isLocked: isLocked,
-                                      isCurrent: isCurrent,
-                                      isLeft: isLeft,
-                                      maxLabelWidth: (width * 0.42)
-                                          .clamp(88.0, 140.0),
-                                      onTap: () => widget.onUnitTap(
-                                        id: unit.id,
-                                        type: unitType,
-                                        title: unit.title,
-                                        status: unit.status,
-                                        locked: isLocked,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+            child: isComplete
+                ? const Icon(
+                    Icons.check_rounded,
+                    size: 18,
+                    color: PaperTheme.success,
+                  )
+                : CustomText(
+                    persianDigits(index + 1),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: PaperTheme.ink,
                   ),
-                );
-              }),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomText(
+                  title,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: PaperTheme.ink,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress / 100.0,
+                    minHeight: 4,
+                    backgroundColor: PaperTheme.inkFaint.withValues(alpha: 0.3),
+                    valueColor: AlwaysStoppedAnimation<Color>(accent),
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      },
+          const SizedBox(width: 10),
+          CustomText(
+            isComplete ? 'کامل' : '$progress٪',
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: accent,
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _RoadUnitNode extends StatefulWidget {
+/// Circular "wax seal" style badge reused for numbering, percentages, and
+/// the completed-unit stamp.
+class _StampBadge extends StatelessWidget {
+  final Widget child;
+  final double size;
+  final Color ringColor;
+
+  const _StampBadge({
+    required this.child,
+    required this.size,
+    required this.ringColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: -0.05,
+      child: Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: PaperTheme.cardPaper,
+          border: Border.all(color: ringColor, width: 2),
+        ),
+        child: Container(
+          margin: const EdgeInsets.all(3),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: ringColor.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Path waypoint — a solid-*filled* rounded-square "milestone" badge (paper
+/// icon on a colored fill, ringed in paper like a sticker on the page),
+/// unmistakably heavier than a unit's light paper-on-paper outline pin. The
+/// filled treatment is what actually separates "this is a bigger
+/// checkpoint" from "this is one step" at a glance, on top of the
+/// square-vs-circle shape difference. Positioned in the same left/right
+/// zigzag as units (see `_buildTrailNodes`'s `randomSide`) instead of
+/// always sitting dead-center, so the trail keeps winding naturally
+/// through every path instead of snapping back to the middle each time.
+class _PathWaypoint extends StatelessWidget {
+  final OutlinePathEntity path;
+  final bool isLeft;
+  final double maxLabelWidth;
+
+  const _PathWaypoint({
+    required this.path,
+    required this.isLeft,
+    required this.maxLabelWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pathProgress = path.pathProgressPercent ?? 0;
+    final isComplete = pathProgress >= 100;
+    final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
+
+    // A gently muted fill (not the raw saturated accent) so it stays
+    // heavier than a unit's outline pin without looking like a harsh block
+    // of color dropped onto a soft paper page.
+    final fill = Color.lerp(accent, PaperTheme.cardPaper, 0.22)!;
+
+    final pin = Container(
+      width: 50,
+      height: 50,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: PaperTheme.cardPaper, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.18),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Icon(
+        isComplete ? Icons.flag_circle_rounded : Icons.route_rounded,
+        size: 22,
+        color: PaperTheme.cardPaper,
+      ),
+    );
+
+    final label = Container(
+      constraints: BoxConstraints(maxWidth: maxLabelWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: isLeft
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CustomText(
+            path.title ?? '',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: PaperTheme.ink,
+            textAlign: isLeft ? TextAlign.left : TextAlign.right,
+            maxLines: 2,
+          ),
+          const SizedBox(height: 2),
+          CustomText(
+            isComplete ? 'مسیر کامل شد' : 'پیشرفت مسیر $pathProgress٪',
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: accent,
+            textAlign: isLeft ? TextAlign.left : TextAlign.right,
+          ),
+        ],
+      ),
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      textDirection: TextDirection.ltr,
+      children: isLeft
+          ? [pin, const SizedBox(width: 10), label]
+          : [label, const SizedBox(width: 10), pin],
+    );
+  }
+}
+
+/// Trophy waypoint at the end of a completed module — a wax-seal medallion
+/// with a short "completed" caption.
+///
+/// The medallion — not "medallion + caption" combined — is what the
+/// trail's line should visually end at. Stacking them in a plain `Column`
+/// would make this widget's reported center (and therefore the line's
+/// target) the midpoint of the whole block, which sits below the actual
+/// medallion once the caption's height is added in — the line would
+/// visibly run past the medallion into the caption. Using a `Stack` with
+/// the caption as a `Positioned` overflow annotation keeps the medallion
+/// itself as this widget's center, regardless of caption length.
+class _TrophyNode extends StatelessWidget {
+  const _TrophyNode();
+
+  static const double _badgeSize = 60;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Transform.rotate(
+          angle: -0.06,
+          child: Container(
+            width: _badgeSize,
+            height: _badgeSize,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: PaperTheme.cardPaper,
+              border: Border.all(color: PaperTheme.accent, width: 2.4),
+            ),
+            child: Container(
+              margin: const EdgeInsets.all(5),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: PaperTheme.accent.withValues(alpha: 0.35),
+                ),
+              ),
+              child: const Icon(
+                Icons.verified_rounded,
+                size: 26,
+                color: PaperTheme.accent,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: _badgeSize + 8,
+          left: 0,
+          right: 0,
+          child: OverflowBox(
+            maxWidth: double.infinity,
+            alignment: Alignment.center,
+            child: const CustomText(
+              'این فصل کامل شد',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: PaperTheme.success,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The finish line — always the very last waypoint on the whole trail, so
+/// the destination is revealed from the moment the roadmap loads instead
+/// of only appearing once you happen to finish. It sits there as a locked
+/// goal (same dashed-outline language as a locked unit) until every module
+/// — and so every unit — in the course is completed, then unlocks into a
+/// bigger, greener medallion than a per-chapter trophy since it caps the
+/// entire adventure, not just one leg of it.
+///
+/// Same reasoning as [_TrophyNode]: the badge itself, not "badge +
+/// caption" combined, is where the trail should visually end. The caption
+/// is a `Positioned` overflow annotation below it so it never pulls this
+/// widget's reported center away from the badge.
+class _CourseFinishNode extends StatelessWidget {
+  final bool isComplete;
+
+  const _CourseFinishNode({required this.isComplete});
+
+  static const double _lockedBadgeSize = 70;
+  static const double _doneBadgeSize = 78;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isComplete) {
+      return Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          _DashedCircle(
+            size: _lockedBadgeSize,
+            child: const Icon(
+              Icons.flag_outlined,
+              size: 28,
+              color: PaperTheme.locked,
+            ),
+          ),
+          Positioned(
+            top: _lockedBadgeSize + 10,
+            left: 0,
+            right: 0,
+            child: OverflowBox(
+              maxWidth: double.infinity,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CustomText(
+                    'پایان مسیر',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: PaperTheme.locked,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 2),
+                  const CustomText(
+                    'با اتمام دوره باز می‌شود',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: PaperTheme.inkMuted,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: _doneBadgeSize,
+          height: _doneBadgeSize,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: PaperTheme.cardPaper,
+            border: Border.all(color: PaperTheme.success, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: PaperTheme.success.withValues(alpha: 0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(6),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: PaperTheme.success.withValues(alpha: 0.35),
+              ),
+            ),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              size: 36,
+              color: PaperTheme.success,
+            ),
+          ),
+        ),
+        Positioned(
+          top: _doneBadgeSize + 10,
+          left: 0,
+          right: 0,
+          child: OverflowBox(
+            maxWidth: double.infinity,
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CustomText(
+                  'دوره با موفقیت به پایان رسید!',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: PaperTheme.success,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                const CustomText(
+                  'همه واحدها را با موفقیت گذراندی 🎉',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: PaperTheme.inkMuted,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A single unit "waypoint" — pin/stamp marker plus its paper label tag.
+class _RoadUnitNode extends StatelessWidget {
   final String title;
   final String typeLabel;
   final IconData icon;
@@ -1195,340 +1426,172 @@ class _RoadUnitNode extends StatefulWidget {
   });
 
   @override
-  State<_RoadUnitNode> createState() => _RoadUnitNodeState();
-}
-
-class _RoadUnitNodeState extends State<_RoadUnitNode>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-      lowerBound: 0.94,
-      upperBound: 1.06,
-    );
-    if (widget.isCurrent && !widget.isLocked) {
-      _pulse.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _RoadUnitNode oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isCurrent && !widget.isLocked) {
-      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
-    } else {
-      _pulse.stop();
-      _pulse.value = 1;
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final Color ringColor;
-    final Color fillColor;
-    final Color iconColor;
-    final IconData displayIcon;
+    final Widget pin;
 
-    if (widget.isCompleted) {
-      ringColor = _OutlinePageState._green;
-      fillColor = _OutlinePageState._greenBg;
-      iconColor = _OutlinePageState._green;
-      displayIcon = Icons.check_rounded;
-    } else if (widget.isLocked) {
-      ringColor = const Color(0xffD8D2E4);
-      fillColor = const Color(0xffF5F3F8);
-      iconColor = _OutlinePageState._locked;
-      displayIcon = Icons.lock_outline_rounded;
-    } else if (widget.isCurrent) {
-      ringColor = _OutlinePageState._purple;
-      fillColor = _OutlinePageState._purpleBg;
-      iconColor = _OutlinePageState._purple;
-      displayIcon = widget.icon;
-    } else {
-      ringColor = _OutlinePageState._purpleSoft;
-      fillColor = Colors.white;
-      iconColor = _OutlinePageState._purple;
-      displayIcon = widget.icon;
-    }
-
-    final label = Column(
-      crossAxisAlignment:
-          widget.isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: widget.maxLabelWidth),
-          child: CustomText(
-            widget.title,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: widget.isLocked
-                ? _OutlinePageState._locked
-                : _OutlinePageState._textDark,
-            // Keep title flush against the clickable circle.
-            textAlign: widget.isLeft ? TextAlign.left : TextAlign.right,
-            maxLines: 2,
-          ),
+    if (isCompleted) {
+      pin = _StampBadge(
+        size: _kRoadNodeSize,
+        ringColor: PaperTheme.success,
+        child: const Icon(
+          Icons.check_rounded,
+          size: 20,
+          color: PaperTheme.success,
         ),
-        const SizedBox(height: 2),
-        CustomText(
-          widget.typeLabel,
-          fontSize: 11,
-          color: _OutlinePageState._textMuted,
-          textAlign: widget.isLeft ? TextAlign.left : TextAlign.right,
+      );
+    } else if (isLocked) {
+      pin = _DashedCircle(
+        size: _kRoadNodeSize,
+        child: const Icon(
+          Icons.lock_outline_rounded,
+          size: 18,
+          color: PaperTheme.locked,
         ),
-        if (widget.isLocked) ...[
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: _OutlinePageState._purpleBg,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const CustomText(
-              'قفل',
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: _OutlinePageState._purple,
-            ),
-          ),
-        ],
-      ],
-    );
-
-    final node = ScaleTransition(
-      scale: _pulse,
-      child: Container(
+      );
+    } else if (isCurrent) {
+      pin = Container(
         width: _kRoadNodeSize,
         height: _kRoadNodeSize,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: fillColor,
-          border: Border.all(color: ringColor, width: 3),
+          color: PaperTheme.cardPaper,
+          border: Border.all(color: PaperTheme.accent, width: 2.4),
           boxShadow: [
             BoxShadow(
-              color: ringColor.withValues(alpha: widget.isCurrent ? 0.45 : 0.18),
-              blurRadius: widget.isCurrent ? 18 : 8,
-              spreadRadius: widget.isCurrent ? 2 : 0,
-              offset: const Offset(0, 4),
+              color: PaperTheme.accent.withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: Icon(displayIcon, color: iconColor, size: 26),
+        child: const Icon(
+          Icons.flag_rounded,
+          size: 20,
+          color: PaperTheme.accent,
+        ),
+      );
+    } else {
+      pin = Container(
+        width: _kRoadNodeSize,
+        height: _kRoadNodeSize,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: PaperTheme.cardPaper,
+          border: Border.all(color: PaperTheme.inkFaint, width: 1.6),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: PaperTheme.accent.withValues(alpha: 0.8),
+        ),
+      );
+    }
+
+    final tagRotation = isLeft ? -0.035 : 0.035;
+    final label = Transform.rotate(
+      angle: tagRotation,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: maxLabelWidth),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: PaperTheme.cardPaper,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isLocked ? PaperTheme.inkFaint : PaperTheme.paperEdge,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: isLeft
+              ? CrossAxisAlignment.start
+              : CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomText(
+              title,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: isLocked ? PaperTheme.locked : PaperTheme.ink,
+              textAlign: isLeft ? TextAlign.left : TextAlign.right,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 2),
+            CustomText(
+              typeLabel,
+              fontSize: 11,
+              color: PaperTheme.inkMuted,
+              textAlign: isLeft ? TextAlign.left : TextAlign.right,
+            ),
+          ],
+        ),
       ),
     );
 
     return OnClick(
-      onTap: widget.isLocked ? null : widget.onTap,
+      onTap: isLocked ? null : onTap,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         textDirection: TextDirection.ltr,
-        children: widget.isLeft
-            ? [node, const SizedBox(width: 10), label]
-            : [label, const SizedBox(width: 10), node],
+        children: isLeft
+            ? [pin, const SizedBox(width: 10), label]
+            : [label, const SizedBox(width: 10), pin],
       ),
     );
   }
 }
 
-class _RoadPathPainter extends CustomPainter {
-  final int itemCount;
-  final double itemHeight;
-  final int zigzagOffset;
-  final double progress;
-  final List<bool> completedFlags;
-  final bool extendFromTop;
-  final bool extendToBottom;
-  final bool startFromCenter;
-  final bool pathFullyComplete;
-  final bool entryBridgeSolid;
+/// Circle with a dashed ink outline (locked waypoints).
+class _DashedCircle extends StatelessWidget {
+  final double size;
+  final Widget child;
 
-  _RoadPathPainter({
-    required this.itemCount,
-    required this.itemHeight,
-    required this.zigzagOffset,
-    required this.progress,
-    required this.completedFlags,
-    this.extendFromTop = false,
-    this.extendToBottom = false,
-    this.startFromCenter = false,
-    this.pathFullyComplete = false,
-    this.entryBridgeSolid = false,
-  });
+  const _DashedCircle({required this.size, required this.child});
 
-  double _nodeX(int index, double width) {
-    final isLeft = (index + zigzagOffset) % 2 == 0;
-    return isLeft
-        ? width * _kRoadSideRatio
-        : width * (1 - _kRoadSideRatio);
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size(size, size),
+            painter: const _DashedCirclePainter(),
+          ),
+          Container(
+            width: size - 8,
+            height: size - 8,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: PaperTheme.cardPaper,
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
   }
+}
 
-  double _nodeY(int index) => index * itemHeight + itemHeight / 2;
-
-  Path _segment(double x1, double y1, double x2, double y2) {
-    final dy = y2 - y1;
-    return Path()
-      ..moveTo(x1, y1)
-      ..cubicTo(x1, y1 + dy * 0.55, x2, y2 - dy * 0.55, x2, y2);
-  }
+class _DashedCirclePainter extends CustomPainter {
+  const _DashedCirclePainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (itemCount < 1) return;
-
-    final glowPaint = Paint()
-      ..color = _OutlinePageState._purple.withValues(alpha: 0.10)
-      ..strokeWidth = 10
+    final paint = Paint()
+      ..color = PaperTheme.locked
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
-    final basePaint = Paint()
-      ..color = _OutlinePageState._purpleSoft.withValues(alpha: 0.85)
-      ..strokeWidth = 4.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final activePaint = Paint()
-      ..color = _OutlinePageState._purple.withValues(alpha: 0.55)
-      ..strokeWidth = 3.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final solidPurplePaint = Paint()
-      ..color = _OutlinePageState._purple
-      ..strokeWidth = 3.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    void paintTrail(Path road, {required bool solid}) {
-      _drawPartial(canvas, road, glowPaint, progress);
-      _drawPartial(canvas, road, basePaint, progress);
-      if (solid) {
-        _drawPartial(canvas, road, solidPurplePaint, progress);
-      } else {
-        _drawSoftDashes(canvas, road, activePaint, progress);
-      }
-    }
-
-    // From path-header bottom-center → first unit.
-    if (startFromCenter) {
-      final entry = _segment(
-        size.width / 2,
-        0,
-        _nodeX(0, size.width),
-        _nodeY(0),
-      );
-      paintTrail(entry, solid: pathFullyComplete);
-    }
-
-    // Incoming bridge from previous path → first unit.
-    if (extendFromTop) {
-      final firstX = _nodeX(0, size.width);
-      final entry = _segment(firstX, 0, firstX, _nodeY(0));
-      paintTrail(entry, solid: entryBridgeSolid);
-    }
-
-    // Unit-to-unit road.
-    if (itemCount >= 2) {
-      final road = Path()..moveTo(_nodeX(0, size.width), _nodeY(0));
-
-      for (int i = 0; i < itemCount - 1; i++) {
-        final startX = _nodeX(i, size.width);
-        final endX = _nodeX(i + 1, size.width);
-        final startY = _nodeY(i);
-        final endY = _nodeY(i + 1);
-        final dy = endY - startY;
-
-        road.cubicTo(
-          startX,
-          startY + dy * 0.55,
-          endX,
-          endY - dy * 0.55,
-          endX,
-          endY,
-        );
-      }
-
-      _drawPartial(canvas, road, glowPaint, progress);
-      _drawPartial(canvas, road, basePaint, progress);
-
-      if (pathFullyComplete) {
-        // All units done → full solid purple trail (no dashes).
-        _drawPartial(canvas, road, solidPurplePaint, progress);
-      } else {
-        final completedCount =
-            completedFlags.where((done) => done).length.clamp(0, itemCount);
-        if (completedCount > 0) {
-          final doneRatio =
-              ((completedCount - 1) / (itemCount - 1)).clamp(0.0, 1.0);
-          final greenPaint = Paint()
-            ..color = _OutlinePageState._green.withValues(alpha: 0.7)
-            ..strokeWidth = 3.2
-            ..style = PaintingStyle.stroke
-            ..strokeCap = StrokeCap.round
-            ..strokeJoin = StrokeJoin.round;
-          _drawPartial(
-            canvas,
-            road,
-            greenPaint,
-            math.min(progress, doneRatio),
-          );
-        }
-
-        _drawSoftDashes(canvas, road, activePaint, progress);
-      }
-    }
-
-    // Outgoing bridge from last unit → next path.
-    if (extendToBottom) {
-      final lastX = _nodeX(itemCount - 1, size.width);
-      final exit = _segment(lastX, _nodeY(itemCount - 1), lastX, size.height);
-      paintTrail(exit, solid: pathFullyComplete);
-    }
-  }
-
-  void _drawPartial(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    double progress,
-  ) {
-    for (final metric in path.computeMetrics()) {
-      final length = metric.length * progress.clamp(0.0, 1.0);
-      if (length <= 0) continue;
-      canvas.drawPath(metric.extractPath(0, length), paint);
-    }
-  }
-
-  void _drawSoftDashes(
-    Canvas canvas,
-    Path path,
-    Paint paint,
-    double progress,
-  ) {
-    const dashWidth = 5.0;
-    const dashSpace = 9.0;
+      ..strokeWidth = 1.6;
+    final path = Path()
+      ..addOval(Rect.fromLTWH(1, 1, size.width - 2, size.height - 2));
+    const dashWidth = 3.0;
+    const dashSpace = 3.0;
     for (final metric in path.computeMetrics()) {
       var distance = 0.0;
-      final max = metric.length * progress.clamp(0.0, 1.0);
-      while (distance < max) {
-        final end = math.min(distance + dashWidth, max);
+      while (distance < metric.length) {
+        final end = math.min(distance + dashWidth, metric.length);
         canvas.drawPath(metric.extractPath(distance, end), paint);
         distance += dashWidth + dashSpace;
       }
@@ -1536,14 +1599,5 @@ class _RoadPathPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _RoadPathPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.itemCount != itemCount ||
-        oldDelegate.zigzagOffset != zigzagOffset ||
-        oldDelegate.extendFromTop != extendFromTop ||
-        oldDelegate.extendToBottom != extendToBottom ||
-        oldDelegate.startFromCenter != startFromCenter ||
-        oldDelegate.pathFullyComplete != pathFullyComplete ||
-        oldDelegate.entryBridgeSolid != entryBridgeSolid;
-  }
+  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) => false;
 }

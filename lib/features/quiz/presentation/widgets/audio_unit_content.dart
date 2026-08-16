@@ -1,3 +1,4 @@
+import '/core/helper/custom_colors.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
@@ -56,9 +57,9 @@ class AudioUnitContent extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColor.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xffE7DEF8)),
+                border: Border.all(color: AppColor.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,20 +68,17 @@ class AudioUnitContent extends StatelessWidget {
                     CustomText(
                       'مدت زمان: ${_formatDuration(_durationSeconds!)}',
                       fontSize: 13,
-                      color: const Color(0xff6E6884),
+                      color: AppColor.inkMuted,
                     ),
                     16.h,
                   ],
                   if (_mediaUrl.isNotEmpty)
-                    CustomAudioPlayer(
-                      url: _mediaUrl,
-                      onChanged: (_) {},
-                    )
+                    CustomAudioPlayer(url: _mediaUrl, onChanged: (_) {})
                   else
-                    const CustomText(
+                    CustomText(
                       'فایل صوتی در دسترس نیست',
                       fontSize: 14,
-                      color: Color(0xff6E6884),
+                      color: AppColor.inkMuted,
                     ),
                 ],
               ),
@@ -111,14 +109,14 @@ class _AudioTypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xffF3EBFF),
+        color: AppColor.primaryTint,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         label,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: const Color(0xff7C3AED),
+        color: AppColor.primary,
       ),
     );
   }
@@ -132,24 +130,20 @@ class _CompletedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xffE8F5E9),
+        color: AppColor.green100,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xffA5D6A7)),
+        border: Border.all(color: AppColor.success.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.check_circle_outline,
-            size: 16,
-            color: Color(0xff4CAF50),
-          ),
+          Icon(Icons.check_circle_outline, size: 16, color: AppColor.success),
           6.w,
-          const CustomText(
+          CustomText(
             'تکمیل شده',
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Color(0xff4CAF50),
+            color: AppColor.success,
           ),
         ],
       ),

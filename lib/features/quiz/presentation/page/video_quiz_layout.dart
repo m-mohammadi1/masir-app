@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/helper/custom_colors.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/video_player.dart';
 import 'package:mohammad/widgets/custom_text.dart';
@@ -30,18 +31,16 @@ class VideoQuizLayout extends StatelessWidget {
     final videoUrl = _videoUrl;
 
     if (videoUrl.isEmpty) {
-      return const CustomText(
+      return CustomText(
         'فایل ویدئو در دسترس نیست',
         fontSize: 14,
-        color: Color(0xff6E6884),
+        color: AppColor.inkMuted,
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CustomVideoPlayer(url: videoUrl),
-      ],
+      children: [CustomVideoPlayer(url: videoUrl)],
     );
   }
 }

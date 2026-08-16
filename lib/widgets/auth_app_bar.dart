@@ -1,19 +1,11 @@
-import '/core/helper/assets.dart';
-import '/core/helper/custom_colors.dart';
-import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'custom_text.dart';
 
 class AuthAppBar extends StatelessWidget {
   final String title;
   final VoidCallback? onTap;
 
-  const AuthAppBar({
-    super.key,
-    required this.title,
-    this.onTap,
-  });
+  const AuthAppBar({super.key, required this.title, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -43,11 +35,7 @@ class AuthAppBar extends StatelessWidget {
         //     ),
         //   ),
         // ),
-        CustomText(
-          title,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-        ),
+        CustomText(title, fontSize: 18, fontWeight: FontWeight.w700),
         // 44.w,
       ],
     );

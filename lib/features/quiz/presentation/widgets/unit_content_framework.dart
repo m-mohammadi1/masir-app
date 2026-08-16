@@ -1,5 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import '/core/helper/custom_colors.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
@@ -40,10 +41,7 @@ class UnitContentFramework extends StatelessWidget {
         Row(
           children: [
             _TypeBadge(label: typeLabel),
-            if (isCompleted) ...[
-              8.w,
-              _CompletedBadge(),
-            ],
+            if (isCompleted) ...[8.w, _CompletedBadge()],
           ],
         ),
         16.h,
@@ -56,10 +54,7 @@ class UnitContentFramework extends StatelessWidget {
                   instructionText: instructionText,
                   attachmentUrl: attachmentUrl,
                 ),
-                if (content != null) ...[
-                  16.h,
-                  content!,
-                ],
+                if (content != null) ...[16.h, content!],
               ],
             ),
           ),
@@ -88,14 +83,14 @@ class _TypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xff7C3AED),
+        color: AppColor.primary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         label,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: Colors.white,
+        color: AppColor.surface,
       ),
     );
   }
@@ -107,24 +102,20 @@ class _CompletedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xffE8F5E9),
+        color: AppColor.green100,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xffA5D6A7)),
+        border: Border.all(color: AppColor.success.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.check_circle_outline,
-            size: 16,
-            color: Color(0xff4CAF50),
-          ),
+          Icon(Icons.check_circle_outline, size: 16, color: AppColor.success),
           6.w,
-          const CustomText(
+          CustomText(
             'تکمیل شده',
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Color(0xff4CAF50),
+            color: AppColor.success,
           ),
         ],
       ),
@@ -136,34 +127,27 @@ class _InstructionCard extends StatelessWidget {
   final String instructionText;
   final String? attachmentUrl;
 
-  const _InstructionCard({
-    required this.instructionText,
-    this.attachmentUrl,
-  });
+  const _InstructionCard({required this.instructionText, this.attachmentUrl});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xffE7DEF8)),
+        border: Border.all(color: AppColor.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CustomText(
-            'دستورالعمل',
-            fontSize: 13,
-            color: Color(0xff6E6884),
-          ),
+          CustomText('دستورالعمل', fontSize: 13, color: AppColor.inkMuted),
           12.h,
           CustomText(
             instructionText,
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: const Color(0xff2F2146),
+            color: AppColor.ink,
           ),
           if (attachmentUrl != null && attachmentUrl!.isNotEmpty) ...[
             16.h,
@@ -172,18 +156,14 @@ class _InstructionCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CustomText(
+                  CustomText(
                     'مشاهده پیوست',
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xff7C3AED),
+                    color: AppColor.primary,
                   ),
                   4.w,
-                  const Icon(
-                    Icons.open_in_new,
-                    size: 16,
-                    color: Color(0xff7C3AED),
-                  ),
+                  Icon(Icons.open_in_new, size: 16, color: AppColor.primary),
                 ],
               ),
             ),

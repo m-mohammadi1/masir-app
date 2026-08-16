@@ -2,6 +2,7 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
+import '/core/helper/custom_colors.dart';
 import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
@@ -83,15 +84,15 @@ class _CoursesPageState extends State<CoursesPage> {
                           textDirection: TextDirection.ltr,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColor.surface,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: Color(0xffE7DEF8),
+                                color: AppColor.border,
                                 width: 1,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
+                                  color: AppColor.ink.withValues(alpha: 0.06),
                                   blurRadius: 8,
                                   offset: Offset(0, 2),
                                 ),
@@ -113,7 +114,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                               style: TextStyle(
                                                 fontSize: 17,
                                                 fontWeight: FontWeight.bold,
-                                                color: Color(0xff2F2146),
+                                                color: AppColor.ink,
                                               ),
                                             ),
                                             if (course?.publishedAt != null &&
@@ -125,7 +126,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                                 "تاریخ ثبت‌نام: ${_formatJalaliDate(course.publishedAt!)}",
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Color(0xff6E6884),
+                                                  color: AppColor.inkMuted,
                                                 ),
                                               ),
                                             ],
@@ -136,8 +137,11 @@ class _CoursesPageState extends State<CoursesPage> {
                                       Container(
                                         width: 64,
                                         height: 64,
+                                        alignment: Alignment.center,
                                         decoration: BoxDecoration(
-                                          color: Color(0xff9B8FD8),
+                                          color: AppColor.primary.withValues(
+                                            alpha: 0.55,
+                                          ),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -153,13 +157,21 @@ class _CoursesPageState extends State<CoursesPage> {
                                                   fit: BoxFit.cover,
                                                   errorBuilder: (_, __, ___) =>
                                                       Icon(
-                                                        Icons.play_circle_fill,
+                                                        Icons.menu_book_rounded,
                                                         size: 30,
-                                                        color: Colors.white70,
+                                                        color: AppColor.white
+                                                            .withValues(
+                                                              alpha: 0.85,
+                                                            ),
                                                       ),
                                                 ),
                                               )
-                                            : SizedBox(),
+                                            : Icon(
+                                                Icons.menu_book_rounded,
+                                                size: 30,
+                                                color: AppColor.white
+                                                    .withValues(alpha: 0.85),
+                                              ),
                                       ),
                                     ],
                                   ),
@@ -175,7 +187,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
-                                          color: Color(0xff6E6884),
+                                          color: AppColor.inkMuted,
                                         ),
                                       ),
                                       SizedBox(width: 6),
@@ -187,10 +199,10 @@ class _CoursesPageState extends State<CoursesPage> {
                                           child: LinearProgressIndicator(
                                             value: progress / 100.0,
                                             minHeight: 8,
-                                            backgroundColor: Color(0xffE7DEF8),
+                                            backgroundColor: AppColor.border,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                                  Color(0xff7C3AED),
+                                                  AppColor.primary,
                                                 ),
                                           ),
                                         ),

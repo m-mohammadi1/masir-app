@@ -19,11 +19,12 @@ Future showCustomModal({
       return ClosableKeyBoard(
         child: Container(
           decoration: BoxDecoration(
-            color: AppColor.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            color: AppColor.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            border: Border.all(color: AppColor.border),
             boxShadow: [
               BoxShadow(
-                color: AppColor.border.withValues(alpha: .15),
+                color: AppColor.ink.withValues(alpha: .1),
                 blurRadius: 24,
                 spreadRadius: 2,
                 offset: Offset(0, -8),
@@ -53,7 +54,7 @@ Future showCustomModal({
       );
     },
   ).then((value) {
-    if(callBack == null) return;
+    if (callBack == null) return;
     callBack(value);
   });
 }

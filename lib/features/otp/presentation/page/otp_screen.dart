@@ -339,23 +339,13 @@ class _AuthTextField extends StatelessWidget {
       action: action,
       onChanged: onChanged,
       textFieldRadius: 10,
-      borderColor: isFocused ? _AuthColors.purple : _AuthColors.border,
-      backgroundColor: isFocused ? _AuthColors.focusFill : Colors.white,
+      borderColor: isFocused ? AppColor.primary : AppColor.border,
+      backgroundColor: isFocused ? AppColor.primary100 : AppColor.surface,
       labelStyle: customTextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w500,
-        color: const Color(0xFF252525),
+        color: AppColor.ink,
       ),
     );
   }
-}
-
-class _AuthColors {
-  static const purple = Color(0xFF7E42C5);
-  static const background = Color(0xFFF8F6FC);
-  static const subtitle = Color(0xFF929292);
-  static const border = Color(0xFFE9E9E9);
-  static const focusFill = Color(0xFFF3EDFA);
-
-  _AuthColors._();
 }

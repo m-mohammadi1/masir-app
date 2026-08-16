@@ -21,6 +21,12 @@ class HiveService {
   static const String _tokenKey = 'token_key';
   static const String _refreshTokenKey = 'refresh_token_key';
 
+  /// Current institute (the institute the student "feels" they're inside)
+  static const String _instituteIdKey = 'current_institute_id_key';
+  static const String _instituteNameKey = 'current_institute_name_key';
+  static const String _instituteSlugKey = 'current_institute_slug_key';
+  static const String _instituteLogoKey = 'current_institute_logo_key';
+
   static Future<void> init() async {
     await Hive.initFlutter();
 
@@ -75,6 +81,33 @@ class HiveService {
 
   static Stream<bool> get theme {
     return _safeBox.watch(key: _themeKey).map((event) => event.value ?? false);
+  }
+
+  /// CURRENT INSTITUTE
+  ///
+  /// The institute the student is currently "inside" — defaults to the
+  /// institute they registered/joined with, changeable from Profile.
+  static String? get currentInstituteId => _myDB.get(_instituteIdKey);
+
+  static String? get currentInstituteName => _myDB.get(_instituteNameKey);
+
+  static String? get currentInstituteSlug => _myDB.get(_instituteSlugKey);
+
+  static String? get currentInstituteLogoUrl => _myDB.get(_instituteLogoKey);
+
+  static bool get hasCurrentInstitute =>
+      currentInstituteId != null && currentInstituteId!.isNotEmpty;
+
+  static Future<void> setCurrentInstitute({
+    required String id,
+    String? name,
+    String? slug,
+    String? logoUrl,
+  }) async {
+    await _myDB.put(_instituteIdKey, id);
+    await _myDB.put(_instituteNameKey, name ?? '');
+    await _myDB.put(_instituteSlugKey, slug ?? '');
+    await _myDB.put(_instituteLogoKey, logoUrl ?? '');
   }
 
   static Future<void> logout() async {

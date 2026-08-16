@@ -2,7 +2,6 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/core/helper/custom_colors.dart';
 import '/widgets/custom_text.dart';
-import 'package:hive_ce/hive.dart';
 
 class CustomRadioButton extends StatefulWidget {
   final List<String> values;
@@ -33,14 +32,18 @@ class _CustomRadioButtonState extends State<CustomRadioButton> {
               },
               child: Row(
                 children: [
-                  Container(
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
                     width: 20,
                     height: 20,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      color: AppColor.surface,
                       border: Border.all(
-                        color: AppColor.primary,
-                        width: i == selected ? 6 : 1,
+                        color: i == selected
+                            ? AppColor.primary
+                            : AppColor.border,
+                        width: i == selected ? 6 : 1.3,
                       ),
                     ),
                   ),

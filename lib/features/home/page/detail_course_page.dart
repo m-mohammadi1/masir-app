@@ -73,14 +73,14 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                         textDirection: TextDirection.ltr,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColor.surface,
                             border: Border.all(
                               color: AppColor.primary.withValues(alpha: 0.2),
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
+                                color: AppColor.ink.withValues(alpha: 0.06),
                                 blurRadius: 10,
                                 offset: Offset(0, 2),
                               ),
@@ -92,22 +92,29 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                             children: [
                               Container(
                                 height: 160,
-                                color: Color(0xff9B8FD8),
+                                alignment: Alignment.center,
+                                color: AppColor.primary.withValues(alpha: 0.55),
                                 child:
                                     data.coursesModel?.coverUrl != null &&
                                         data.coursesModel!.coverUrl!.isNotEmpty
                                     ? Image.network(
                                         data.coursesModel!.coverUrl!,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Center(
-                                          child: Icon(
-                                            Icons.play_circle_fill,
-                                            size: 48,
-                                            color: Colors.white70,
+                                        errorBuilder: (_, __, ___) => Icon(
+                                          Icons.menu_book_rounded,
+                                          size: 48,
+                                          color: AppColor.white.withValues(
+                                            alpha: 0.85,
                                           ),
                                         ),
                                       )
-                                    : SizedBox(),
+                                    : Icon(
+                                        Icons.menu_book_rounded,
+                                        size: 48,
+                                        color: AppColor.white.withValues(
+                                          alpha: 0.85,
+                                        ),
+                                      ),
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(16),
@@ -116,9 +123,9 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                   children: [
                                     CustomText(
                                       data.coursesModel?.title ?? "",
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xff2F2146),
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColor.ink,
                                       textAlign: TextAlign.right,
                                     ),
                                     if (data.coursesModel?.description !=
@@ -130,8 +137,8 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                       SizedBox(height: 6),
                                       CustomText(
                                         data.coursesModel!.description!,
-                                          fontSize: 13,
-                                          color: Color(0xff6E6884),
+                                        fontSize: 13,
+                                        color: AppColor.inkMuted,
                                         textAlign: TextAlign.right,
                                         maxLines: 2,
                                         // overflow: TextOverflow.ellipsis,
@@ -146,7 +153,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Color(0xffF3EBFF),
+                                          color: AppColor.primaryTint,
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
@@ -155,9 +162,9 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                           isFree
                                               ? "رایگان"
                                               : "${data.coursesModel?.price} تومان",
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xff7C3AED),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColor.primary,
                                         ),
                                       ),
                                     ),
@@ -168,7 +175,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                               Container(
                                 margin: EdgeInsets.symmetric(horizontal: 16),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AppColor.surface,
                                   border: Border.all(
                                     color: AppColor.primary.withValues(
                                       alpha: 0.2,

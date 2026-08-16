@@ -1,3 +1,4 @@
+import '/core/helper/custom_colors.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
@@ -59,24 +60,24 @@ class PracticeUnitContent extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColor.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xffE7DEF8)),
+                border: Border.all(color: AppColor.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CustomText(
+                  CustomText(
                     'دستورالعمل',
                     fontSize: 13,
-                    color: Color(0xff6E6884),
+                    color: AppColor.inkMuted,
                   ),
                   12.h,
                   CustomText(
                     _instructions,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xff2F2146),
+                    color: AppColor.ink,
                   ),
                   if (_attachmentUrl != null && _attachmentUrl!.isNotEmpty) ...[
                     16.h,
@@ -85,17 +86,17 @@ class PracticeUnitContent extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const CustomText(
+                          CustomText(
                             'مشاهده پیوست',
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xff7C3AED),
+                            color: AppColor.primary,
                           ),
                           4.w,
-                          const Icon(
+                          Icon(
                             Icons.open_in_new,
                             size: 16,
-                            color: Color(0xff7C3AED),
+                            color: AppColor.primary,
                           ),
                         ],
                       ),
@@ -130,14 +131,14 @@ class _PracticeTypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xffF3EBFF),
+        color: AppColor.primaryTint,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         label,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: const Color(0xff7C3AED),
+        color: AppColor.primary,
       ),
     );
   }
@@ -151,24 +152,20 @@ class _CompletedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xffE8F5E9),
+        color: AppColor.green100,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xffA5D6A7)),
+        border: Border.all(color: AppColor.success.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.check_circle_outline,
-            size: 16,
-            color: Color(0xff4CAF50),
-          ),
+          Icon(Icons.check_circle_outline, size: 16, color: AppColor.success),
           6.w,
-          const CustomText(
+          CustomText(
             'تکمیل شده',
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Color(0xff4CAF50),
+            color: AppColor.success,
           ),
         ],
       ),

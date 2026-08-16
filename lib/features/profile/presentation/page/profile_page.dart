@@ -1,15 +1,13 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mohammad/core/services/service_locator.dart';
-import 'package:mohammad/features/main/data/models/request_my_institutes_model.dart';
-import 'package:mohammad/features/main/presentation/bloc/my_institutes/my_institutes_bloc.dart';
 
+import '../../../../core/helper/custom_colors.dart';
 import '../../../../core/services/hive_service.dart';
 import '../../../../widgets/custom_text.dart';
 import '../../../auth/domain/entities/submit_username.dart';
 import '../../../auth/presentation/page/auth_screen.dart';
 import '../../../edit_profile/presentation/page/edit_profile_page.dart';
+import '../../../main/presentation/page/institutes_page.dart';
 import '../../../../widgets/exit_modal.dart';
 import '../../../../widgets/base_modal.dart';
 
@@ -21,14 +19,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final myInstitutesBloc = inject<MyInstitutesBloc>();
-
-  @override
-  void initState() {
-    super.initState();
-    myInstitutesBloc.add(MyInstitutesEvent.myInstitutes());
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = HiveService.user;
@@ -49,7 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   _buildProfileCard(user),
                   16.h,
-                  _buildInstitutesSection(),
+                  _buildCurrentInstituteSection(),
                   16.h,
                   _buildLogoutButton(),
                   40.h,
@@ -66,12 +56,12 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        border: Border.all(color: AppColor.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColor.ink.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -85,40 +75,31 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xff2F2146),
+              color: AppColor.ink,
             ),
           ),
           SizedBox(height: 20),
-          _buildInfoRow(
-            label: "شماره موبایل",
-            value: user?.phone ?? "---",
-          ),
+          _buildInfoRow(label: "شماره موبایل", value: user?.phone ?? "---"),
           SizedBox(height: 12),
-          _buildInfoRow(
-            label: "نام کاربری",
-            value: user?.username ?? "---",
-          ),
+          _buildInfoRow(label: "نام کاربری", value: user?.username ?? "---"),
           SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             height: 48,
             child: OutlinedButton.icon(
-              onPressed: () => CustomNavigator.pushNamed(EditProfilePage.routeName),
-              icon: Icon(
-                Icons.edit_outlined,
-                size: 18,
-                color: Color(0xff2F2146),
-              ),
+              onPressed: () =>
+                  CustomNavigator.pushNamed(EditProfilePage.routeName),
+              icon: Icon(Icons.edit_outlined, size: 18, color: AppColor.ink),
               label: Text(
                 "ویرایش پروفایل",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xff2F2146),
+                  color: AppColor.ink,
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Color(0xffE7DEF8), width: 1),
+                side: BorderSide(color: AppColor.border, width: 1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -134,34 +115,25 @@ class _ProfilePageState extends State<ProfilePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            color: Color(0xff2F2146),
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Color(0xff6E6884),
-          ),
-        ),
+        Text(value, style: TextStyle(fontSize: 14, color: AppColor.ink)),
+        Text(label, style: TextStyle(fontSize: 14, color: AppColor.inkMuted)),
       ],
     );
   }
 
-  Widget _buildInstitutesSection() {
+  Widget _buildCurrentInstituteSection() {
+    final hasInstitute = HiveService.hasCurrentInstitute;
+    final logoUrl = HiveService.currentInstituteLogoUrl;
+
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xffE7DEF8), width: 1),
+        border: Border.all(color: AppColor.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: AppColor.ink.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -171,83 +143,88 @@ class _ProfilePageState extends State<ProfilePage> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            "مؤسسات من",
+            "مؤسسه فعلی",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xff2F2146),
+              color: AppColor.ink,
             ),
           ),
           SizedBox(height: 16),
-          BlocBuilder<MyInstitutesBloc, MyInstitutesState>(
-            bloc: myInstitutesBloc,
-            builder: (context, state) {
-              return state.when(
-                loading: (_) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: CircularProgressIndicator(color: Color(0xff7C3AED)),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColor.borderF9,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ClipOval(
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    color: AppColor.primaryTint,
+                    child: (logoUrl != null && logoUrl.isNotEmpty)
+                        ? Image.network(
+                            logoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.school,
+                              size: 20,
+                              color: AppColor.primary,
+                            ),
+                          )
+                        : Icon(Icons.school, size: 20, color: AppColor.primary),
                   ),
                 ),
-                error: (_, message) => Center(
+                Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
-                      message,
-                      style: TextStyle(color: Colors.red, fontSize: 13),
+                      hasInstitute
+                          ? (HiveService.currentInstituteName ?? "")
+                          : "هنوز انتخاب نشده",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColor.ink,
+                      ),
                     ),
                   ),
                 ),
-                success: (isLoading, data) {
-                  if (data.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          " مؤسسه‌ای یافت نشد",
-                          style: TextStyle(
-                            color: Color(0xff6E6884),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return Column(
-                    children: data.map((institute) {
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 8),
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: Color(0xffF9F7FD),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              institute.slug ?? "",
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xff6E6884),
-                              ),
-                            ),
-                            Text(
-                              institute.name ?? "",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xff2F2146),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-              );
-            },
+              ],
+            ),
+          ),
+          SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton.icon(
+              onPressed: () => CustomNavigator.pushNamed(
+                InstitutesPage.routeName,
+              ).then((_) => setState(() {})),
+              icon: Icon(
+                Icons.swap_horiz_rounded,
+                size: 18,
+                color: AppColor.ink,
+              ),
+              label: Text(
+                "تغییر مؤسسه",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.ink,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColor.border, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -273,21 +250,17 @@ class _ProfilePageState extends State<ProfilePage> {
               },
             ),
           ),
-          icon: Icon(
-            Icons.logout_rounded,
-            size: 20,
-            color: Color(0xff2F2146),
-          ),
+          icon: Icon(Icons.logout_rounded, size: 20, color: AppColor.ink),
           label: Text(
             "خروج",
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xff2F2146),
+              color: AppColor.ink,
             ),
           ),
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: Color(0xffE7DEF8), width: 1),
+            side: BorderSide(color: AppColor.border, width: 1),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

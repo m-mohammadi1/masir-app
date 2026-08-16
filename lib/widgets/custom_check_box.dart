@@ -21,23 +21,33 @@ class CustomCheckBox extends StatelessWidget {
       children: [
         OnClick(
           onTap: () => onChange(!value),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color: value ? AppColor.primary : Colors.transparent,
-              border: !value ? Border.all(color: AppColor.text92 , width: 1.2) : null,
+              color: value ? AppColor.primary : AppColor.surface,
+              border: Border.all(
+                color: value ? AppColor.primary : AppColor.border,
+                width: 1.3,
+              ),
               borderRadius: BorderRadius.circular(6),
+              boxShadow: value
+                  ? [
+                      BoxShadow(
+                        color: AppColor.primary.withValues(alpha: 0.25),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             child: value
-                ? Icon(Icons.done, color: Colors.white, size: 16)
+                ? Icon(Icons.done, color: AppColor.white, size: 16)
                 : SizedBox(),
           ),
         ),
-        if(hint !=null)...[
-          4.w,
-          CustomText(hint!, fontSize: 12,)
-        ]
+        if (hint != null) ...[4.w, CustomText(hint!, fontSize: 12)],
       ],
     );
   }

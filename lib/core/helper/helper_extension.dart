@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 
-
 final Map<String, String> days = {
   "saturday": "شنبه",
   "sunday": "یک شنبه",
@@ -24,10 +23,7 @@ extension ListHandler on List? {
 extension HexColor on String {
   Color toColor() {
     final hex = replaceAll('#', '');
-    return Color(int.parse(
-      hex.length == 6 ? 'FF$hex' : hex,
-      radix: 16,
-    ));
+    return Color(int.parse(hex.length == 6 ? 'FF$hex' : hex, radix: 16));
   }
 }
 
@@ -35,7 +31,8 @@ extension FormValidation on String? {
   bool get isValidEmail {
     if (this == null) return false;
     final emailRegExp = RegExp(
-        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$');
+      r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$',
+    );
     return emailRegExp.hasMatch(this!);
   }
 
@@ -55,8 +52,9 @@ extension FormValidation on String? {
 
   bool get isValidDate {
     if (this == null) return false;
-    final dateRegExp =
-        RegExp(r"^(0[1-9]|1[0-2])\/(0[1-9]|1\d|2\d|3[01])\/(19|20)\d{2}$");
+    final dateRegExp = RegExp(
+      r"^(0[1-9]|1[0-2])\/(0[1-9]|1\d|2\d|3[01])\/(19|20)\d{2}$",
+    );
     return dateRegExp.hasMatch(this!);
   }
 
@@ -247,15 +245,24 @@ String getFileSizeString({required int bytes, int decimals = 0}) {
 
 String fileUrl(String url) {
   String str = url.split('/').last.length > 20
-      ? url.split('/').last.substring(
-          url.split('/').last.length - 20, url.split('/').last.length)
+      ? url
+            .split('/')
+            .last
+            .substring(
+              url.split('/').last.length - 20,
+              url.split('/').last.length,
+            )
       : url.split('/').last;
 
   return str;
 }
 
-({String year, String month, String day}) toJalali(int y, int m, int d,
-    {bool twoDigits = false}) {
+({String year, String month, String day}) toJalali(
+  int y,
+  int m,
+  int d, {
+  bool twoDigits = false,
+}) {
   var sumMonthDay = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
   var jY = 0;
   if (y > 1600) {
@@ -266,7 +273,8 @@ String fileUrl(String url) {
     y -= 621;
   }
   var gy = (m > 2) ? y + 1 : y;
-  var day = (365 * y) +
+  var day =
+      (365 * y) +
       ((gy + 3) ~/ 4) -
       ((gy + 99) ~/ 100) +
       ((gy + 399) ~/ 400) -
@@ -289,8 +297,9 @@ String fileUrl(String url) {
     jm = 7 + ((days - 186) ~/ 30);
     jd = 1 + (days - 186) % 30;
   }
-  String monthString =
-      twoDigits ? jm.toString().padLeft(2, '0') : jm.toString();
+  String monthString = twoDigits
+      ? jm.toString().padLeft(2, '0')
+      : jm.toString();
   String dayString = twoDigits ? jd.toString().padLeft(2, '0') : jd.toString();
 
   // String persionDate = "$jY/$monthString/$dayString";
@@ -299,6 +308,6 @@ String fileUrl(String url) {
     year: "$jY",
     month: monthString,
     // month: NumberUtility.getPersianMonthLetter(monthString),
-    day: dayString
+    day: dayString,
   );
 }

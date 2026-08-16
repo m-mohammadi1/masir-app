@@ -71,13 +71,23 @@ class CustomButton extends StatelessWidget {
                 height: height,
                 width: width ?? MediaQuery.sizeOf(context).width,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(buttonSizeRadius ?? 8),
+                  borderRadius: BorderRadius.circular(buttonSizeRadius ?? 14),
                   color: enable
                       ? (backgroundColor ?? AppColor.primary)
                       : enableColor ?? AppColor.primary.withValues(alpha: 0.5),
                   border: enable
                       ? null
                       : Border.all(color: borderColor ?? AppColor.border),
+                  boxShadow: enable
+                      ? [
+                          BoxShadow(
+                            color: (backgroundColor ?? AppColor.primary)
+                                .withValues(alpha: 0.3),
+                            blurRadius: 14,
+                            offset: const Offset(0, 5),
+                          ),
+                        ]
+                      : null,
                 ),
                 alignment: Alignment.center,
                 child:

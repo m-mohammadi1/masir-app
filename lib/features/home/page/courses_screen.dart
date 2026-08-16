@@ -7,6 +7,7 @@ import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_sub
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/helper/custom_colors.dart';
 import '../widgets/home_item.dart';
 import 'detail_course_page.dart';
 
@@ -36,7 +37,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           context.appSize.width.w,
-         CustomAppBar(title: "دوره‌ها"),
+          CustomAppBar(title: "دوره‌ها"),
           8.h,
           CustomText("همه دوره‌های منتشرشده"),
           20.h,
@@ -50,24 +51,32 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   success: (isLoading, data) {
                     return ListView.separated(
                       itemCount: data.length,
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       separatorBuilder: (_, __) => SizedBox(height: 14),
                       itemBuilder: (context, index) {
                         final course = data[index];
-                        final isFree = course.price == null || course.price == 0;
+                        final isFree =
+                            course.price == null || course.price == 0;
                         return OnClick(
                           onTap: () {
-                            CustomNavigator.pushNamed(DetailCoursePage.routeName,arguments: course.id);
+                            CustomNavigator.pushNamed(
+                              DetailCoursePage.routeName,
+                              arguments: course.id,
+                            );
                           },
                           child: Directionality(
                             textDirection: TextDirection.ltr,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AppColor.surface,
                                 borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColor.border),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.06),
+                                    color: AppColor.ink.withValues(alpha: 0.06),
                                     blurRadius: 10,
                                     offset: Offset(0, 2),
                                   ),
@@ -79,40 +88,57 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                 children: [
                                   Container(
                                     height: 160,
-                                    color: Color(0xff9B8FD8),
-                                    child: course.coverUrl != null && course.coverUrl!.isNotEmpty
+                                    alignment: Alignment.center,
+                                    color: AppColor.primary.withValues(
+                                      alpha: 0.55,
+                                    ),
+                                    child:
+                                        course.coverUrl != null &&
+                                            course.coverUrl!.isNotEmpty
                                         ? Image.network(
                                             course.coverUrl!,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => Center(
-                                              child: Icon(Icons.play_circle_fill, size: 48, color: Colors.white70),
+                                            errorBuilder: (_, __, ___) => Icon(
+                                              Icons.menu_book_rounded,
+                                              size: 48,
+                                              color: AppColor.white.withValues(
+                                                alpha: 0.85,
+                                              ),
                                             ),
                                           )
-                                        : SizedBox(),
+                                        : Icon(
+                                            Icons.menu_book_rounded,
+                                            size: 48,
+                                            color: AppColor.white.withValues(
+                                              alpha: 0.85,
+                                            ),
+                                          ),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(16),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
                                       children: [
                                         Text(
                                           course.title ?? "",
                                           style: TextStyle(
                                             fontSize: 17,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xff2F2146),
+                                            color: AppColor.ink,
                                           ),
                                           textAlign: TextAlign.right,
                                         ),
-                                        if (course.description != null && course.description!.isNotEmpty) ...[
+                                        if (course.description != null &&
+                                            course.description!.isNotEmpty) ...[
                                           SizedBox(height: 6),
                                           Text(
                                             course.description!,
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: Color(0xff6E6884),
+                                              color: AppColor.inkMuted,
                                             ),
-                                              textAlign: TextAlign.right,
+                                            textAlign: TextAlign.right,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -121,17 +147,23 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                         Align(
                                           alignment: Alignment.centerLeft,
                                           child: Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 6,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: Color(0xffF3EBFF),
-                                              borderRadius: BorderRadius.circular(20),
+                                              color: AppColor.primaryTint,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
                                             child: Text(
-                                              isFree ? "رایگان" : "${course.price} تومان",
+                                              isFree
+                                                  ? "رایگان"
+                                                  : "${course.price} تومان",
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
-                                                color: Color(0xff7C3AED),
+                                                color: AppColor.primary,
                                               ),
                                             ),
                                           ),

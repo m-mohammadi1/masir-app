@@ -52,6 +52,7 @@ class _MainPageState extends State<MainPage> {
       },
       canPop: false,
       child: Scaffold(
+        backgroundColor: AppColor.background,
         body: Column(
           children: [
             Expanded(child: pages[index]),
@@ -62,12 +63,13 @@ class _MainPageState extends State<MainPage> {
                 borderRadius: BorderRadius.circular(38),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColor.border.withValues(alpha: .5),
-                    blurRadius: 8,
-                    spreadRadius: 8,
+                    color: AppColor.ink.withValues(alpha: 0.08),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
                   ),
                 ],
-                color: Colors.white,
+                border: Border.all(color: AppColor.border),
+                color: AppColor.surface,
               ),
               margin: EdgeInsets.symmetric(horizontal: 16),
               child: Row(
