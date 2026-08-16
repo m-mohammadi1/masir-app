@@ -18,9 +18,6 @@ import '../../domain/entities/subscribe_course.dart';
 import '../models/request_subscribe_course_model.dart';
 import '../../domain/entities/course_detail.dart';
 import '../models/request_course_detail_model.dart';
-import '../models/request_my_sbuscriptions_model.dart';
-import '../../domain/entities/my_institutes.dart';
-import '../models/request_my_institutes_model.dart';
 import '../../domain/entities/courses.dart';
 import '../models/request_courses_model.dart';
 import '../../domain/entities/institutes.dart';
@@ -109,20 +106,6 @@ class MainRepositoryImpl implements MainRepository {
     }
   }
 
-
-  @override
-  Future<Either<Failure, List<MyInstitutesEntity>>> myInstitutes({RequestMyInstitutesModel? params}) async {
-    try {
-      return Right(await remoteDataSource.myInstitutes(params: params));
-    } on DioException catch (e) {
-      if (e.response != null) {
-        return Left(ServerFailure().fromJson(e.response?.data));
-      }
-      return Left(DefaultFailure(message: e.message.toString()));
-    } catch (e) {
-      return Left(DefaultFailure(message: e.toString()));
-    }
-  }
 
   @override
   Future<Either<Failure, List<CoursesEntity>>> courses({RequestCoursesModel? params}) async {

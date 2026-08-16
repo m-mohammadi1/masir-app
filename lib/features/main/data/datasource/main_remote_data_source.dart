@@ -16,9 +16,6 @@ import '../models/request_subscribe_course_model.dart';
 import '../../domain/entities/course_detail.dart';
 import '../models/course_detail_model.dart';
 import '../models/request_course_detail_model.dart';
-import '../../domain/entities/my_institutes.dart';
-import '../models/my_institutes_model.dart';
-import '../models/request_my_institutes_model.dart';
 import '../../domain/entities/courses.dart';
 import '../models/courses_model.dart';
 import '../models/request_courses_model.dart';
@@ -54,11 +51,6 @@ sealed class MainRemoteDataSource {
 
   @factoryMethod
   Future<CourseDetailEntity> courseDetail({RequestCourseDetailModel? params});
-
-  @factoryMethod
-  Future<List<MyInstitutesEntity>> myInstitutes({
-    RequestMyInstitutesModel? params,
-  });
 
   @factoryMethod
   Future<List<CoursesEntity>> courses({RequestCoursesModel? params});
@@ -139,18 +131,6 @@ class MainRemoteDataSourceImpl implements MainRemoteDataSource {
       // request: params,
     );
     return response.result as CourseDetailModel;
-  }
-
-  @override
-  Future<List<MyInstitutesEntity>> myInstitutes({
-    RequestMyInstitutesModel? params,
-  }) async {
-    var response = await restfulApi.get(
-      path: 'me',
-      result: const MyInstitutesModel().setResults(['data', 'institutes']),
-      // request: params,
-    );
-    return response.results!.cast<MyInstitutesModel>();
   }
 
   @override

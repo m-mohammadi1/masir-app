@@ -1,3 +1,4 @@
+import 'package:easy_helper/easy_helper.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
@@ -28,7 +29,13 @@ class FCMManager {
     FirebaseMessaging.onMessage.listen(showFlutterNotification);
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('A new onMessageOpenedApp event was published: $message');
+      final fromPayload = message.data['institute_id']?.toString();
+      final id = (fromPayload != null && fromPayload.isNotEmpty)
+          ? fromPayload
+          : HiveService.currentInstituteId;
+      if (id != null && id.isNotEmpty) {
+        CustomNavigator.go('/i/$id/home');
+      }
     });
 
     FirebaseMessaging.instance.onTokenRefresh.listen((event) {

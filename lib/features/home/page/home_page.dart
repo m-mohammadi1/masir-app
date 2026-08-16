@@ -9,7 +9,7 @@ import '../../main/data/models/courses_model.dart';
 import '../../main/data/models/my_subscriptions_model.dart';
 import '../../main/data/models/request_courses_model.dart';
 import '../../main/presentation/bloc/courses/courses_bloc.dart';
-import '../../main/presentation/bloc/my_institutes/my_institutes_bloc.dart';
+import '../../institute/presentation/bloc/wallet/wallet_bloc.dart';
 import '../../main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import '../../main/presentation/page/institutes_page.dart';
 import '../../main/presentation/page/outline_page.dart';
@@ -29,7 +29,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final myInstitutesBloc = inject<MyInstitutesBloc>();
+  final walletBloc = inject<WalletBloc>();
   final coursesBloc = inject<CoursesBloc>();
   final mySubscriptionsBloc = inject<MySubscriptionsBloc>();
   bool _noInstituteFound = false;
@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
     // only place we can resolve an institute's *name* for the "other
     // institute" label on a subscribed course that isn't part of the
     // currently selected institute.
-    myInstitutesBloc.add(MyInstitutesEvent.myInstitutes());
+    walletBloc.add(const WalletEvent.wallet());
     if (HiveService.hasCurrentInstitute) {
       _loadCourses(HiveService.currentInstituteId!);
     }
@@ -70,24 +70,21 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _bootstrapFromMyInstitutes(List data) async {
+  Future<void> _bootstrapFromWallet(List data) async {
     if (!mounted) return;
-    // Now that MyInstitutesBloc is always fetched (also used for the
-    // "other institute" name label below), only actually auto-select an
-    // institute from it the first time — never override one the student
-    // already has selected.
     if (HiveService.hasCurrentInstitute) return;
     if (data.isEmpty) {
       setState(() => _noInstituteFound = true);
       return;
     }
     final institute = data.first;
-    final id = institute.id ?? '';
+    final id = institute.instituteId ?? '';
     if (id.isEmpty) return;
     await HiveService.setCurrentInstitute(
       id: id,
       name: institute.name,
       slug: institute.slug,
+      logoUrl: institute.logoUrl,
     );
     if (!mounted) return;
     setState(() {});
@@ -96,11 +93,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<MyInstitutesBloc, MyInstitutesState>(
-      bloc: myInstitutesBloc,
+    return BlocListener<WalletBloc, WalletState>(
+      bloc: walletBloc,
       listener: (context, state) {
         state.whenOrNull(
-          success: (isLoading, data) => _bootstrapFromMyInstitutes(data),
+          success: (isLoading, data) => _bootstrapFromWallet(data),
         );
       },
       child: SingleChildScrollView(
@@ -168,19 +165,18 @@ class _HomePageState extends State<HomePage> {
         child: Center(child: CustomLoading()),
       );
     }
-    return BlocBuilder<MyInstitutesBloc, MyInstitutesState>(
-      bloc: myInstitutesBloc,
-      builder: (context, myInstitutesState) {
-        // Only used to resolve a *name* for the obvious "other institute"
-        // label below — never to decide which courses to show.
+    return BlocBuilder<WalletBloc, WalletState>(
+      bloc: walletBloc,
+      builder: (context, walletState) {
         final instituteNameById = <String, String>{
           for (final institute
-              in myInstitutesState.whenOrNull(
+              in walletState.whenOrNull(
                     success: (isLoading, data) => data,
                   ) ??
                   const [])
-            if (institute.id != null && (institute.name ?? '').isNotEmpty)
-              institute.id!: institute.name!,
+            if (institute.instituteId != null &&
+                (institute.name ?? '').isNotEmpty)
+              institute.instituteId!: institute.name!,
         };
 
         return BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(

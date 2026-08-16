@@ -27,6 +27,11 @@ void main() async {
   await HiveService.init();
   await setup();
 
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await FCMManager.initial();
+  } catch (_) {}
+
   FirebaseMessaging.onBackgroundMessage(background);
 
   SystemChrome.setPreferredOrientations([

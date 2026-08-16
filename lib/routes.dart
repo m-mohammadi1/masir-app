@@ -11,9 +11,13 @@ import 'features/home/page/courses_screen.dart';
 import 'features/home/page/detail_course_page.dart';
 import 'features/home/page/route_map_page.dart';
 import 'features/intro/presentation/page/intro_screen.dart';
+import 'features/institute/presentation/page/institute_courses_page.dart';
+import 'features/institute/presentation/page/institute_home_page.dart';
+import 'features/institute/presentation/page/institute_me_page.dart';
+import 'features/institute/presentation/shell/institute_shell.dart';
+import 'features/institute/presentation/transitions/threshold_page.dart';
 import 'features/main/presentation/page/institutes_page.dart';
 import 'features/main/presentation/page/main_page.dart';
-import 'features/main/presentation/page/my_institutes_page.dart';
 import 'features/main/presentation/page/outline_page.dart';
 import 'features/otp/presentation/page/otp_screen.dart';
 import 'features/quiz/presentation/page/end_quiz_page.dart';
@@ -69,10 +73,6 @@ final GoRouter router = GoRouter(
           builder: (context, state) => InstitutesPage(),
         ),
         GoRoute(
-          path: MyInstitutesPage.routeName,
-          builder: (context, state) => MyInstitutesPage(),
-        ),
-        GoRoute(
           path: CoursesScreen.routeName,
           builder: (context, state) => CoursesScreen(),
         ),
@@ -117,6 +117,32 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: RouteMapPage.routeName,
       builder: (context, state) => RouteMapPage(),
+    ),
+    ShellRoute(
+      pageBuilder: (context, state, child) {
+        return thresholdPage(
+          context,
+          state,
+          InstituteShell(
+            instituteId: state.pathParameters['instituteId'] ?? '',
+            child: child,
+          ),
+        );
+      },
+      routes: [
+        GoRoute(
+          path: '/i/:instituteId/home',
+          builder: (context, state) => const InstituteHomePage(),
+        ),
+        GoRoute(
+          path: '/i/:instituteId/courses',
+          builder: (context, state) => const InstituteCoursesPage(),
+        ),
+        GoRoute(
+          path: '/i/:instituteId/me',
+          builder: (context, state) => const InstituteMePage(),
+        ),
+      ],
     ),
   ],
   errorBuilder: (context, state) {

@@ -18,9 +18,6 @@ import '../../data/models/request_subscribe_course_model.dart';
 import '../entities/subscribe_course.dart';
 import '../../data/models/request_course_detail_model.dart';
 import '../entities/course_detail.dart';
-import '../../data/models/request_my_sbuscriptions_model.dart';
-import '../../data/models/request_my_institutes_model.dart';
-import '../entities/my_institutes.dart';
 import '../../data/models/request_courses_model.dart';
 import '../entities/courses.dart';
 import '../../data/models/request_institutes_model.dart';
@@ -54,12 +51,6 @@ abstract class MainRepository {
 
   @factoryMethod
   Future<Either<Failure, CourseDetailEntity>> courseDetail({RequestCourseDetailModel? params});
-
-
-
-  @factoryMethod
-  Future<Either<Failure, List<MyInstitutesEntity>>> myInstitutes({RequestMyInstitutesModel? params});
-
 
   @factoryMethod
   Future<Either<Failure, List<CoursesEntity>>> courses({RequestCoursesModel? params});

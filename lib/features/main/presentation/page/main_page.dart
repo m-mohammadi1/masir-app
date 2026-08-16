@@ -1,12 +1,10 @@
-import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/core/services/service_locator.dart';
-import 'package:mohammad/features/home/page/home_page.dart';
+import 'package:mohammad/features/institute/presentation/page/main_feed_page.dart';
+import 'package:mohammad/features/institute/presentation/page/wallet_page.dart';
 import 'package:mohammad/features/main/presentation/bloc/main_bloc.dart';
 import 'package:mohammad/features/profile/presentation/page/profile_page.dart';
-import '../../../home/page/courses_page.dart';
-import '/core/helper/assets.dart';
-import '/widgets/custom_text.dart';
+import '/widgets/masir_bottom_bar.dart';
 import '/core/theme/theme_context.dart';
 
 class MainPage extends StatefulWidget {
@@ -19,8 +17,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int index = 1;
-
+  int index = 2;
 
   final bloc = inject<MainBloc>();
 
@@ -35,16 +32,16 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      ProfilePage(),
-      CoursesPage(),
-      HomePage(),
+    final pages = [
+      const ProfilePage(),
+      const WalletPage(),
+      const MainFeedPage(),
     ];
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (index == 0) {
           setState(() {
-            index = 1;
+            index = 2;
           });
         } else {
           Navigator.pop(context);
@@ -56,117 +53,11 @@ class _MainPageState extends State<MainPage> {
         body: Column(
           children: [
             Expanded(child: pages[index]),
-            Container(
-              height: 99,
-              width: context.appSize.width,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(38),
-                boxShadow: [
-                  BoxShadow(
-                    color: context.colors.ink.withValues(alpha: 0.08),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(color: context.colors.border),
-                color: context.colors.surface,
-              ),
-              margin: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  OnClick(
-                    onTap: () {
-                      setState(() {
-                        index = 2;
-                      });
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        CustomImage(
-                          assets: index == 2
-                              ? Assets.homeSelected
-                              : Assets.home,
-                          width: 24,
-                          color: index == 2
-                              ? context.colors.primary
-                              : context.colors.secondary,
-                        ),
-                        2.h,
-                        CustomText(
-                          'کاوش',
-                          color: index == 2
-                              ? context.colors.primary
-                              : context.colors.secondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  OnClick(
-                    onTap: () {
-                      setState(() {
-                        index = 1;
-                      });
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        CustomImage(
-                          assets: index == 1
-                              ? Assets.homeSelected
-                              : Assets.home,
-                          width: 24,
-                          color: index == 1
-                              ? context.colors.primary
-                              : context.colors.secondary,
-                        ),
-                        2.h,
-                        CustomText(
-                          'دوره هاى من',
-                          color: index == 1
-                              ? context.colors.primary
-                              : context.colors.secondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  OnClick(
-                    onTap: () {
-                      setState(() {
-                        index = 0;
-                      });
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        CustomImage(
-                          assets: index == 0
-                              ? Assets.profileSelected
-                              : Assets.profile,
-                          width: 24,
-                          color: index == 0
-                              ? context.colors.primary
-                              : context.colors.secondary,
-                        ),
-                        2.h,
-                        CustomText(
-                          'پروفایل',
-                          color: index == 0
-                              ? context.colors.primary
-                              : context.colors.secondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            MasirBottomBar(
+              currentIndex: index,
+              onTap: (value) => setState(() => index = value),
+              items: masirGlobalTabs(),
             ),
-            16.h,
           ],
         ),
       ),
