@@ -16,6 +16,7 @@ class InstituteDetailModel extends InstituteDetailEntity {
     super.topic,
     super.courseCount,
     super.studentCount,
+    super.teacherCount,
     super.membership,
   });
 
@@ -35,6 +36,7 @@ class InstituteDetailModel extends InstituteDetailEntity {
       topic: topic,
       courseCount: courseCount,
       studentCount: studentCount,
+      teacherCount: teacherCount,
       membership: membership ?? this.membership,
     );
   }
@@ -75,6 +77,7 @@ class InstituteDetailModel extends InstituteDetailEntity {
           : null,
       courseCount: (json['course_count'] as num?)?.toInt() ?? 0,
       studentCount: (json['student_count'] as num?)?.toInt() ?? 0,
+      teacherCount: (json['teacher_count'] as num?)?.toInt() ?? 0,
       membership: InstituteMembership(
         isMember: membershipRaw['is_member'] == true,
         memberSince: membershipRaw['member_since']?.toString(),

@@ -15,6 +15,7 @@ import '../../main/presentation/page/institutes_page.dart';
 import '../../main/presentation/page/outline_page.dart';
 import 'detail_course_page.dart';
 import '/core/theme/theme_context.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 import '/widgets/custom_error.dart';
 
 /// The student's "home" once inside an institute: a header for the current
@@ -573,6 +574,10 @@ class _InstituteCourseTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (course.teachers.isNotEmpty) ...[
+              8.h,
+              CourseTeacherRow(teachers: course.teachers),
+            ],
             12.h,
             // A real, full-width call-to-action instead of a small pill —
             // impossible to miss, and its color alone signals state.

@@ -1,5 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 
+import '/features/teacher/domain/entities/teacher.dart';
+
 abstract class CoursesEntity extends BaseResult {
   final String? id;
   final String? instituteId;
@@ -8,6 +10,7 @@ abstract class CoursesEntity extends BaseResult {
   final String? coverUrl;
   final int? price;
   final String? publishedAt;
+  final List<CourseTeacherSummary> teachers;
 
   const CoursesEntity({
     this.id,
@@ -17,6 +20,7 @@ abstract class CoursesEntity extends BaseResult {
     this.coverUrl,
     this.price,
     this.publishedAt,
+    this.teachers = const [],
   });
 
   @override
@@ -28,5 +32,6 @@ abstract class CoursesEntity extends BaseResult {
     coverUrl,
     price,
     publishedAt,
+    teachers,
   ];
 }

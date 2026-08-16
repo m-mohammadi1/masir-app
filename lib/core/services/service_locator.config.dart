@@ -118,6 +118,19 @@ import '../../features/register/domain/repository/register_repository.dart'
     as _i240;
 import '../../features/register/domain/usecases/register_usecase.dart' as _i73;
 import '../../features/register/presentation/bloc/register_bloc.dart' as _i771;
+import '../../features/teacher/data/datasource/teacher_remote_data_source.dart'
+    as _i531;
+import '../../features/teacher/data/repository/teacher_repository_impl.dart'
+    as _i274;
+import '../../features/teacher/domain/repository/teacher_repository.dart'
+    as _i717;
+import '../../features/teacher/domain/usecases/get_institute_teachers.dart'
+    as _i289;
+import '../../features/teacher/domain/usecases/get_teacher.dart' as _i969;
+import '../../features/teacher/presentation/bloc/institute_teachers/institute_teachers_bloc.dart'
+    as _i224;
+import '../../features/teacher/presentation/bloc/teacher_detail/teacher_detail_bloc.dart'
+    as _i773;
 import 'service_locator.dart' as _i105;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -168,6 +181,11 @@ extension GetItInjectableX on _i174.GetIt {
         remoteDataSource: gh<_i425.QuizRemoteDataSource>(),
       ),
     );
+    gh.factory<_i531.TeacherRemoteDataSource>(
+      () => _i531.TeacherRemoteDataSourceImpl(
+        restfulApi: gh<_i669.IRestfulApi>(),
+      ),
+    );
     gh.factory<_i670.AboutUsRemoteDataSource>(
       () => _i670.AboutUsRemoteDataSourceImpl(
         restfulApi: gh<_i669.IRestfulApi>(),
@@ -176,6 +194,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1055.MainRepository>(
       () => _i1026.MainRepositoryImpl(
         remoteDataSource: gh<_i551.MainRemoteDataSource>(),
+      ),
+    );
+    gh.factory<_i717.TeacherRepository>(
+      () => _i274.TeacherRepositoryImpl(
+        remoteDataSource: gh<_i531.TeacherRemoteDataSource>(),
       ),
     );
     gh.factory<_i73.RegisterUseCase>(
@@ -200,6 +223,14 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i409.AuthRepositoryImpl(
         remoteDataSource: gh<_i24.AuthRemoteDataSource>(),
       ),
+    );
+    gh.factory<_i289.GetInstituteTeachersUseCase>(
+      () => _i289.GetInstituteTeachersUseCase(
+        repository: gh<_i717.TeacherRepository>(),
+      ),
+    );
+    gh.factory<_i969.GetTeacherUseCase>(
+      () => _i969.GetTeacherUseCase(repository: gh<_i717.TeacherRepository>()),
     );
     gh.factory<_i436.AuthUseCase>(
       () => _i436.AuthUseCase(repository: gh<_i961.AuthRepository>()),
@@ -282,8 +313,18 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i376.WalletBloc>(
       () => _i376.WalletBloc(getWalletUseCase: gh<_i150.GetWalletUseCase>()),
     );
+    gh.factory<_i224.InstituteTeachersBloc>(
+      () => _i224.InstituteTeachersBloc(
+        getInstituteTeachersUseCase: gh<_i289.GetInstituteTeachersUseCase>(),
+      ),
+    );
     gh.factory<_i240.AboutUsBloc>(
       () => _i240.AboutUsBloc(aboutUsUseCase: gh<_i280.AboutUsUseCase>()),
+    );
+    gh.factory<_i773.TeacherDetailBloc>(
+      () => _i773.TeacherDetailBloc(
+        getTeacherUseCase: gh<_i969.GetTeacherUseCase>(),
+      ),
     );
     gh.factory<_i993.JoinInstituteBloc>(
       () => _i993.JoinInstituteBloc(

@@ -15,6 +15,7 @@ import 'package:mohammad/widgets/custom_text.dart';
 import '../../main/data/models/my_subscriptions_model.dart';
 import '../../main/presentation/bloc/course_detail/course_detail_bloc.dart';
 import '/core/theme/theme_context.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 import '/widgets/custom_error.dart';
 
 class DetailCoursePage extends StatefulWidget {
@@ -143,6 +144,17 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                         textAlign: TextAlign.right,
                                         maxLines: 2,
                                         // overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                    if (data.teachers.isNotEmpty) ...[
+                                      SizedBox(height: 12),
+                                      Directionality(
+                                        textDirection: TextDirection.rtl,
+                                        child: CourseTeacherRow(
+                                          teachers: data.teachers,
+                                          compact: false,
+                                          showHeadlines: true,
+                                        ),
                                       ),
                                     ],
                                     SizedBox(height: 10),

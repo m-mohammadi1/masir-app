@@ -7,6 +7,7 @@ import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
 class QuizUnitContent extends StatefulWidget {
   final UnitsModel data;
@@ -102,7 +103,10 @@ class QuizUnitContentState extends State<QuizUnitContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CustomAppBar(title: title),
+        CustomAppBar(
+          title: title,
+          icon: unitTeacherHeaderIcon(widget.data.teachers),
+        ),
         16.h,
         Row(
           children: [

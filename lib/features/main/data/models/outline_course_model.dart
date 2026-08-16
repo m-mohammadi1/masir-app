@@ -1,4 +1,5 @@
 import '/features/main/domain/entities/outline_course.dart';
+import '/features/teacher/data/models/teacher_model.dart';
 
 class OutlineCourseModel extends OutlineCourseEntity {
   const OutlineCourseModel({
@@ -6,6 +7,7 @@ class OutlineCourseModel extends OutlineCourseEntity {
     super.title,
     super.courseProgressPercent,
     super.modules,
+    super.teachers,
   });
 
   @override
@@ -17,6 +19,7 @@ class OutlineCourseModel extends OutlineCourseEntity {
       modules: (json['modules'] as List<dynamic>?)
           ?.map((e) => OutlineModuleModel.fromJson(e))
           .toList(),
+      teachers: parseCourseTeachers(json['teachers']),
     );
   }
 }

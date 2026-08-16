@@ -9,6 +9,7 @@ import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'detail_course_page.dart';
 import '/core/theme/theme_context.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 import '/widgets/custom_error.dart';
 import '/widgets/empty_widget.dart';
 import '/widgets/skeleton.dart';
@@ -153,6 +154,15 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                             textAlign: TextAlign.right,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                        if (course.teachers.isNotEmpty) ...[
+                                          SizedBox(height: 10),
+                                          Directionality(
+                                            textDirection: TextDirection.rtl,
+                                            child: CourseTeacherRow(
+                                              teachers: course.teachers,
+                                            ),
                                           ),
                                         ],
                                         SizedBox(height: 10),

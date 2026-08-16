@@ -132,7 +132,7 @@ List<MasirBottomBarItem> masirInstituteTabs() => [
     label: 'اساتید',
     icon: Assets.profile,
     selectedIcon: Assets.profileSelected,
-    hidden: true,
+    hidden: false,
   ),
   MasirBottomBarItem(
     index: 3,

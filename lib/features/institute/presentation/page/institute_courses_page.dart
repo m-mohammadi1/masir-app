@@ -9,6 +9,8 @@ import '/features/main/data/models/request_courses_model.dart';
 import '/features/main/presentation/bloc/courses/courses_bloc.dart';
 import '/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import '/features/main/presentation/page/outline_page.dart';
+import '/features/teacher/domain/entities/teacher.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/empty_widget.dart';
 import '/widgets/skeleton.dart';
@@ -81,6 +83,7 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
                       for (final course in mine)
                         _CourseTile(
                           title: course.title ?? '',
+                          teachers: course.teachers,
                           onTap: () => CustomNavigator.pushNamed(
                             OutlinePage.routeName,
                             arguments: {
@@ -106,6 +109,7 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
                       for (final course in others)
                         _CourseTile(
                           title: course.title ?? '',
+                          teachers: course.teachers,
                           onTap: () => CustomNavigator.pushNamed(
                             OutlinePage.routeName,
                             arguments: {
@@ -127,9 +131,14 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
 
 class _CourseTile extends StatelessWidget {
   final String title;
+  final List<CourseTeacherSummary> teachers;
   final VoidCallback onTap;
 
-  const _CourseTile({required this.title, required this.onTap});
+  const _CourseTile({
+    required this.title,
+    required this.teachers,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +151,12 @@ class _CourseTile extends StatelessWidget {
           side: BorderSide(color: context.colors.border),
         ),
         title: CustomText(title),
+        subtitle: teachers.isEmpty
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: CourseTeacherRow(teachers: teachers),
+              ),
         trailing: const Icon(Icons.chevron_left),
       ),
     );

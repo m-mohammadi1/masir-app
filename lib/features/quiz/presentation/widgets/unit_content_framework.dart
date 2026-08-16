@@ -16,6 +16,7 @@ class UnitContentFramework extends StatelessWidget {
   final VoidCallback onBack;
   final String primaryButtonTitle;
   final bool isSubmitting;
+  final Widget? headerIcon;
 
   const UnitContentFramework({
     super.key,
@@ -29,6 +30,7 @@ class UnitContentFramework extends StatelessWidget {
     this.onComplete,
     this.primaryButtonTitle = 'تکمیل شد',
     this.isSubmitting = false,
+    this.headerIcon,
   });
 
   @override
@@ -36,7 +38,7 @@ class UnitContentFramework extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CustomAppBar(title: title),
+        CustomAppBar(title: title, icon: headerIcon),
         16.h,
         Row(
           children: [

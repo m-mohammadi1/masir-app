@@ -14,6 +14,8 @@ import 'features/intro/presentation/page/intro_screen.dart';
 import 'features/institute/presentation/page/institute_courses_page.dart';
 import 'features/institute/presentation/page/institute_home_page.dart';
 import 'features/institute/presentation/page/institute_me_page.dart';
+import 'features/teacher/presentation/page/institute_teachers_page.dart';
+import 'features/teacher/presentation/page/teacher_page.dart';
 import 'features/institute/presentation/shell/institute_shell.dart';
 import 'features/institute/presentation/transitions/threshold_page.dart';
 import 'features/main/presentation/page/institutes_page.dart';
@@ -118,6 +120,10 @@ final GoRouter router = GoRouter(
       path: RouteMapPage.routeName,
       builder: (context, state) => RouteMapPage(),
     ),
+    GoRoute(
+      path: '/teachers/:userId',
+      builder: (context, state) => const TeacherPage(),
+    ),
     ShellRoute(
       pageBuilder: (context, state, child) {
         return thresholdPage(
@@ -137,6 +143,10 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/i/:instituteId/courses',
           builder: (context, state) => const InstituteCoursesPage(),
+        ),
+        GoRoute(
+          path: '/i/:instituteId/teachers',
+          builder: (context, state) => const InstituteTeachersPage(),
         ),
         GoRoute(
           path: '/i/:instituteId/me',

@@ -1,4 +1,5 @@
 import '/features/main/domain/entities/courses.dart';
+import '/features/teacher/data/models/teacher_model.dart';
 
 class CoursesModel extends CoursesEntity {
   const CoursesModel({
@@ -9,6 +10,7 @@ class CoursesModel extends CoursesEntity {
     super.coverUrl,
     super.price,
     super.publishedAt,
+    super.teachers,
   });
 
   @override
@@ -21,6 +23,7 @@ class CoursesModel extends CoursesEntity {
       coverUrl : json['cover_url'],
       price : json['price'],
       publishedAt : json['published_at'],
+      teachers: parseCourseTeachers(json['teachers']),
     );
   }
 
@@ -34,6 +37,7 @@ class CoursesModel extends CoursesEntity {
       coverUrl : json['cover_url'],
       price : json['price'],
       publishedAt : json['published_at'],
+      teachers: parseCourseTeachers(json['teachers']),
     );
   }
 }

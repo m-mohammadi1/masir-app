@@ -19,6 +19,7 @@ import 'package:mohammad/features/quiz/presentation/widgets/video_unit_content.d
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/widgets/custom_error.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
 class UnitPage extends StatefulWidget {
   static const String routeName = '/unit';
@@ -309,6 +310,7 @@ class _UnitPageState extends State<UnitPage> {
       instructionText: instructionText,
       attachmentUrl: attachmentUrl,
       isSubmitting: _isSubmitting,
+      headerIcon: unitTeacherHeaderIcon(data.teachers),
       content: widget.isCompleted
           ? null
           : buildQuizLayout(

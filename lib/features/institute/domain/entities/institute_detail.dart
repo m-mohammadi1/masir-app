@@ -37,6 +37,7 @@ abstract class InstituteDetailEntity extends BaseResult {
   final InstituteTopic? topic;
   final int courseCount;
   final int studentCount;
+  final int teacherCount;
   final InstituteMembership membership;
 
   const InstituteDetailEntity({
@@ -54,6 +55,7 @@ abstract class InstituteDetailEntity extends BaseResult {
     this.topic,
     this.courseCount = 0,
     this.studentCount = 0,
+    this.teacherCount = 0,
     this.membership = const InstituteMembership(),
   });
 
@@ -73,6 +75,7 @@ abstract class InstituteDetailEntity extends BaseResult {
     topic,
     courseCount,
     studentCount,
+    teacherCount,
     membership,
   ];
 }

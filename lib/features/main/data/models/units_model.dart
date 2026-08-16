@@ -1,4 +1,5 @@
 import '/features/main/domain/entities/units.dart';
+import '/features/teacher/data/models/teacher_model.dart';
 
 class UnitsModel extends UnitsEntity {
   const UnitsModel({
@@ -8,6 +9,7 @@ class UnitsModel extends UnitsEntity {
     super.type,
     super.order,
     super.payload,
+    super.teachers,
   });
 
   @override
@@ -21,6 +23,7 @@ class UnitsModel extends UnitsEntity {
       payload: json['payload'] != null
           ? UnitsPayloadModel.fromJson(json['payload'])
           : null,
+      teachers: parseCourseTeachers(json['teachers']),
     );
   }
 
@@ -34,6 +37,7 @@ class UnitsModel extends UnitsEntity {
       payload: json['payload'] != null
           ? UnitsPayloadModel.fromJson(json['payload'])
           : null,
+      teachers: parseCourseTeachers(json['teachers']),
     );
   }
 }

@@ -71,6 +71,7 @@ class _InstituteShellState extends State<InstituteShell> {
 
   int _tabFor(String path) {
     if (path.endsWith('/courses')) return 1;
+    if (path.endsWith('/teachers')) return 2;
     if (path.endsWith('/me')) return 3;
     return 0;
   }
@@ -80,6 +81,8 @@ class _InstituteShellState extends State<InstituteShell> {
     switch (index) {
       case 1:
         context.go('/i/$id/courses');
+      case 2:
+        context.go('/i/$id/teachers');
       case 3:
         context.go('/i/$id/me');
       default:

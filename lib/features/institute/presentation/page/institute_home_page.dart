@@ -16,6 +16,7 @@ import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
 import '/features/main/data/models/request_courses_model.dart';
 import '/features/main/presentation/bloc/courses/courses_bloc.dart';
 import '/features/main/presentation/page/outline_page.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/skeleton.dart';
@@ -193,6 +194,14 @@ class _HomeBody extends StatelessWidget {
                               side: BorderSide(color: context.colors.border),
                             ),
                             title: CustomText(course.title ?? ''),
+                            subtitle: course.teachers.isEmpty
+                                ? null
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: CourseTeacherRow(
+                                      teachers: course.teachers,
+                                    ),
+                                  ),
                             trailing: isMember
                                 ? const Icon(Icons.chevron_left)
                                 : Icon(
@@ -223,6 +232,12 @@ class _HomeBody extends StatelessWidget {
           children: [
             CustomText(
               '${detail.courseCount} دوره',
+              fontSize: 12,
+              color: context.colors.inkMuted,
+            ),
+            16.w,
+            CustomText(
+              '${detail.teacherCount} استاد',
               fontSize: 12,
               color: context.colors.inkMuted,
             ),

@@ -6,6 +6,7 @@ import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '/core/theme/theme_context.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
 class PracticeUnitContent extends StatelessWidget {
   final UnitsModel data;
@@ -44,7 +45,7 @@ class PracticeUnitContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CustomAppBar(title: title),
+        CustomAppBar(title: title, icon: unitTeacherHeaderIcon(data.teachers)),
         16.h,
         Row(
           children: [

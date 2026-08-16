@@ -6,6 +6,7 @@ import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
 class AudioUnitContent extends StatelessWidget {
   final UnitsModel data;
@@ -41,7 +42,7 @@ class AudioUnitContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CustomAppBar(title: title),
+        CustomAppBar(title: title, icon: unitTeacherHeaderIcon(data.teachers)),
         16.h,
         Row(
           children: [

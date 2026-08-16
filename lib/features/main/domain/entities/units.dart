@@ -1,5 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 
+import '/features/teacher/domain/entities/teacher.dart';
+
 abstract class UnitsEntity extends BaseResult {
   final String? id;
   final String? courseId;
@@ -7,6 +9,7 @@ abstract class UnitsEntity extends BaseResult {
   final String? type;
   final int? order;
   final UnitsPayloadEntity? payload;
+  final List<CourseTeacherSummary> teachers;
 
   const UnitsEntity({
     this.id,
@@ -15,10 +18,11 @@ abstract class UnitsEntity extends BaseResult {
     this.type,
     this.order,
     this.payload,
+    this.teachers = const [],
   });
 
   @override
-  List<Object?> get props => [id, courseId, title, type, order, payload];
+  List<Object?> get props => [id, courseId, title, type, order, payload, teachers];
 }
 
 abstract class UnitsPayloadEntity extends BaseResult {

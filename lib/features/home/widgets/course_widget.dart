@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
+import '/features/teacher/domain/entities/teacher.dart';
+import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
 class CourseCard extends StatelessWidget {
   final String title;
   final String description;
   final IconData icon;
   final VoidCallback onTap;
+  final List<CourseTeacherSummary> teachers;
 
   const CourseCard({
     super.key,
@@ -14,6 +17,7 @@ class CourseCard extends StatelessWidget {
     required this.description,
     required this.icon,
     required this.onTap,
+    this.teachers = const [],
   });
 
   @override
@@ -26,7 +30,6 @@ class CourseCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           onTap: onTap,
           child: Ink(
-            height: 110,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
               color: context.colors.surface,
@@ -62,6 +65,13 @@ class CourseCard extends StatelessWidget {
                         color: context.colors.inkMuted,
                         fontWeight: FontWeight.w500,
                       ),
+                      if (teachers.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Directionality(
+                          textDirection: TextDirection.rtl,
+                          child: CourseTeacherRow(teachers: teachers),
+                        ),
+                      ],
                     ],
                   ),
                 ),

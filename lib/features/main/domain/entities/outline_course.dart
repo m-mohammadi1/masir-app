@@ -1,20 +1,24 @@
 import 'package:easy_helper/easy_helper.dart';
 
+import '/features/teacher/domain/entities/teacher.dart';
+
 abstract class OutlineCourseEntity extends BaseResult {
   final String? id;
   final String? title;
   final int? courseProgressPercent;
   final List<OutlineModuleEntity>? modules;
+  final List<CourseTeacherSummary> teachers;
 
   const OutlineCourseEntity({
     this.id,
     this.title,
     this.courseProgressPercent,
     this.modules,
+    this.teachers = const [],
   });
 
   @override
-  List<Object?> get props => [id, title, courseProgressPercent, modules];
+  List<Object?> get props => [id, title, courseProgressPercent, modules, teachers];
 }
 
 abstract class OutlineModuleEntity extends BaseResult {
