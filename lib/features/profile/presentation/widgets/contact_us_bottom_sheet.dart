@@ -1,10 +1,10 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:mohammad/core/helper/custom_colors.dart';
 
 import '../../../../core/helper/assets.dart';
 import '../../../../widgets/custom_text.dart';
 import '../../../../widgets/modal_title.dart';
+import '/core/theme/theme_context.dart';
 
 class ContactUsBottomSheet extends StatelessWidget {
   const ContactUsBottomSheet({super.key});
@@ -50,7 +50,7 @@ class ContactUsBottomSheet extends StatelessWidget {
 
         Container(
           decoration: BoxDecoration(
-            color: AppColor.green.withValues(alpha: .2),
+            color: context.colors.green.withValues(alpha: .2),
             borderRadius: BorderRadius.circular(8),
           ),
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),

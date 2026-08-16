@@ -1,7 +1,6 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '/core/helper/custom_colors.dart';
 import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
 import '/widgets/custom_button.dart';
@@ -15,6 +14,8 @@ import '../../main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart
 import '../../main/presentation/page/institutes_page.dart';
 import '../../main/presentation/page/outline_page.dart';
 import 'detail_course_page.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/custom_error.dart';
 
 /// The student's "home" once inside an institute: a header for the current
 /// institute plus the courses that institute has published. The institute
@@ -142,7 +143,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             CustomText(
               "هنوز به مؤسسه‌ای متصل نیستید.",
-              color: AppColor.inkMuted,
+              color: context.colors.inkMuted,
             ),
             12.h,
             OutlinedButton(
@@ -150,7 +151,7 @@ class _HomePageState extends State<HomePage> {
                 InstitutesPage.routeName,
               ).then((_) => _onReturnedFromInstitutePicker()),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColor.border),
+                side: BorderSide(color: context.colors.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -238,7 +239,7 @@ class _HomePageState extends State<HomePage> {
                         child: Center(
                           child: CustomText(
                             "هنوز دوره‌ای منتشر نشده است.",
-                            color: AppColor.inkMuted,
+                            color: context.colors.inkMuted,
                           ),
                         ),
                       );
@@ -287,12 +288,12 @@ class _InstituteHeader extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColor.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColor.border),
+          border: Border.all(color: context.colors.border),
           boxShadow: [
             BoxShadow(
-              color: AppColor.ink.withValues(alpha: 0.06),
+              color: context.colors.ink.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -304,15 +305,15 @@ class _InstituteHeader extends StatelessWidget {
               child: Container(
                 width: 52,
                 height: 52,
-                color: AppColor.primaryTint,
+                color: context.colors.primaryTint,
                 child: (logoUrl != null && logoUrl!.isNotEmpty)
                     ? Image.network(
                         logoUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) =>
-                            Icon(Icons.school_rounded, color: AppColor.primary),
+                            Icon(Icons.school_rounded, color: context.colors.primary),
                       )
-                    : Icon(Icons.school_rounded, color: AppColor.primary),
+                    : Icon(Icons.school_rounded, color: context.colors.primary),
               ),
             ),
             12.w,
@@ -325,13 +326,13 @@ class _InstituteHeader extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColor.ink,
+                      color: context.colors.ink,
                     ),
                   ),
                   4.h,
                   Text(
                     "شما اکنون در این مؤسسه هستید",
-                    style: TextStyle(fontSize: 12, color: AppColor.inkMuted),
+                    style: TextStyle(fontSize: 12, color: context.colors.inkMuted),
                   ),
                 ],
               ),
@@ -389,17 +390,17 @@ class _InstituteCourseTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColor.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSubscribed
-                ? AppColor.success.withValues(alpha: 0.45)
-                : AppColor.border,
+                ? context.colors.success.withValues(alpha: 0.45)
+                : context.colors.border,
             width: isSubscribed ? 1.4 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColor.ink.withValues(alpha: 0.05),
+              color: context.colors.ink.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -426,7 +427,7 @@ class _InstituteCourseTile extends StatelessWidget {
                         height: 76,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColor.primary.withValues(alpha: 0.55),
+                          color: context.colors.primary.withValues(alpha: 0.55),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         clipBehavior: Clip.antiAlias,
@@ -439,13 +440,13 @@ class _InstituteCourseTile extends StatelessWidget {
                                 errorBuilder: (_, __, ___) => Icon(
                                   Icons.menu_book_rounded,
                                   size: 34,
-                                  color: AppColor.white.withValues(alpha: 0.9),
+                                  color: context.colors.white.withValues(alpha: 0.9),
                                 ),
                               )
                             : Icon(
                                 Icons.menu_book_rounded,
                                 size: 34,
-                                color: AppColor.white.withValues(alpha: 0.9),
+                                color: context.colors.white.withValues(alpha: 0.9),
                               ),
                       ),
                       if (isSubscribed)
@@ -456,16 +457,16 @@ class _InstituteCourseTile extends StatelessWidget {
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColor.success,
+                              color: context.colors.success,
                               border: Border.all(
-                                color: AppColor.surface,
+                                color: context.colors.surface,
                                 width: 2,
                               ),
                             ),
                             child: Icon(
                               Icons.check_rounded,
                               size: 13,
-                              color: AppColor.white,
+                              color: context.colors.white,
                             ),
                           ),
                         ),
@@ -484,7 +485,7 @@ class _InstituteCourseTile extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: AppColor.ink,
+                            color: context.colors.ink,
                           ),
                         ),
                         if (otherInstituteName != null) ...[
@@ -495,9 +496,9 @@ class _InstituteCourseTile extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColor.inkFaint.withValues(alpha: 0.35),
+                              color: context.colors.inkFaint.withValues(alpha: 0.35),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColor.border),
+                              border: Border.all(color: context.colors.border),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -505,7 +506,7 @@ class _InstituteCourseTile extends StatelessWidget {
                                 Icon(
                                   Icons.apartment_rounded,
                                   size: 11,
-                                  color: AppColor.inkMuted,
+                                  color: context.colors.inkMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -515,7 +516,7 @@ class _InstituteCourseTile extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
-                                    color: AppColor.inkMuted,
+                                    color: context.colors.inkMuted,
                                   ),
                                 ),
                               ],
@@ -531,7 +532,7 @@ class _InstituteCourseTile extends StatelessWidget {
                             textAlign: TextAlign.right,
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColor.inkMuted,
+                              color: context.colors.inkMuted,
                             ),
                           ),
                         ],
@@ -542,9 +543,9 @@ class _InstituteCourseTile extends StatelessWidget {
                             child: LinearProgressIndicator(
                               value: progress / 100.0,
                               minHeight: 6,
-                              backgroundColor: AppColor.border,
+                              backgroundColor: context.colors.border,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColor.success,
+                                context.colors.success,
                               ),
                             ),
                           ),
@@ -555,7 +556,7 @@ class _InstituteCourseTile extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColor.inkMuted,
+                              color: context.colors.inkMuted,
                             ),
                           ),
                         ] else ...[
@@ -566,7 +567,7 @@ class _InstituteCourseTile extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: AppColor.primary,
+                              color: context.colors.primary,
                             ),
                           ),
                         ],
@@ -584,7 +585,7 @@ class _InstituteCourseTile extends StatelessWidget {
               height: 46,
               child: CustomButton(
                 onTap: _open,
-                backgroundColor: isSubscribed ? AppColor.success : null,
+                backgroundColor: isSubscribed ? context.colors.success : null,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -593,14 +594,14 @@ class _InstituteCourseTile extends StatelessWidget {
                           ? Icons.play_circle_fill_rounded
                           : Icons.arrow_back_ios_new_rounded,
                       size: isSubscribed ? 18 : 14,
-                      color: AppColor.white,
+                      color: context.colors.white,
                     ),
                     const SizedBox(width: 8),
                     CustomText(
                       isSubscribed
                           ? "ادامه یادگیری"
                           : (isFree ? "شروع رایگان" : "مشاهده و ثبت‌نام"),
-                      color: AppColor.white,
+                      color: context.colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),

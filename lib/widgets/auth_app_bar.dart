@@ -19,16 +19,16 @@ class AuthAppBar extends StatelessWidget {
         //     width: 44,
         //     height: 44,
         //     decoration: BoxDecoration(
-        //       border: Border.all(width: 1.5, color: AppColor.border),
+        //       border: Border.all(width: 1.5, color: context.colors.border),
         //       shape: BoxShape.circle,
-        //       color: AppColor.background,
+        //       color: context.colors.background,
         //     ),
         //     child: Padding(
         //       padding: const EdgeInsets.all(12),
         //       // child: SvgPicture.asset(
         //       //   Assets.,
         //       //   colorFilter: ColorFilter.mode(
-        //       //     AppColor.iconColor,
+        //       //     context.colors.iconColor,
         //       //     BlendMode.srcIn,
         //       //   ),
         //       // ),

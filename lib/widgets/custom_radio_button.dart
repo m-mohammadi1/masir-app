@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomRadioButton extends StatefulWidget {
   final List<String> values;
@@ -38,11 +38,11 @@ class _CustomRadioButtonState extends State<CustomRadioButton> {
                     height: 20,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColor.surface,
+                      color: context.colors.surface,
                       border: Border.all(
                         color: i == selected
-                            ? AppColor.primary
-                            : AppColor.border,
+                            ? context.colors.primary
+                            : context.colors.border,
                         width: i == selected ? 6 : 1.3,
                       ),
                     ),

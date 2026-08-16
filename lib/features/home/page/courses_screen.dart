@@ -1,4 +1,4 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
@@ -7,9 +7,11 @@ import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_sub
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
-import '/core/helper/custom_colors.dart';
-import '../widgets/home_item.dart';
 import 'detail_course_page.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/custom_error.dart';
+import '/widgets/empty_widget.dart';
+import '/widgets/skeleton.dart';
 
 class CoursesScreen extends StatefulWidget {
   static const String routeName = "/courses";
@@ -46,9 +48,19 @@ class _CoursesScreenState extends State<CoursesScreen> {
               bloc: coursesBloc,
               builder: (context, state) {
                 return state.when(
-                  loading: (_) => CustomLoading(),
-                  error: (_, message) => CustomError(message: message),
+                  loading: (_) => const SkeletonList(itemHeight: 220),
+                  error: (_, message) => CustomError(
+                    message: message,
+                    retry: () => coursesBloc.add(CoursesEvent.courses()),
+                  ),
                   success: (isLoading, data) {
+                    if (data.isEmpty) {
+                      return const EmptyWidget(
+                        text: 'دوره‌ای نیست',
+                        description: 'هنوز دوره‌ای منتشر نشده است.',
+                        icon: Icons.menu_book_outlined,
+                      );
+                    }
                     return ListView.separated(
                       itemCount: data.length,
                       padding: EdgeInsets.symmetric(
@@ -71,12 +83,12 @@ class _CoursesScreenState extends State<CoursesScreen> {
                             textDirection: TextDirection.ltr,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: AppColor.surface,
+                                color: context.colors.surface,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: AppColor.border),
+                                border: Border.all(color: context.colors.border),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColor.ink.withValues(alpha: 0.06),
+                                    color: context.colors.ink.withValues(alpha: 0.06),
                                     blurRadius: 10,
                                     offset: Offset(0, 2),
                                   ),
@@ -89,7 +101,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                   Container(
                                     height: 160,
                                     alignment: Alignment.center,
-                                    color: AppColor.primary.withValues(
+                                    color: context.colors.primary.withValues(
                                       alpha: 0.55,
                                     ),
                                     child:
@@ -101,7 +113,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                             errorBuilder: (_, __, ___) => Icon(
                                               Icons.menu_book_rounded,
                                               size: 48,
-                                              color: AppColor.white.withValues(
+                                              color: context.colors.white.withValues(
                                                 alpha: 0.85,
                                               ),
                                             ),
@@ -109,7 +121,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                         : Icon(
                                             Icons.menu_book_rounded,
                                             size: 48,
-                                            color: AppColor.white.withValues(
+                                            color: context.colors.white.withValues(
                                               alpha: 0.85,
                                             ),
                                           ),
@@ -125,7 +137,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                           style: TextStyle(
                                             fontSize: 17,
                                             fontWeight: FontWeight.bold,
-                                            color: AppColor.ink,
+                                            color: context.colors.ink,
                                           ),
                                           textAlign: TextAlign.right,
                                         ),
@@ -136,7 +148,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                             course.description!,
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: AppColor.inkMuted,
+                                              color: context.colors.inkMuted,
                                             ),
                                             textAlign: TextAlign.right,
                                             maxLines: 2,
@@ -152,7 +164,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                               vertical: 6,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: AppColor.primaryTint,
+                                              color: context.colors.primaryTint,
                                               borderRadius:
                                                   BorderRadius.circular(20),
                                             ),
@@ -163,7 +175,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
-                                                color: AppColor.primary,
+                                                color: context.colors.primary,
                                               ),
                                             ),
                                           ),

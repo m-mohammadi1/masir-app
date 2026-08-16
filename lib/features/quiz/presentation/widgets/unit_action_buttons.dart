@@ -1,8 +1,8 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 /// Primary action (complete / submit) + always-visible "back to path".
 /// Hides the primary button when [showPrimary] is false (e.g. already completed).
@@ -41,13 +41,13 @@ class UnitActionButtons extends StatelessWidget {
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColor.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColor.border),
+              border: Border.all(color: context.colors.border),
             ),
             child: CustomText(
               'بازگشت به مسیر',
-              color: AppColor.ink,
+              color: context.colors.ink,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),

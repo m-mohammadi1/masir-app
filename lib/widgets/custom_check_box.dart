@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomCheckBox extends StatelessWidget {
   final bool value;
@@ -26,16 +26,16 @@ class CustomCheckBox extends StatelessWidget {
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color: value ? AppColor.primary : AppColor.surface,
+              color: value ? context.colors.primary : context.colors.surface,
               border: Border.all(
-                color: value ? AppColor.primary : AppColor.border,
+                color: value ? context.colors.primary : context.colors.border,
                 width: 1.3,
               ),
               borderRadius: BorderRadius.circular(6),
               boxShadow: value
                   ? [
                       BoxShadow(
-                        color: AppColor.primary.withValues(alpha: 0.25),
+                        color: context.colors.primary.withValues(alpha: 0.25),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -43,7 +43,7 @@ class CustomCheckBox extends StatelessWidget {
                   : null,
             ),
             child: value
-                ? Icon(Icons.done, color: AppColor.white, size: 16)
+                ? Icon(Icons.done, color: context.colors.white, size: 16)
                 : SizedBox(),
           ),
         ),

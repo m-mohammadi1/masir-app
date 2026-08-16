@@ -1,5 +1,5 @@
-import '/core/helper/custom_colors.dart';
 import 'package:flutter/material.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomText extends StatelessWidget {
   final String text;
@@ -37,7 +37,7 @@ class CustomText extends StatelessWidget {
                 : (fontWeight?.value ?? 400) == 500
                 ? "Pinar-Medium"
                 : "Pinar"),
-            color: color ?? AppColor.text,
+            color: color ?? context.colors.text,
             fontSize: fontSize,
             fontWeight: fontWeight,
           ),
@@ -51,19 +51,22 @@ extension TR on String {
   }
 }
 
-TextStyle customTextStyle({
+TextStyle customTextStyle(
+  BuildContext context, {
   double? fontSize,
   FontWeight? fontWeight,
   String? fontFamily,
   Color? color,
 }) {
   return TextStyle(
-    fontFamily:  true ? "IRANSans":(fontWeight?.value ?? 400) >= 600
+    fontFamily: true
+        ? "IRANSans"
+        : (fontWeight?.value ?? 400) >= 600
         ? "Pinar-Bold"
         : (fontWeight?.value ?? 400) == 500
         ? "Pinar-Medium"
         : "Pinar",
-    color: color ?? AppColor.text,
+    color: color ?? context.colors.text,
     fontSize: fontSize,
     fontWeight: fontWeight,
   );

@@ -1,4 +1,4 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -6,6 +6,7 @@ import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/about_us/presentation/bloc/about_us_bloc.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
+import '/widgets/custom_error.dart';
 
 class AboutUsPage extends StatefulWidget {
   static const String routeName = "/about-us";

@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 
-import '/core/helper/custom_colors.dart';
 import 'package:flutter/material.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomDivider extends StatelessWidget {
   final double? indent;
@@ -22,7 +22,7 @@ class CustomDivider extends StatelessWidget {
     return Container(
       width: context.appSize.width,
       height: height,
-      color: borderColor ?? AppColor.border,
+      color: borderColor ?? context.colors.border,
       margin: EdgeInsetsDirectional.only(
         start: indent ?? 0,
         end: endIndent ?? 0,

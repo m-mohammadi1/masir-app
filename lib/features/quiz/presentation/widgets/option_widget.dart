@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:mohammad/core/helper/custom_colors.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class OptionWidget extends StatelessWidget {
   final String title;
@@ -27,17 +27,17 @@ class OptionWidget extends StatelessWidget {
           height: 48,
           width: context.appSize.width,
           decoration: BoxDecoration(
-            color: selected ? AppColor.primary : null,
+            color: selected ? context.colors.primary : null,
             borderRadius: BorderRadius.circular(8),
             border: selected
                 ? null
-                : Border.all(color: AppColor.primary, width: 1.5),
+                : Border.all(color: context.colors.primary, width: 1.5),
           ),
           child: Center(
             child: CustomText(
               title,
               fontWeight: FontWeight.bold,
-              color: selected ? AppColor.white : AppColor.primary,
+              color: selected ? context.colors.white : context.colors.primary,
               fontSize: 18,
             ),
           ),

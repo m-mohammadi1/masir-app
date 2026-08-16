@@ -1,12 +1,12 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:mohammad/core/helper/custom_colors.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/speed_widget.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
 import '../bloc/audio/audio_state.dart';
 import '../bloc/audio/audio_view_model.dart';
+import '/core/theme/theme_context.dart';
 
 late AudioViewModel viewModel;
 
@@ -42,9 +42,9 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
 
   int currentTime = 0;
 
-  static Color get _trackActive => AppColor.primary.withValues(alpha: .45);
-  static Color get _trackInactive => AppColor.primaryTint;
-  static Color get _thumbColor => AppColor.primary;
+  Color get _trackActive => context.colors.primary.withValues(alpha: .45);
+  Color get _trackInactive => context.colors.primaryTint;
+  Color get _thumbColor => context.colors.primary;
 
   Widget _buildProgressSection({
     required double currentTime,
@@ -66,10 +66,10 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                 CustomText(
                   elapsedLabel,
                   fontSize: 10,
-                  color: AppColor.inkMuted,
+                  color: context.colors.inkMuted,
                 ),
                 const Spacer(),
-                CustomText(totalLabel, fontSize: 10, color: AppColor.inkMuted),
+                CustomText(totalLabel, fontSize: 10, color: context.colors.inkMuted),
               ],
             ),
           ),
@@ -142,7 +142,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                     //   width: 37,
                     //   height: 32,
                     // ),
-                    Container(height: 12.6, width: 12, color: AppColor.surface),
+                    Container(height: 12.6, width: 12, color: context.colors.surface),
                     Align(
                       alignment: AlignmentDirectional.centerEnd,
                       child: Padding(
@@ -150,7 +150,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                         child: CustomText(
                           "15s",
                           fontSize: 12,
-                          color: AppColor.primary,
+                          color: context.colors.primary,
                         ),
                       ),
                     ),
@@ -190,14 +190,14 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: AppColor.primary,
+                    color: context.colors.primary,
                     shape: BoxShape.circle,
                   ),
                   alignment: AlignmentDirectional.center,
                   child: AnimatedIcon(
                     icon: AnimatedIcons.pause_play,
                     progress: viewModel.animationController,
-                    color: AppColor.white,
+                    color: context.colors.white,
                     size: 50,
                   ),
                 ),
@@ -237,11 +237,11 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                   children: [
                     // SvgPicture.asset(
                     //   "assets/quiz/next_second.svg",
-                    //   color: AppColor.primary,
+                    //   color: context.colors.primary,
                     //   width: 37,
                     //   height: 32,
                     // ),
-                    Container(height: 12.6, width: 12, color: AppColor.surface),
+                    Container(height: 12.6, width: 12, color: context.colors.surface),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: Padding(
@@ -249,7 +249,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
                         child: CustomText(
                           "15s",
                           fontSize: 10,
-                          color: AppColor.primary,
+                          color: context.colors.primary,
                         ),
                       ),
                     ),
@@ -261,7 +261,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
         ),
         20.h,
         SpeedWidget(
-          color: AppColor.primary,
+          color: context.colors.primary,
           onChanged: (value) {
             viewModel.updateSpeed(value);
           },

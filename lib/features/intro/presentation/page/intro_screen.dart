@@ -8,8 +8,8 @@ import '/widgets/custom_button.dart';
 import '/widgets/custom_outline_button.dart';
 
 import '../../../../core/helper/assets.dart';
-import '../../../../core/helper/custom_colors.dart';
 import '../../bloc/intro_state_bloc.dart';
+import '/core/theme/theme_context.dart';
 
 class IntroScreen extends StatefulWidget {
   static const String routeName = "/intro";
@@ -122,7 +122,7 @@ class _IntroScreenState extends State<IntroScreen> {
                               margin: EdgeInsets.symmetric(horizontal: 3),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
-                                color: AppColor.border100,
+                                color: context.colors.border100,
                               ),
                             );
                           }
@@ -131,7 +131,7 @@ class _IntroScreenState extends State<IntroScreen> {
                             margin: EdgeInsets.symmetric(horizontal: 3),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              color: AppColor.primary,
+                              color: context.colors.primary,
                             ),
                           );
                         },

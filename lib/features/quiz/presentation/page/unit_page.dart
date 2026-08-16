@@ -1,4 +1,4 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
@@ -18,6 +18,7 @@ import 'package:mohammad/features/quiz/presentation/widgets/unit_content_framewo
 import 'package:mohammad/features/quiz/presentation/widgets/video_unit_content.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/widgets/custom_error.dart';
 
 class UnitPage extends StatefulWidget {
   static const String routeName = '/unit';

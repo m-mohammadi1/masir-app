@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class TimePickerAnchor extends StatefulWidget {
   final Function(String) onChange;
@@ -101,10 +101,10 @@ class _TimePickerAnchorState extends State<TimePickerAnchor>
           height: 48,
           width: context.appSize.width,
           decoration: BoxDecoration(
-            color: AppColor.white,
+            color: context.colors.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: _overlay == null ? AppColor.border : AppColor.primary,
+              color: _overlay == null ? context.colors.border : context.colors.primary,
             ),
           ),
           child: Padding(
@@ -115,11 +115,11 @@ class _TimePickerAnchorState extends State<TimePickerAnchor>
               children: [
                 CustomText(
                   '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
-                  color: AppColor.text92,
+                  color: context.colors.text92,
                 ),
                 Icon(
                   Icons.access_time_rounded,
-                  color: AppColor.text92,
+                  color: context.colors.text92,
                   size: 20,
                 ),
               ],
@@ -198,7 +198,7 @@ class _TimePickerOverlayState extends State<_TimePickerOverlay>
                   height: 40,
                   width: context.appSize.width,
                   decoration: BoxDecoration(
-                    color: AppColor.primary100,
+                    color: context.colors.primary100,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),

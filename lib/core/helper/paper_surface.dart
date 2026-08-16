@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'custom_colors.dart';
+import '/core/theme/theme_context.dart';
 
 /// Very subtle dot-grid so scroll areas read as textured paper.
 class PaperGrainPainter extends CustomPainter {
-  const PaperGrainPainter();
+  final Color color;
+
+  const PaperGrainPainter({required this.color});
 
   static const double _spacing = 15;
   static const double _dotRadius = 0.7;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = AppColor.inkFaint.withValues(alpha: 0.4);
+    final paint = Paint()..color = color.withValues(alpha: 0.4);
     for (double y = 6; y < size.height; y += _spacing) {
       for (double x = 6; x < size.width; x += _spacing) {
         canvas.drawCircle(Offset(x, y), _dotRadius, paint);
@@ -19,7 +21,8 @@ class PaperGrainPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant PaperGrainPainter oldDelegate) => false;
+  bool shouldRepaint(covariant PaperGrainPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 /// Faint paper-grain texture behind [child].
@@ -32,10 +35,12 @@ class PaperBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        const Positioned.fill(
+        Positioned.fill(
           child: IgnorePointer(
             child: RepaintBoundary(
-              child: CustomPaint(painter: PaperGrainPainter()),
+              child: CustomPaint(
+                painter: PaperGrainPainter(color: context.colors.inkFaint),
+              ),
             ),
           ),
         ),

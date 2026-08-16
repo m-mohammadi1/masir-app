@@ -15,8 +15,8 @@ import '/widgets/custom_text_field.dart';
 
 import '../bloc/auth_bloc.dart';
 import '../widget/verify_phone_bottom_sheet.dart';
+import '/core/theme/theme_context.dart';
 
-import '/core/helper/custom_colors.dart';
 
 enum _AuthMode { login, register }
 
@@ -117,7 +117,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
-      backgroundColor: AppColor.background,
+      backgroundColor: context.colors.background,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       body: Stack(
         children: [
@@ -132,8 +132,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   center: Alignment.topCenter,
                   radius: 1.1,
                   colors: [
-                    AppColor.primary.withValues(alpha: 0.14),
-                    AppColor.background.withValues(alpha: 0),
+                    context.colors.primary.withValues(alpha: 0.14),
+                    context.colors.background.withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -170,7 +170,7 @@ class _AuthScreenState extends State<AuthScreen> {
         CustomText(
           "نام کاربری و رمز عبور خود را وارد کنید",
           fontSize: 13,
-          color: AppColor.text92,
+          color: context.colors.text92,
           textAlign: TextAlign.center,
         ),
         28.h,
@@ -207,8 +207,8 @@ class _AuthScreenState extends State<AuthScreen> {
               title: "ورود",
               enable: _isLoginValid,
               loading: state.isLoading,
-              backgroundColor: AppColor.primary,
-              enableColor: AppColor.primary.withValues(alpha: 0.45),
+              backgroundColor: context.colors.primary,
+              enableColor: context.colors.primary.withValues(alpha: 0.45),
               buttonSizeRadius: 10,
               onTap: _onLogin,
             );
@@ -244,7 +244,7 @@ class _AuthScreenState extends State<AuthScreen> {
         CustomText(
           "کد دعوت و شماره موبایل خود را وارد کنید",
           fontSize: 13,
-          color: AppColor.text92,
+          color: context.colors.text92,
           textAlign: TextAlign.center,
         ),
         28.h,
@@ -296,8 +296,8 @@ class _AuthScreenState extends State<AuthScreen> {
               title: "بعدی",
               loading: state.isLoading,
               enable: _isRegisterValid,
-              backgroundColor: AppColor.primary,
-              enableColor: AppColor.primary.withValues(alpha: 0.45),
+              backgroundColor: context.colors.primary,
+              enableColor: context.colors.primary.withValues(alpha: 0.45),
               buttonSizeRadius: 10,
               onTap: _onRegisterNext,
             );
@@ -324,12 +324,12 @@ class _AuthCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
-        color: AppColor.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColor.border),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
-            color: AppColor.ink.withValues(alpha: 0.06),
+            color: context.colors.ink.withValues(alpha: 0.06),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -350,7 +350,7 @@ class _AuthLogo extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: AppColor.primary,
+          color: context.colors.primary,
           borderRadius: BorderRadius.circular(14),
         ),
         alignment: Alignment.center,
@@ -406,12 +406,13 @@ class _AuthTextField extends StatelessWidget {
       action: action,
       onChanged: onChanged,
       textFieldRadius: 10,
-      borderColor: isFocused ? AppColor.primary : AppColor.border,
-      backgroundColor: isFocused ? AppColor.primary100 : AppColor.surface,
+      borderColor: isFocused ? context.colors.primary : context.colors.border,
+      backgroundColor: isFocused ? context.colors.primary100 : context.colors.surface,
       labelStyle: customTextStyle(
+        context,
         fontSize: 13,
         fontWeight: FontWeight.w500,
-        color: AppColor.ink,
+        color: context.colors.ink,
       ),
     );
   }
@@ -433,9 +434,9 @@ class _AuthLink extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
-            color: AppColor.primary,
+            color: context.colors.primary,
             decoration: TextDecoration.underline,
-            decorationColor: AppColor.primary,
+            decorationColor: context.colors.primary,
           ),
         ),
       ),

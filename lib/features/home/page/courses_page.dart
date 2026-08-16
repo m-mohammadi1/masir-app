@@ -1,14 +1,17 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
-import '/core/helper/custom_colors.dart';
 import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 
 import '../../main/presentation/page/outline_page.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/custom_error.dart';
+import '/widgets/empty_widget.dart';
+import '/widgets/skeleton.dart';
 
 class CoursesPage extends StatefulWidget {
   const CoursesPage({super.key});
@@ -68,9 +71,21 @@ class _CoursesPageState extends State<CoursesPage> {
               bloc: mySubscriptionsBloc,
               builder: (context, state) {
                 return state.when(
-                  loading: (_) => CustomLoading(),
-                  error: (_, message) => CustomError(message: message),
+                  loading: (_) => const SkeletonList(),
+                  error: (_, message) => CustomError(
+                    message: message,
+                    retry: () => mySubscriptionsBloc.add(
+                      MySubscriptionsEvent.mySubscriptions(),
+                    ),
+                  ),
                   success: (isLoading, data) {
+                    if (data.isEmpty) {
+                      return const EmptyWidget(
+                        text: 'دوره‌ای ندارید',
+                        description: 'هنوز در هیچ دوره‌ای ثبت‌نام نکرده‌اید.',
+                        icon: Icons.menu_book_outlined,
+                      );
+                    }
                     return ListView.separated(
                       itemCount: data.length,
                       padding: EdgeInsets.symmetric(vertical: 8),
@@ -84,15 +99,15 @@ class _CoursesPageState extends State<CoursesPage> {
                           textDirection: TextDirection.ltr,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppColor.surface,
+                              color: context.colors.surface,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColor.border,
+                                color: context.colors.border,
                                 width: 1,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColor.ink.withValues(alpha: 0.06),
+                                  color: context.colors.ink.withValues(alpha: 0.06),
                                   blurRadius: 8,
                                   offset: Offset(0, 2),
                                 ),
@@ -114,7 +129,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                               style: TextStyle(
                                                 fontSize: 17,
                                                 fontWeight: FontWeight.bold,
-                                                color: AppColor.ink,
+                                                color: context.colors.ink,
                                               ),
                                             ),
                                             if (course?.publishedAt != null &&
@@ -126,7 +141,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                                 "تاریخ ثبت‌نام: ${_formatJalaliDate(course.publishedAt!)}",
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: AppColor.inkMuted,
+                                                  color: context.colors.inkMuted,
                                                 ),
                                               ),
                                             ],
@@ -139,7 +154,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                         height: 64,
                                         alignment: Alignment.center,
                                         decoration: BoxDecoration(
-                                          color: AppColor.primary.withValues(
+                                          color: context.colors.primary.withValues(
                                             alpha: 0.55,
                                           ),
                                           borderRadius: BorderRadius.circular(
@@ -159,7 +174,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                                       Icon(
                                                         Icons.menu_book_rounded,
                                                         size: 30,
-                                                        color: AppColor.white
+                                                        color: context.colors.white
                                                             .withValues(
                                                               alpha: 0.85,
                                                             ),
@@ -169,7 +184,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                             : Icon(
                                                 Icons.menu_book_rounded,
                                                 size: 30,
-                                                color: AppColor.white
+                                                color: context.colors.white
                                                     .withValues(alpha: 0.85),
                                               ),
                                       ),
@@ -187,7 +202,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
-                                          color: AppColor.inkMuted,
+                                          color: context.colors.inkMuted,
                                         ),
                                       ),
                                       SizedBox(width: 6),
@@ -199,10 +214,10 @@ class _CoursesPageState extends State<CoursesPage> {
                                           child: LinearProgressIndicator(
                                             value: progress / 100.0,
                                             minHeight: 8,
-                                            backgroundColor: AppColor.border,
+                                            backgroundColor: context.colors.border,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                                  AppColor.primary,
+                                                  context.colors.primary,
                                                 ),
                                           ),
                                         ),

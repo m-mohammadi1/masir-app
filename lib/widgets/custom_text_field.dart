@@ -1,10 +1,10 @@
-import '/core/helper/custom_colors.dart';
 import '/core/helper/helper_extension.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomTextField extends StatelessWidget {
   final String? hint, labelText;
@@ -109,7 +109,7 @@ class CustomTextField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(textFieldRadius),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColor.ink.withValues(alpha: 0.04),
+                    color: context.colors.ink.withValues(alpha: 0.04),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -123,7 +123,7 @@ class CustomTextField extends StatelessWidget {
                 onChanged: onChanged,
                 enabled: (enabled == true && onTap == null),
                 decoration: InputDecoration(
-                  fillColor: backgroundColor ?? AppColor.surface,
+                  fillColor: backgroundColor ?? context.colors.surface,
                   hintTextDirection: textDirection,
                   focusColor: Colors.transparent,
                   hoverColor: Colors.transparent,
@@ -135,8 +135,8 @@ class CustomTextField extends StatelessWidget {
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       color: !errorMessage.isNullOrEmpty
-                          ? AppColor.error
-                          : borderColor ?? AppColor.primary,
+                          ? context.colors.error
+                          : borderColor ?? context.colors.primary,
                       width: 1.2,
                     ),
                     borderRadius: BorderRadius.circular(textFieldRadius),
@@ -144,8 +144,8 @@ class CustomTextField extends StatelessWidget {
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       color: !errorMessage.isNullOrEmpty
-                          ? AppColor.error
-                          : borderColor ?? AppColor.border,
+                          ? context.colors.error
+                          : borderColor ?? context.colors.border,
                       width: 1.2,
                     ),
                     borderRadius: BorderRadius.circular(textFieldRadius),
@@ -153,8 +153,8 @@ class CustomTextField extends StatelessWidget {
                   disabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       color: !errorMessage.isNullOrEmpty
-                          ? AppColor.error
-                          : borderColor ?? AppColor.border,
+                          ? context.colors.error
+                          : borderColor ?? context.colors.border,
                       width: 1.2,
                     ),
                     borderRadius: BorderRadius.circular(textFieldRadius),
@@ -167,7 +167,8 @@ class CustomTextField extends StatelessWidget {
                   hintStyle:
                       hintStyle ??
                       customTextStyle(
-                        color: AppColor.text92,
+                        context,
+                        color: context.colors.text92,
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
                       ),
@@ -175,7 +176,8 @@ class CustomTextField extends StatelessWidget {
                 style:
                     style ??
                     customTextStyle(
-                      color: AppColor.text,
+                      context,
+                      color: context.colors.text,
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
@@ -204,7 +206,7 @@ class CustomTextField extends StatelessWidget {
         ),
         if (!errorMessage.isNullOrEmpty) ...[
           4.h,
-          CustomText(errorMessage!, color: AppColor.error),
+          CustomText(errorMessage!, color: context.colors.error),
         ],
       ],
     );

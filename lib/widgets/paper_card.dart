@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
+import '/core/theme/masir_colors.dart';
+import '/core/theme/theme_context.dart';
 
 /// Shared "paper sheet" card styling used across the app.
 class PaperCard extends StatelessWidget {
@@ -18,14 +19,17 @@ class PaperCard extends StatelessWidget {
     this.onTap,
   });
 
-  static BoxDecoration decoration({double borderRadius = 14}) {
+  static BoxDecoration decoration(
+    MasirColors colors, {
+    double borderRadius = 14,
+  }) {
     return BoxDecoration(
-      color: AppColor.surface,
+      color: colors.surface,
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: AppColor.border, width: 1.1),
+      border: Border.all(color: colors.border, width: 1.1),
       boxShadow: [
         BoxShadow(
-          color: AppColor.ink.withValues(alpha: 0.06),
+          color: colors.ink.withValues(alpha: 0.06),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -38,7 +42,7 @@ class PaperCard extends StatelessWidget {
     final content = Container(
       margin: margin,
       padding: padding ?? const EdgeInsets.all(16),
-      decoration: decoration(borderRadius: borderRadius),
+      decoration: decoration(context.colors, borderRadius: borderRadius),
       child: child,
     );
 

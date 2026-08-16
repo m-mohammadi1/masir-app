@@ -2,9 +2,9 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/helper/assets.dart';
-import '../../../core/helper/custom_colors.dart';
 import '../../../widgets/custom_text.dart';
 import '../page/route_map_page.dart';
+import '/core/theme/theme_context.dart';
 
 class HomeItem extends StatelessWidget {
   const HomeItem({super.key});
@@ -18,8 +18,8 @@ class HomeItem extends StatelessWidget {
         width: 340,
         margin: EdgeInsetsDirectional.only(start: 8, bottom: 0),
         decoration: BoxDecoration(
-          color: AppColor.white,
-          border: Border.all(color: AppColor.border150),
+          color: context.colors.white,
+          border: Border.all(color: context.colors.border150),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Padding(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class CourseCard extends StatelessWidget {
   final String title;
@@ -29,12 +29,12 @@ class CourseCard extends StatelessWidget {
             height: 110,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
-              color: AppColor.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColor.border),
+              border: Border.all(color: context.colors.border),
               boxShadow: [
                 BoxShadow(
-                  color: AppColor.primary.withValues(alpha: 0.08),
+                  color: context.colors.primary.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 3),
                 ),
@@ -52,14 +52,14 @@ class CourseCard extends StatelessWidget {
                         textAlign: TextAlign.right,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColor.ink,
+                        color: context.colors.ink,
                       ),
                       const SizedBox(height: 10),
                       CustomText(
                         description,
                         textAlign: TextAlign.right,
                         fontSize: 14,
-                        color: AppColor.inkMuted,
+                        color: context.colors.inkMuted,
                         fontWeight: FontWeight.w500,
                       ),
                     ],
@@ -70,10 +70,10 @@ class CourseCard extends StatelessWidget {
                   width: 74,
                   height: 74,
                   decoration: BoxDecoration(
-                    color: AppColor.primaryTint,
+                    color: context.colors.primaryTint,
                     borderRadius: BorderRadius.circular(22),
                   ),
-                  child: Icon(icon, size: 34, color: AppColor.primary),
+                  child: Icon(icon, size: 34, color: context.colors.primary),
                 ),
               ],
             ),

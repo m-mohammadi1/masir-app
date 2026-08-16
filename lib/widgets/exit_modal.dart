@@ -1,9 +1,9 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/helper/custom_colors.dart';
 import '../../../../widgets/custom_text.dart';
 import 'custom_button.dart';
 import 'custom_outline_button.dart';
+import '/core/theme/theme_context.dart';
 
 class ExitModal extends StatelessWidget {
   final String text;
@@ -30,9 +30,9 @@ class ExitModal extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              color: AppColor.primaryTint,
+              color: context.colors.primaryTint,
               border: Border.all(
-                color: AppColor.primary.withValues(alpha: 0.25),
+                color: context.colors.primary.withValues(alpha: 0.25),
                 width: 1.1,
               ),
             ),
@@ -40,7 +40,7 @@ class ExitModal extends StatelessWidget {
               child: CustomText(
                 "تاییدیه",
                 fontWeight: FontWeight.w500,
-                color: AppColor.primary,
+                color: context.colors.primary,
               ),
             ),
           ),
@@ -49,7 +49,7 @@ class ExitModal extends StatelessWidget {
           8.h,
           CustomText(
             description ?? "با بستن مرحله، تغییرات شما ذخیره نخواهد شد.",
-            color: AppColor.text92,
+            color: context.colors.text92,
           ),
           16.h,
           Row(
@@ -57,11 +57,11 @@ class ExitModal extends StatelessWidget {
               Expanded(
                 child: CustomOutlineButton(
                   title: "انصراف",
-                  borderColor: ConstColors.red,
+                  borderColor: context.colors.error,
                   onTap: () {
                     CustomNavigator.pop();
                   },
-                  textStyle: TextStyle(color: ConstColors.red),
+                  textStyle: TextStyle(color: context.colors.error),
                 ),
               ),
               10.w,
@@ -76,7 +76,7 @@ class ExitModal extends StatelessWidget {
                       CustomNavigator.pop();
                     }
                   },
-                  backgroundColor: ConstColors.red,
+                  backgroundColor: context.colors.error,
                 ),
               ),
             ],

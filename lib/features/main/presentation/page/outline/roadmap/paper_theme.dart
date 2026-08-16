@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
+import '/core/theme/masir_colors.dart';
+import '/core/theme/theme_context.dart';
 
-/// Roadmap tokens — const aliases to [LightColors] for use in const widgets.
-/// Elsewhere in the app prefer [AppColor] (respects dark mode).
+/// Roadmap tokens derived from the current [MasirColors] so the trail
+/// follows light/dark (and later, institute) theming.
 class PaperTheme {
-  PaperTheme._();
+  final MasirColors colors;
 
-  static const Color pagePaper = LightColors.pagePaper;
-  static const Color cardPaper = LightColors.cardPaper;
-  static const Color paperEdge = LightColors.paperEdge;
-  static const Color ink = LightColors.ink;
-  static const Color inkMuted = LightColors.inkMuted;
-  static const Color inkFaint = LightColors.inkFaint;
-  static const Color locked = LightColors.locked;
-  static const Color accent = LightColors.primary;
-  static const Color success = LightColors.success;
-  static const Color trailWalked = LightColors.trailWalked;
-  static const Color trailWalkedEdge = LightColors.trailWalkedEdge;
-  static const Color trailUnwalked = LightColors.trailUnwalked;
-  static const Color trailUnwalkedEdge = LightColors.trailUnwalkedEdge;
+  const PaperTheme(this.colors);
+
+  factory PaperTheme.of(BuildContext context) => PaperTheme(context.colors);
+
+  Color get pagePaper => colors.pagePaper;
+  Color get cardPaper => colors.cardPaper;
+  Color get paperEdge => colors.paperEdge;
+  Color get ink => colors.ink;
+  Color get inkMuted => colors.inkMuted;
+  Color get inkFaint => colors.inkFaint;
+  Color get locked => colors.locked;
+  Color get accent => colors.accent;
+  Color get success => colors.success;
+  Color get trailWalked => colors.trailWalked;
+  Color get trailWalkedEdge => colors.trailWalkedEdge;
+  Color get trailUnwalked => colors.trailUnwalked;
+  Color get trailUnwalkedEdge => colors.trailUnwalkedEdge;
 }
 
 String persianDigits(int n) {

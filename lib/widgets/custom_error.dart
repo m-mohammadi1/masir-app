@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '/core/theme/theme_context.dart';
+import 'custom_button.dart';
 
 class CustomError extends StatelessWidget {
   final String message;
   final Color? textColor;
-  static Color? initialColor;
   final VoidCallback? retry;
 
   const CustomError({
@@ -26,14 +27,17 @@ class CustomError extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: textColor ?? CustomError.initialColor,
+                color: textColor ?? context.colors.ink,
               ),
             ),
-            if (retry != null)
-              TextButton(
-                child: const Text("تلاش مجدد"),
-                onPressed: retry,
+            if (retry != null) ...[
+              const SizedBox(height: 16),
+              CustomButton(
+                title: 'تلاش مجدد',
+                onTap: retry,
+                width: 180,
               ),
+            ],
           ],
         ),
       ),

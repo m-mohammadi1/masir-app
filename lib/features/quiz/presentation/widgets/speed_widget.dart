@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class SpeedWidget extends StatefulWidget {
   final Color color;
@@ -46,12 +46,12 @@ class _SpeedWidgetState extends State<SpeedWidget> {
                 borderRadius: BorderRadius.circular(8),
                 color: data[index] == selected
                     ? widget.color
-                    : AppColor.surface,
+                    : context.colors.surface,
               ),
               child: CustomText(
                 data[index],
                 fontSize: 12,
-                color: data[index] == selected ? AppColor.white : widget.color,
+                color: data[index] == selected ? context.colors.white : widget.color,
               ),
             ),
           ),

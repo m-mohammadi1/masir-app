@@ -141,7 +141,7 @@ Global redirect for auth is stubbed (commented) in `routes.dart`; splash current
 
 - **RTL Persian-first:** default locale `fa`; copy is mostly Persian strings in widgets.
 - **Fonts:** Pinar (FD), IRANSans — declared in `pubspec.yaml`.
-- **Theming:** `core/helper/custom_colors.dart`, `custom_themes.dart`; `AppColor`, `light` theme in `main.dart`.
+- **Theming:** `MasirColors` ThemeExtension in `core/theme/masir_colors.dart` (`context.colors`); palettes in `core/helper/custom_colors.dart`; themes in `custom_themes.dart`.
 - **Shared widgets:** prefer `lib/widgets/` (`CustomButton`, `CustomText`, `BaseScreen`, …) before duplicating.
 - **Assets:** `core/helper/assets.dart` for centralized paths.
 - **Rich content:** `flutter_html`, custom audio/video players under `features/quiz/presentation/widgets/`.

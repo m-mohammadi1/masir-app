@@ -1,6 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
+import '/core/theme/theme_context.dart';
 
 Future showCustomModal({
   required BuildContext context,
@@ -19,12 +19,12 @@ Future showCustomModal({
       return ClosableKeyBoard(
         child: Container(
           decoration: BoxDecoration(
-            color: AppColor.surface,
+            color: context.colors.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-            border: Border.all(color: AppColor.border),
+            border: Border.all(color: context.colors.border),
             boxShadow: [
               BoxShadow(
-                color: AppColor.ink.withValues(alpha: .1),
+                color: context.colors.ink.withValues(alpha: .1),
                 blurRadius: 24,
                 spreadRadius: 2,
                 offset: Offset(0, -8),
@@ -40,7 +40,7 @@ Future showCustomModal({
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(19),
-                    color: AppColor.text92.withValues(alpha: .4),
+                    color: context.colors.text92.withValues(alpha: .4),
                   ),
                   height: 4,
                   width: 48,

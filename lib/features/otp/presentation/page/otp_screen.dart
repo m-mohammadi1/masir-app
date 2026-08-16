@@ -7,7 +7,6 @@ import 'package:mohammad/features/auth/presentation/bloc/submit_register/submit_
 import 'package:mohammad/features/register/presentation/page/register_page.dart';
 import '../../../../widgets/custom_text_field.dart';
 import '/core/helper/assets.dart';
-import '/core/helper/custom_colors.dart';
 import '/widgets/back_button.dart';
 import '/widgets/base_screen.dart';
 import '/widgets/custom_button.dart';
@@ -16,6 +15,7 @@ import 'package:otp_text_field_v2/otp_field_style_v2.dart';
 import 'package:otp_text_field_v2/otp_field_v2.dart';
 import '../../../../core/services/service_locator.dart';
 import '../bloc/otp_form/otp_form_bloc.dart';
+import '/core/theme/theme_context.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phoneNumber;
@@ -124,19 +124,19 @@ class _OtpScreenState extends State<OtpScreen> {
                   CustomText(
                     "کدتایید به شماره",
                     fontWeight: FontWeight.w500,
-                    color: AppColor.text92,
+                    color: context.colors.text92,
                   ),
                   Directionality(
                     textDirection: TextDirection.ltr,
                     child: CustomText(
                       " ${widget.phoneNumber} ",
-                      color: AppColor.secondary,
+                      color: context.colors.secondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   CustomText(
                     "ارسال شده را وارد کنید.",
-                    color: AppColor.text92,
+                    color: context.colors.text92,
                     fontWeight: FontWeight.w500,
                   ),
                 ],
@@ -152,13 +152,13 @@ class _OtpScreenState extends State<OtpScreen> {
               children: [
                 CustomText(
                   "شماره موبایل اشتباه است؟",
-                  color: AppColor.text92,
+                  color: context.colors.text92,
                   fontSize: 12,
                 ),
                 6.w,
                 CustomText(
                   "ویرایش شماره",
-                  color: AppColor.primary,
+                  color: context.colors.primary,
                   fontSize: 12,
                 ),
                 4.w,
@@ -202,12 +202,12 @@ class _OtpScreenState extends State<OtpScreen> {
                       width: MediaQuery.of(context).size.width,
                       textFieldAlignment: MainAxisAlignment.spaceBetween,
                       fieldWidth: 55,
-                      cursorColor: AppColor.primary,
+                      cursorColor: context.colors.primary,
                       contentPadding: EdgeInsets.symmetric(vertical: 16),
                       otpFieldStyle: OtpFieldStyle(
-                        borderColor: AppColor.primary,
-                        focusBorderColor: AppColor.primary,
-                        backgroundColor: AppColor.borderF9,
+                        borderColor: context.colors.primary,
+                        focusBorderColor: context.colors.primary,
+                        backgroundColor: context.colors.borderF9,
                       ),
 
                       fieldStyle: FieldStyle.box,
@@ -263,7 +263,7 @@ class _OtpScreenState extends State<OtpScreen> {
                             ),
                             CustomText(
                               "$_formattedTime ${"ثانیه"}",
-                              color: AppColor.primary,
+                              color: context.colors.primary,
                               fontSize: 12,
                             ),
                           ],
@@ -339,12 +339,13 @@ class _AuthTextField extends StatelessWidget {
       action: action,
       onChanged: onChanged,
       textFieldRadius: 10,
-      borderColor: isFocused ? AppColor.primary : AppColor.border,
-      backgroundColor: isFocused ? AppColor.primary100 : AppColor.surface,
+      borderColor: isFocused ? context.colors.primary : context.colors.border,
+      backgroundColor: isFocused ? context.colors.primary100 : context.colors.surface,
       labelStyle: customTextStyle(
+        context,
         fontSize: 13,
         fontWeight: FontWeight.w500,
-        color: AppColor.ink,
+        color: context.colors.ink,
       ),
     );
   }

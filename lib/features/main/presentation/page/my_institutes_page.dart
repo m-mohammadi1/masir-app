@@ -1,13 +1,16 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
-import '/core/helper/custom_colors.dart';
 
 import '../bloc/my_institutes/my_institutes_bloc.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/custom_error.dart';
+import '/widgets/empty_widget.dart';
+import '/widgets/skeleton.dart';
 
 class MyInstitutesPage extends StatefulWidget {
   static const String routeName = "/my-institutes";
@@ -43,9 +46,19 @@ class _MyInstitutesPageState extends State<MyInstitutesPage> {
               bloc: bloc,
               builder: (context, state) {
                 return state.when(
-                  loading: (isLoading) => CustomLoading(),
-                  error: (isLoading, message) => CustomError(message: message),
+                  loading: (isLoading) => const SkeletonList(),
+                  error: (isLoading, message) => CustomError(
+                    message: message,
+                    retry: () => bloc.add(MyInstitutesEvent.myInstitutes()),
+                  ),
                   success: (isLoading, data) {
+                    if (data.isEmpty) {
+                      return const EmptyWidget(
+                        text: 'مؤسسه‌ای ندارید',
+                        description: 'هنوز به هیچ مؤسسه‌ای متصل نشده‌اید.',
+                        icon: Icons.apartment_outlined,
+                      );
+                    }
                     return ListView.separated(
                       itemCount: data.length,
                       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -57,12 +70,12 @@ class _MyInstitutesPageState extends State<MyInstitutesPage> {
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppColor.surface,
+                              color: context.colors.surface,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColor.border),
+                              border: Border.all(color: context.colors.border),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColor.ink.withValues(alpha: 0.06),
+                                  color: context.colors.ink.withValues(alpha: 0.06),
                                   blurRadius: 10,
                                   offset: Offset(0, 2),
                                 ),
@@ -80,12 +93,12 @@ class _MyInstitutesPageState extends State<MyInstitutesPage> {
                                             institute.name ?? "",
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
-                                            color: AppColor.ink,
+                                            color: context.colors.ink,
                                           ),
                                           CustomText(
                                             institute.slug ?? "",
                                             fontSize: 14,
-                                            color: AppColor.ink,
+                                            color: context.colors.ink,
                                           ),
                                         ],
                                       ),
@@ -97,11 +110,11 @@ class _MyInstitutesPageState extends State<MyInstitutesPage> {
                                   child: Container(
                                     width: 64,
                                     height: 64,
-                                    color: AppColor.borderF9,
+                                    color: context.colors.borderF9,
                                     child: Icon(
                                       Icons.apartment_rounded,
                                       size: 30,
-                                      color: AppColor.inkMuted,
+                                      color: context.colors.inkMuted,
                                     ),
                                   ),
                                 ),

@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/core/helper/assets.dart';
-import '/core/helper/custom_colors.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomBackButton extends StatelessWidget {
   final Function? backAction;
@@ -24,7 +24,7 @@ class CustomBackButton extends StatelessWidget {
           height: 32,
           width: 32,
           decoration: BoxDecoration(
-            color: AppColor.text92.withValues(alpha: .15),
+            color: context.colors.text92.withValues(alpha: .15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Padding(

@@ -1,4 +1,4 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
@@ -6,10 +6,13 @@ import 'package:mohammad/features/main/presentation/bloc/institutes/institutes_b
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
-import '/core/helper/custom_colors.dart';
 import '/core/services/hive_service.dart';
 import '../../data/models/institutes_model.dart';
 import '../bloc/my_institutes/my_institutes_bloc.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/custom_error.dart';
+import '/widgets/empty_widget.dart';
+import '/widgets/skeleton.dart';
 
 /// Doubles as the "switch institute" screen: every institute is tappable,
 /// selecting one makes it the student's current institute app-wide.
@@ -72,10 +75,19 @@ class _InstitutesPageState extends State<InstitutesPage> {
                   bloc: bloc,
                   builder: (context, state) {
                     return state.when(
-                      loading: (isLoading) => CustomLoading(),
-                      error: (isLoading, message) =>
-                          CustomError(message: message),
+                      loading: (isLoading) => const SkeletonList(),
+                      error: (isLoading, message) => CustomError(
+                        message: message,
+                        retry: () => bloc.add(InstitutesEvent.institutes()),
+                      ),
                       success: (isLoading, data) {
+                        if (data.isEmpty) {
+                          return const EmptyWidget(
+                            text: 'مؤسسه‌ای یافت نشد',
+                            description: 'در حال حاضر مؤسسه‌ای برای نمایش نیست.',
+                            icon: Icons.school_outlined,
+                          );
+                        }
                         return ListView.separated(
                           itemCount: data.length,
                           padding: EdgeInsets.symmetric(horizontal: 16),
@@ -94,18 +106,18 @@ class _InstitutesPageState extends State<InstitutesPage> {
                                   padding: EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: isCurrent
-                                        ? AppColor.primaryTint
-                                        : AppColor.surface,
+                                        ? context.colors.primaryTint
+                                        : context.colors.surface,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: isCurrent
-                                          ? AppColor.primary
-                                          : AppColor.border,
+                                          ? context.colors.primary
+                                          : context.colors.border,
                                       width: isCurrent ? 1.5 : 1,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColor.ink.withValues(
+                                        color: context.colors.ink.withValues(
                                           alpha: 0.06,
                                         ),
                                         blurRadius: 10,
@@ -119,7 +131,7 @@ class _InstitutesPageState extends State<InstitutesPage> {
                                         child: Container(
                                           width: 56,
                                           height: 56,
-                                          color: AppColor.borderF9,
+                                          color: context.colors.borderF9,
                                           child:
                                               institute.logoUrl != null &&
                                                   institute.logoUrl!.isNotEmpty
@@ -131,13 +143,13 @@ class _InstitutesPageState extends State<InstitutesPage> {
                                                         Icons.school,
                                                         size: 26,
                                                         color:
-                                                            AppColor.inkMuted,
+                                                            context.colors.inkMuted,
                                                       ),
                                                 )
                                               : Icon(
                                                   Icons.school,
                                                   size: 26,
-                                                  color: AppColor.inkMuted,
+                                                  color: context.colors.inkMuted,
                                                 ),
                                         ),
                                       ),
@@ -152,7 +164,7 @@ class _InstitutesPageState extends State<InstitutesPage> {
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w600,
-                                                color: AppColor.ink,
+                                                color: context.colors.ink,
                                               ),
                                             ),
                                             if (isMine || isCurrent) ...[
@@ -165,8 +177,8 @@ class _InstitutesPageState extends State<InstitutesPage> {
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                   color: isCurrent
-                                                      ? AppColor.primary
-                                                      : AppColor.success,
+                                                      ? context.colors.primary
+                                                      : context.colors.success,
                                                 ),
                                               ),
                                             ],
@@ -176,7 +188,7 @@ class _InstitutesPageState extends State<InstitutesPage> {
                                       if (isCurrent)
                                         Icon(
                                           Icons.check_circle_rounded,
-                                          color: AppColor.primary,
+                                          color: context.colors.primary,
                                         ),
                                     ],
                                   ),

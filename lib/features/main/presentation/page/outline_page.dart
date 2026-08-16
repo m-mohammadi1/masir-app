@@ -1,13 +1,12 @@
 import 'dart:math' as math;
 
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/request_outline_course_model.dart';
 import 'package:mohammad/features/main/domain/entities/outline_course.dart';
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
-import 'package:mohammad/core/helper/custom_colors.dart';
 import 'package:mohammad/core/helper/paper_surface.dart';
 import 'package:mohammad/features/main/presentation/page/outline/roadmap/paper_theme.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
@@ -15,6 +14,8 @@ import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/custom_error.dart';
 
 // ---------------------------------------------------------------------------
 // ARCHITECTURE NOTE
@@ -74,22 +75,22 @@ class _TrailRibbon {
   static const double _sampleStep = 8.0;
 
   /// The portion of [source] already adventured — solid green.
-  static void drawWalked(Canvas canvas, Path source) {
+  static void drawWalked(Canvas canvas, Path source, PaperTheme theme) {
     _drawSolid(
       canvas,
       source,
-      fill: PaperTheme.trailWalked,
-      edge: PaperTheme.trailWalkedEdge,
+      fill: theme.trailWalked,
+      edge: theme.trailWalkedEdge,
     );
   }
 
   /// The portion of [source] not yet adventured — solid purple.
-  static void drawUnwalked(Canvas canvas, Path source) {
+  static void drawUnwalked(Canvas canvas, Path source, PaperTheme theme) {
     _drawSolid(
       canvas,
       source,
-      fill: PaperTheme.trailUnwalked,
-      edge: PaperTheme.trailUnwalkedEdge,
+      fill: theme.trailUnwalked,
+      edge: theme.trailUnwalkedEdge,
     );
   }
 
@@ -636,7 +637,7 @@ class _OutlinePageState extends State<OutlinePage>
       textDirection: TextDirection.rtl,
       child: BaseScreen(
         usePaperGrain: false,
-        backgroundColor: AppColor.background,
+        backgroundColor: context.colors.background,
         body: Column(
           children: [
             CustomAppBar(title: widget.title, topSpacing: 4),
@@ -710,9 +711,9 @@ class _CourseProgressHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: PaperTheme.cardPaper,
+        color: PaperTheme.of(context).cardPaper,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: PaperTheme.paperEdge),
+        border: Border.all(color: PaperTheme.of(context).paperEdge),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -720,20 +721,20 @@ class _CourseProgressHeader extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const CustomText(
+              CustomText(
                 'مسیر یادگیری',
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: PaperTheme.ink,
+                color: PaperTheme.of(context).ink,
               ),
               _StampBadge(
                 size: 32,
-                ringColor: PaperTheme.accent,
+                ringColor: PaperTheme.of(context).accent,
                 child: CustomText(
                   '$progress٪',
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: PaperTheme.ink,
+                  color: PaperTheme.of(context).ink,
                 ),
               ),
             ],
@@ -744,9 +745,9 @@ class _CourseProgressHeader extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress / 100.0,
               minHeight: 6,
-              backgroundColor: PaperTheme.inkFaint.withValues(alpha: 0.3),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                PaperTheme.accent,
+              backgroundColor: PaperTheme.of(context).inkFaint.withValues(alpha: 0.3),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                PaperTheme.of(context).accent,
               ),
             ),
           ),
@@ -784,7 +785,11 @@ class _TrailCanvas extends StatelessWidget {
             children: [
               Positioned.fill(
                 child: CustomPaint(
-                  painter: _FullTrailPainter(nodes: nodes, centersY: centersY),
+                  painter: _FullTrailPainter(
+                    nodes: nodes,
+                    centersY: centersY,
+                    theme: PaperTheme.of(context),
+                  ),
                 ),
               ),
               for (var i = 0; i < nodes.length; i++)
@@ -905,8 +910,13 @@ class _TrailNodeEntrance extends StatelessWidget {
 class _FullTrailPainter extends CustomPainter {
   final List<_TrailNode> nodes;
   final List<double> centersY;
+  final PaperTheme theme;
 
-  _FullTrailPainter({required this.nodes, required this.centersY});
+  _FullTrailPainter({
+    required this.nodes,
+    required this.centersY,
+    required this.theme,
+  });
 
   double _x(_TrailNode node, double width) {
     if (node.centered) return width / 2;
@@ -937,9 +947,9 @@ class _FullTrailPainter extends CustomPainter {
         );
 
       if (nodes[i].incomingSolid) {
-        _TrailRibbon.drawWalked(canvas, segment);
+        _TrailRibbon.drawWalked(canvas, segment, theme);
       } else {
-        _TrailRibbon.drawUnwalked(canvas, segment);
+        _TrailRibbon.drawUnwalked(canvas, segment, theme);
       }
     }
   }
@@ -972,17 +982,17 @@ class _ChapterHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
+    final accent = isComplete ? PaperTheme.of(context).success : PaperTheme.of(context).accent;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: PaperTheme.cardPaper,
+        color: PaperTheme.of(context).cardPaper,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: PaperTheme.paperEdge),
+        border: Border.all(color: PaperTheme.of(context).paperEdge),
         boxShadow: [
           BoxShadow(
-            color: PaperTheme.ink.withValues(alpha: 0.06),
+            color: PaperTheme.of(context).ink.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -997,20 +1007,20 @@ class _ChapterHeader extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: PaperTheme.cardPaper,
+              color: PaperTheme.of(context).cardPaper,
               border: Border.all(color: accent, width: 1.8),
             ),
             child: isComplete
-                ? const Icon(
+                ? Icon(
                     Icons.check_rounded,
                     size: 18,
-                    color: PaperTheme.success,
+                    color: PaperTheme.of(context).success,
                   )
                 : CustomText(
                     persianDigits(index + 1),
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: PaperTheme.ink,
+                    color: PaperTheme.of(context).ink,
                   ),
           ),
           const SizedBox(width: 10),
@@ -1023,7 +1033,7 @@ class _ChapterHeader extends StatelessWidget {
                   title,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: PaperTheme.ink,
+                  color: PaperTheme.of(context).ink,
                   maxLines: 2,
                 ),
                 const SizedBox(height: 4),
@@ -1032,7 +1042,7 @@ class _ChapterHeader extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: progress / 100.0,
                     minHeight: 4,
-                    backgroundColor: PaperTheme.inkFaint.withValues(alpha: 0.3),
+                    backgroundColor: PaperTheme.of(context).inkFaint.withValues(alpha: 0.3),
                     valueColor: AlwaysStoppedAnimation<Color>(accent),
                   ),
                 ),
@@ -1075,7 +1085,7 @@ class _StampBadge extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: PaperTheme.cardPaper,
+          color: PaperTheme.of(context).cardPaper,
           border: Border.all(color: ringColor, width: 2),
         ),
         child: Container(
@@ -1119,12 +1129,12 @@ class _PathWaypoint extends StatelessWidget {
   Widget build(BuildContext context) {
     final pathProgress = path.pathProgressPercent ?? 0;
     final isComplete = pathProgress >= 100;
-    final accent = isComplete ? PaperTheme.success : PaperTheme.accent;
+    final accent = isComplete ? PaperTheme.of(context).success : PaperTheme.of(context).accent;
 
     // A gently muted fill (not the raw saturated accent) so it stays
     // heavier than a unit's outline pin without looking like a harsh block
     // of color dropped onto a soft paper page.
-    final fill = Color.lerp(accent, PaperTheme.cardPaper, 0.22)!;
+    final fill = Color.lerp(accent, PaperTheme.of(context).cardPaper, 0.22)!;
 
     final pin = Container(
       width: 50,
@@ -1133,7 +1143,7 @@ class _PathWaypoint extends StatelessWidget {
       decoration: BoxDecoration(
         color: fill,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: PaperTheme.cardPaper, width: 2),
+        border: Border.all(color: PaperTheme.of(context).cardPaper, width: 2),
         boxShadow: [
           BoxShadow(
             color: accent.withValues(alpha: 0.18),
@@ -1145,7 +1155,7 @@ class _PathWaypoint extends StatelessWidget {
       child: Icon(
         isComplete ? Icons.flag_circle_rounded : Icons.route_rounded,
         size: 22,
-        color: PaperTheme.cardPaper,
+        color: PaperTheme.of(context).cardPaper,
       ),
     );
 
@@ -1167,7 +1177,7 @@ class _PathWaypoint extends StatelessWidget {
             path.title ?? '',
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: PaperTheme.ink,
+            color: PaperTheme.of(context).ink,
             textAlign: isLeft ? TextAlign.left : TextAlign.right,
             maxLines: 2,
           ),
@@ -1223,8 +1233,8 @@ class _TrophyNode extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: PaperTheme.cardPaper,
-              border: Border.all(color: PaperTheme.accent, width: 2.4),
+              color: PaperTheme.of(context).cardPaper,
+              border: Border.all(color: PaperTheme.of(context).accent, width: 2.4),
             ),
             child: Container(
               margin: const EdgeInsets.all(5),
@@ -1232,13 +1242,13 @@ class _TrophyNode extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: PaperTheme.accent.withValues(alpha: 0.35),
+                  color: PaperTheme.of(context).accent.withValues(alpha: 0.35),
                 ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.verified_rounded,
                 size: 26,
-                color: PaperTheme.accent,
+                color: PaperTheme.of(context).accent,
               ),
             ),
           ),
@@ -1250,11 +1260,11 @@ class _TrophyNode extends StatelessWidget {
           child: OverflowBox(
             maxWidth: double.infinity,
             alignment: Alignment.center,
-            child: const CustomText(
+            child: CustomText(
               'این فصل کامل شد',
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: PaperTheme.success,
+              color: PaperTheme.of(context).success,
             ),
           ),
         ),
@@ -1292,10 +1302,10 @@ class _CourseFinishNode extends StatelessWidget {
         children: [
           _DashedCircle(
             size: _lockedBadgeSize,
-            child: const Icon(
+            child: Icon(
               Icons.flag_outlined,
               size: 28,
-              color: PaperTheme.locked,
+              color: PaperTheme.of(context).locked,
             ),
           ),
           Positioned(
@@ -1308,19 +1318,19 @@ class _CourseFinishNode extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CustomText(
+                  CustomText(
                     'پایان مسیر',
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: PaperTheme.locked,
+                    color: PaperTheme.of(context).locked,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 2),
-                  const CustomText(
+                  CustomText(
                     'با اتمام دوره باز می‌شود',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: PaperTheme.inkMuted,
+                    color: PaperTheme.of(context).inkMuted,
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -1341,11 +1351,11 @@ class _CourseFinishNode extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: PaperTheme.cardPaper,
-            border: Border.all(color: PaperTheme.success, width: 3),
+            color: PaperTheme.of(context).cardPaper,
+            border: Border.all(color: PaperTheme.of(context).success, width: 3),
             boxShadow: [
               BoxShadow(
-                color: PaperTheme.success.withValues(alpha: 0.28),
+                color: PaperTheme.of(context).success.withValues(alpha: 0.28),
                 blurRadius: 18,
                 offset: const Offset(0, 6),
               ),
@@ -1357,13 +1367,13 @@ class _CourseFinishNode extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: PaperTheme.success.withValues(alpha: 0.35),
+                color: PaperTheme.of(context).success.withValues(alpha: 0.35),
               ),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.emoji_events_rounded,
               size: 36,
-              color: PaperTheme.success,
+              color: PaperTheme.of(context).success,
             ),
           ),
         ),
@@ -1377,19 +1387,19 @@ class _CourseFinishNode extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CustomText(
+                CustomText(
                   'دوره با موفقیت به پایان رسید!',
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: PaperTheme.success,
+                  color: PaperTheme.of(context).success,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 2),
-                const CustomText(
+                CustomText(
                   'همه واحدها را با موفقیت گذراندی 🎉',
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: PaperTheme.inkMuted,
+                  color: PaperTheme.of(context).inkMuted,
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -1432,20 +1442,20 @@ class _RoadUnitNode extends StatelessWidget {
     if (isCompleted) {
       pin = _StampBadge(
         size: _kRoadNodeSize,
-        ringColor: PaperTheme.success,
-        child: const Icon(
+        ringColor: PaperTheme.of(context).success,
+        child: Icon(
           Icons.check_rounded,
           size: 20,
-          color: PaperTheme.success,
+          color: PaperTheme.of(context).success,
         ),
       );
     } else if (isLocked) {
       pin = _DashedCircle(
         size: _kRoadNodeSize,
-        child: const Icon(
+        child: Icon(
           Icons.lock_outline_rounded,
           size: 18,
-          color: PaperTheme.locked,
+          color: PaperTheme.of(context).locked,
         ),
       );
     } else if (isCurrent) {
@@ -1455,20 +1465,20 @@ class _RoadUnitNode extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: PaperTheme.cardPaper,
-          border: Border.all(color: PaperTheme.accent, width: 2.4),
+          color: PaperTheme.of(context).cardPaper,
+          border: Border.all(color: PaperTheme.of(context).accent, width: 2.4),
           boxShadow: [
             BoxShadow(
-              color: PaperTheme.accent.withValues(alpha: 0.2),
+              color: PaperTheme.of(context).accent.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: const Icon(
+        child: Icon(
           Icons.flag_rounded,
           size: 20,
-          color: PaperTheme.accent,
+          color: PaperTheme.of(context).accent,
         ),
       );
     } else {
@@ -1478,13 +1488,13 @@ class _RoadUnitNode extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: PaperTheme.cardPaper,
-          border: Border.all(color: PaperTheme.inkFaint, width: 1.6),
+          color: PaperTheme.of(context).cardPaper,
+          border: Border.all(color: PaperTheme.of(context).inkFaint, width: 1.6),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: PaperTheme.accent.withValues(alpha: 0.8),
+          color: PaperTheme.of(context).accent.withValues(alpha: 0.8),
         ),
       );
     }
@@ -1496,10 +1506,10 @@ class _RoadUnitNode extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: maxLabelWidth),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: PaperTheme.cardPaper,
+          color: PaperTheme.of(context).cardPaper,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isLocked ? PaperTheme.inkFaint : PaperTheme.paperEdge,
+            color: isLocked ? PaperTheme.of(context).inkFaint : PaperTheme.of(context).paperEdge,
           ),
         ),
         child: Column(
@@ -1512,7 +1522,7 @@ class _RoadUnitNode extends StatelessWidget {
               title,
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: isLocked ? PaperTheme.locked : PaperTheme.ink,
+              color: isLocked ? PaperTheme.of(context).locked : PaperTheme.of(context).ink,
               textAlign: isLeft ? TextAlign.left : TextAlign.right,
               maxLines: 2,
             ),
@@ -1520,7 +1530,7 @@ class _RoadUnitNode extends StatelessWidget {
             CustomText(
               typeLabel,
               fontSize: 11,
-              color: PaperTheme.inkMuted,
+              color: PaperTheme.of(context).inkMuted,
               textAlign: isLeft ? TextAlign.left : TextAlign.right,
             ),
           ],
@@ -1558,14 +1568,14 @@ class _DashedCircle extends StatelessWidget {
         children: [
           CustomPaint(
             size: Size(size, size),
-            painter: const _DashedCirclePainter(),
+            painter: _DashedCirclePainter(color: PaperTheme.of(context).locked),
           ),
           Container(
             width: size - 8,
             height: size - 8,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: PaperTheme.cardPaper,
+              color: PaperTheme.of(context).cardPaper,
             ),
           ),
           child,
@@ -1576,12 +1586,14 @@ class _DashedCircle extends StatelessWidget {
 }
 
 class _DashedCirclePainter extends CustomPainter {
-  const _DashedCirclePainter();
+  final Color color;
+
+  const _DashedCirclePainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = PaperTheme.locked
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
     final path = Path()
@@ -1599,5 +1611,6 @@ class _DashedCirclePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) => false;
+  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) =>
+      oldDelegate.color != color;
 }

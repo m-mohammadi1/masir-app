@@ -1,9 +1,9 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/custom_outline_button.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class VerifyPhoneBottomSheet extends StatelessWidget {
   final String phoneNumber;
@@ -21,7 +21,7 @@ class VerifyPhoneBottomSheet extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: AppColor.text92.withValues(alpha: .1),
+              color: context.colors.text92.withValues(alpha: .1),
             ),
             height: 45,
             alignment: Alignment.center,
@@ -47,21 +47,21 @@ class VerifyPhoneBottomSheet extends StatelessWidget {
                 "کد فعال‌سازی که به شماره ",
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: AppColor.text92,
+                color: context.colors.text92,
               ),
               Directionality(
                 textDirection: TextDirection.ltr,
                 child: CustomText(
                   phoneNumber,
                   fontSize: 12,
-                  color: AppColor.secondary,
+                  color: context.colors.secondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               CustomText(
                 " ارسال شده را وارد کنید.",
                 fontSize: 12,
-                color: AppColor.text92,
+                color: context.colors.text92,
                 fontWeight: FontWeight.w500,
               ),
             ],
@@ -76,9 +76,9 @@ class VerifyPhoneBottomSheet extends StatelessWidget {
                   onTap: () {
                     CustomNavigator.pop();
                   },
-                  borderColor: AppColor.primary,
+                  borderColor: context.colors.primary,
                   textStyle: TextStyle(
-                    color: AppColor.primary,
+                    color: context.colors.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

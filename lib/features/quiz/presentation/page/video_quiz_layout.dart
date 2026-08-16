@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/video_player.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class VideoQuizLayout extends StatelessWidget {
   final UnitsQuestionModel question;
@@ -34,7 +34,7 @@ class VideoQuizLayout extends StatelessWidget {
       return CustomText(
         'فایل ویدئو در دسترس نیست',
         fontSize: 14,
-        color: AppColor.inkMuted,
+        color: context.colors.inkMuted,
       );
     }
 

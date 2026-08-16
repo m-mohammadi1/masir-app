@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:mohammad/widgets/base_modal.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/modal_title.dart';
-import '/core/helper/custom_colors.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomDatePicker {
   static void show({
@@ -137,7 +137,7 @@ class _DatePickerInlineState extends State<DatePickerInline> {
             height: 40,
             width: context.appSize.width,
             decoration: BoxDecoration(
-              color: AppColor.primary.withValues(alpha: .3),
+              color: context.colors.primary.withValues(alpha: .3),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -211,8 +211,8 @@ class _DatePickerInlineState extends State<DatePickerInline> {
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: index == controller.selectedItem
-                    ? AppColor.text
-                    : AppColor.text92,
+                    ? context.colors.text
+                    : context.colors.text92,
               ),
             );
           },

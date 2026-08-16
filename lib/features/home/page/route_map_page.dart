@@ -1,8 +1,8 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:mohammad/core/helper/custom_colors.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class RouteMapPage extends StatefulWidget {
   static const String routeName = "/route-map";
@@ -59,7 +59,7 @@ class _RouteMapPageState extends State<RouteMapPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('زبان ترکی')),
-      backgroundColor: AppColor.background,
+      backgroundColor: context.colors.background,
       body: AnimatedBuilder(
         animation: Listenable.merge([animationController, scrollController]),
         builder: (c, w) {
@@ -72,6 +72,8 @@ class _RouteMapPageState extends State<RouteMapPage>
               progress: animationController.value,
               scrollOffset: offset,
               currentStep: currentStep,
+              walked: context.colors.trailWalkedEdge,
+              unwalked: context.colors.trailUnwalked,
             ),
             child: ListView.builder(
               controller: scrollController,
@@ -109,13 +111,14 @@ class _RouteMapPageState extends State<RouteMapPage>
 
 class RoadMapPainter extends CustomPainter {
   final int itemCount;
+  final Color color;
 
-  RoadMapPainter({required this.itemCount});
+  RoadMapPainter({required this.itemCount, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColor.locked
+      ..color = color
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
@@ -220,19 +223,19 @@ class _RoadItemState extends State<RoadItem>
 
     switch (widget.state) {
       case StepState.completed:
-        color = AppColor.success;
+        color = context.colors.success;
         child = const Icon(Icons.check, color: Colors.white);
         break;
 
       case StepState.current:
-        color = AppColor.primary;
+        color = context.colors.primary;
         child = CustomText(
           (widget.index + 1).toString(),
           style: const TextStyle(color: Colors.white),
         );
         break;
       case StepState.locked:
-        color = AppColor.locked;
+        color = context.colors.locked;
         child = const Icon(Icons.lock, color: Colors.white);
         break;
     }
@@ -278,12 +281,16 @@ class RoadPainter extends CustomPainter {
   final double progress;
   final double scrollOffset;
   final int currentStep;
+  final Color walked;
+  final Color unwalked;
 
   RoadPainter({
     required this.itemCount,
     required this.progress,
     required this.scrollOffset,
     required this.currentStep,
+    required this.walked,
+    required this.unwalked,
   });
 
   @override
@@ -306,7 +313,7 @@ class RoadPainter extends CustomPainter {
       final isPassed = i < currentStep;
 
       final paint = Paint()
-        ..color = isPassed ? AppColor.trailWalkedEdge : AppColor.trailUnwalked
+        ..color = isPassed ? walked : unwalked
         ..strokeWidth = 3
         ..style = PaintingStyle.stroke;
 

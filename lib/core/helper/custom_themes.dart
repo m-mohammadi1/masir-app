@@ -1,100 +1,107 @@
-import '/core/services/hive_service.dart';
 import 'package:flutter/material.dart';
-import 'custom_colors.dart';
-
-ColorScheme get _scheme {
-  if (HiveService.isDarkMode) {
-    return ColorScheme.dark(
-      primary: AppColor.primary,
-      secondary: AppColor.secondary,
-      surface: AppColor.surface,
-      onSurface: AppColor.ink,
-      brightness: Brightness.dark,
-    );
-  }
-  return ColorScheme.light(
-    primary: AppColor.primary,
-    secondary: AppColor.secondary,
-    surface: AppColor.surface,
-    onSurface: AppColor.ink,
-    brightness: Brightness.light,
-  );
-}
+import '/core/theme/masir_colors.dart';
 
 ThemeData _buildTheme(Brightness brightness) {
+  final colors =
+      brightness == Brightness.dark ? MasirColors.dark : MasirColors.light;
+  final scheme = brightness == Brightness.dark
+      ? ColorScheme.dark(
+          primary: colors.primary,
+          secondary: colors.secondary,
+          surface: colors.surface,
+          onSurface: colors.ink,
+          brightness: Brightness.dark,
+        )
+      : ColorScheme.light(
+          primary: colors.primary,
+          secondary: colors.secondary,
+          surface: colors.surface,
+          onSurface: colors.ink,
+          brightness: Brightness.light,
+        );
+
   return ThemeData(
     fontFamily: 'YekanBakh',
     brightness: brightness,
-    scaffoldBackgroundColor: AppColor.background,
-    colorScheme: _scheme,
-    primaryColor: AppColor.primary,
-    cardColor: AppColor.surface,
-    dividerColor: AppColor.border,
-    dividerTheme: DividerThemeData(color: AppColor.border, thickness: 1),
+    scaffoldBackgroundColor: colors.background,
+    colorScheme: scheme,
+    primaryColor: colors.primary,
+    cardColor: colors.surface,
+    dividerColor: colors.border,
+    dividerTheme: DividerThemeData(color: colors.border, thickness: 1),
     useMaterial3: true,
+    extensions: [colors],
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColor.background,
-      foregroundColor: AppColor.ink,
+      backgroundColor: colors.background,
+      foregroundColor: colors.ink,
       elevation: 0,
       scrolledUnderElevation: 0,
     ),
     bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: AppColor.surface,
+      backgroundColor: colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: AppColor.surface,
+      backgroundColor: colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColor.border),
+        side: BorderSide(color: colors.border),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColor.surface,
+      fillColor: colors.surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: AppColor.border),
+        borderSide: BorderSide(color: colors.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: AppColor.border),
+        borderSide: BorderSide(color: colors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+        borderSide: BorderSide(color: colors.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.error, width: 1.5),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.secondaryDisable),
       ),
     ),
-    // Raw Material buttons (a few screens reach for these directly instead
-    // of the custom button widgets) should still read as paper elements —
-    // a filled paper card with a hairline edge and a soft ink shadow —
-    // rather than the flat, shadowless Material default.
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: AppColor.surface,
-        foregroundColor: AppColor.ink,
+        backgroundColor: colors.surface,
+        foregroundColor: colors.ink,
         elevation: 1.5,
-        shadowColor: AppColor.ink.withValues(alpha: 0.16),
-        side: BorderSide(color: AppColor.border, width: 1.1),
+        shadowColor: colors.ink.withValues(alpha: 0.16),
+        side: BorderSide(color: colors.border, width: 1.1),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColor.primary,
-        foregroundColor: AppColor.white,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.white,
         elevation: 3,
-        shadowColor: AppColor.primary.withValues(alpha: 0.35),
+        shadowColor: colors.primary.withValues(alpha: 0.35),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColor.primary,
+        foregroundColor: colors.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),

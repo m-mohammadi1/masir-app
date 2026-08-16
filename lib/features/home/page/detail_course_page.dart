@@ -1,7 +1,6 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mohammad/core/helper/custom_colors.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/course_detail_model.dart';
 import 'package:mohammad/features/main/data/models/request_course_detail_model.dart';
@@ -15,6 +14,8 @@ import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '../../main/data/models/my_subscriptions_model.dart';
 import '../../main/presentation/bloc/course_detail/course_detail_bloc.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/custom_error.dart';
 
 class DetailCoursePage extends StatefulWidget {
   final String id;
@@ -73,14 +74,14 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                         textDirection: TextDirection.ltr,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppColor.surface,
+                            color: context.colors.surface,
                             border: Border.all(
-                              color: AppColor.primary.withValues(alpha: 0.2),
+                              color: context.colors.primary.withValues(alpha: 0.2),
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColor.ink.withValues(alpha: 0.06),
+                                color: context.colors.ink.withValues(alpha: 0.06),
                                 blurRadius: 10,
                                 offset: Offset(0, 2),
                               ),
@@ -93,7 +94,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                               Container(
                                 height: 160,
                                 alignment: Alignment.center,
-                                color: AppColor.primary.withValues(alpha: 0.55),
+                                color: context.colors.primary.withValues(alpha: 0.55),
                                 child:
                                     data.coursesModel?.coverUrl != null &&
                                         data.coursesModel!.coverUrl!.isNotEmpty
@@ -103,7 +104,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                         errorBuilder: (_, __, ___) => Icon(
                                           Icons.menu_book_rounded,
                                           size: 48,
-                                          color: AppColor.white.withValues(
+                                          color: context.colors.white.withValues(
                                             alpha: 0.85,
                                           ),
                                         ),
@@ -111,7 +112,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                     : Icon(
                                         Icons.menu_book_rounded,
                                         size: 48,
-                                        color: AppColor.white.withValues(
+                                        color: context.colors.white.withValues(
                                           alpha: 0.85,
                                         ),
                                       ),
@@ -125,7 +126,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                       data.coursesModel?.title ?? "",
                                       fontSize: 17,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColor.ink,
+                                      color: context.colors.ink,
                                       textAlign: TextAlign.right,
                                     ),
                                     if (data.coursesModel?.description !=
@@ -138,7 +139,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                       CustomText(
                                         data.coursesModel!.description!,
                                         fontSize: 13,
-                                        color: AppColor.inkMuted,
+                                        color: context.colors.inkMuted,
                                         textAlign: TextAlign.right,
                                         maxLines: 2,
                                         // overflow: TextOverflow.ellipsis,
@@ -153,7 +154,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppColor.primaryTint,
+                                          color: context.colors.primaryTint,
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
@@ -164,7 +165,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                                               : "${data.coursesModel?.price} تومان",
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
-                                          color: AppColor.primary,
+                                          color: context.colors.primary,
                                         ),
                                       ),
                                     ),
@@ -175,9 +176,9 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                               Container(
                                 margin: EdgeInsets.symmetric(horizontal: 16),
                                 decoration: BoxDecoration(
-                                  color: AppColor.surface,
+                                  color: context.colors.surface,
                                   border: Border.all(
-                                    color: AppColor.primary.withValues(
+                                    color: context.colors.primary.withValues(
                                       alpha: 0.2,
                                     ),
                                   ),

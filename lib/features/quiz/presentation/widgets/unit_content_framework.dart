@@ -1,9 +1,9 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class UnitContentFramework extends StatelessWidget {
   final String title;
@@ -83,14 +83,14 @@ class _TypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColor.primary,
+        color: context.colors.primary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         label,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: AppColor.surface,
+        color: context.colors.surface,
       ),
     );
   }
@@ -102,20 +102,20 @@ class _CompletedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColor.green100,
+        color: context.colors.green100,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColor.success.withValues(alpha: 0.4)),
+        border: Border.all(color: context.colors.success.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle_outline, size: 16, color: AppColor.success),
+          Icon(Icons.check_circle_outline, size: 16, color: context.colors.success),
           6.w,
           CustomText(
             'تکمیل شده',
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColor.success,
+            color: context.colors.success,
           ),
         ],
       ),
@@ -134,20 +134,20 @@ class _InstructionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColor.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColor.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CustomText('دستورالعمل', fontSize: 13, color: AppColor.inkMuted),
+          CustomText('دستورالعمل', fontSize: 13, color: context.colors.inkMuted),
           12.h,
           CustomText(
             instructionText,
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: AppColor.ink,
+            color: context.colors.ink,
           ),
           if (attachmentUrl != null && attachmentUrl!.isNotEmpty) ...[
             16.h,
@@ -160,10 +160,10 @@ class _InstructionCard extends StatelessWidget {
                     'مشاهده پیوست',
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColor.primary,
+                    color: context.colors.primary,
                   ),
                   4.w,
-                  Icon(Icons.open_in_new, size: 16, color: AppColor.primary),
+                  Icon(Icons.open_in_new, size: 16, color: context.colors.primary),
                 ],
               ),
             ),

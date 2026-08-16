@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '/core/helper/custom_colors.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:video_player/video_player.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomVideoPlayer extends StatefulWidget {
   final String url;
@@ -23,7 +23,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   bool _hasError = false;
   bool _showControls = true;
 
-  static Color get _accent => AppColor.primary;
+  Color get _accent => context.colors.primary;
 
   @override
   void initState() {

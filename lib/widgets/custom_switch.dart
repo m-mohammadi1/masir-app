@@ -1,8 +1,8 @@
 import '/widgets/custom_text.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import '/core/theme/theme_context.dart';
 
-import '../core/helper/custom_colors.dart';
 
 class CustomSwitch extends StatefulWidget {
   final bool active;
@@ -52,12 +52,12 @@ class _CustomSwitchState extends State<CustomSwitch> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(_height),
                       color: widget.active
-                          ? AppColor.primaryTint
-                          : AppColor.surface,
+                          ? context.colors.primaryTint
+                          : context.colors.surface,
                       border: Border.all(
                         color: widget.active
-                            ? AppColor.primary
-                            : AppColor.border,
+                            ? context.colors.primary
+                            : context.colors.border,
                         width: 1.2,
                       ),
                     ),
@@ -74,11 +74,11 @@ class _CustomSwitchState extends State<CustomSwitch> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: widget.active
-                              ? AppColor.primary
-                              : AppColor.inkFaint,
+                              ? context.colors.primary
+                              : context.colors.inkFaint,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColor.ink.withValues(alpha: 0.22),
+                              color: context.colors.ink.withValues(alpha: 0.22),
                               blurRadius: 3,
                               offset: const Offset(0, 1),
                             ),
@@ -88,7 +88,7 @@ class _CustomSwitchState extends State<CustomSwitch> {
                             ? IconTheme(
                                 data: IconThemeData(
                                   size: 12,
-                                  color: AppColor.surface,
+                                  color: context.colors.surface,
                                 ),
                                 child: widget.icon!,
                               )

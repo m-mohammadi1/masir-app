@@ -1,8 +1,8 @@
 import '/widgets/custom_text.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import '/core/theme/theme_context.dart';
 
-import '../core/helper/custom_colors.dart';
 
 class CustomOutlineButton extends StatelessWidget {
   static Container? initCustomButton;
@@ -72,13 +72,13 @@ class CustomOutlineButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(buttonSizeRadius ?? 14),
                   border: Border.all(
-                    color: borderColor ?? AppColor.border,
+                    color: borderColor ?? context.colors.border,
                     width: 1.1,
                   ),
-                  color: backgroundColor ?? AppColor.surface,
+                  color: backgroundColor ?? context.colors.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColor.ink.withValues(alpha: 0.05),
+                      color: context.colors.ink.withValues(alpha: 0.05),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),

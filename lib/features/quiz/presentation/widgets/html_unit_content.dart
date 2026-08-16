@@ -1,4 +1,3 @@
-import '/core/helper/custom_colors.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -6,6 +5,7 @@ import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class HtmlUnitContent extends StatelessWidget {
   final UnitsModel data;
@@ -48,9 +48,9 @@ class HtmlUnitContent extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColor.surface,
+                color: context.colors.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColor.border),
+                border: Border.all(color: context.colors.border),
               ),
               child: Html(
                 data: _body,
@@ -60,7 +60,7 @@ class HtmlUnitContent extends StatelessWidget {
                     padding: HtmlPaddings.zero,
                     fontSize: FontSize(16),
                     fontWeight: FontWeight.bold,
-                    color: AppColor.ink,
+                    color: context.colors.ink,
                     textAlign: TextAlign.right,
                     direction: TextDirection.rtl,
                   ),
@@ -94,14 +94,14 @@ class _HtmlTypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColor.primaryTint,
+        color: context.colors.primaryTint,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         label,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: AppColor.primary,
+        color: context.colors.primary,
       ),
     );
   }
@@ -115,20 +115,20 @@ class _CompletedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColor.green100,
+        color: context.colors.green100,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColor.success.withValues(alpha: 0.4)),
+        border: Border.all(color: context.colors.success.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle_outline, size: 16, color: AppColor.success),
+          Icon(Icons.check_circle_outline, size: 16, color: context.colors.success),
           6.w,
           CustomText(
             'تکمیل شده',
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColor.success,
+            color: context.colors.success,
           ),
         ],
       ),

@@ -1,9 +1,9 @@
 import '../core/helper/assets.dart';
-import '/core/helper/custom_colors.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 
 import 'custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class CustomButton extends StatelessWidget {
   static Container? initCustomButton;
@@ -57,7 +57,7 @@ class CustomButton extends StatelessWidget {
                       height: 30,
                       width: 30,
                       child: CircularProgressIndicator(
-                        color: backgroundColor ?? AppColor.primary,
+                        color: backgroundColor ?? context.colors.primary,
                         strokeWidth: 2.5,
                       ),
                     ),
@@ -73,15 +73,15 @@ class CustomButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(buttonSizeRadius ?? 14),
                   color: enable
-                      ? (backgroundColor ?? AppColor.primary)
-                      : enableColor ?? AppColor.primary.withValues(alpha: 0.5),
+                      ? (backgroundColor ?? context.colors.primary)
+                      : enableColor ?? context.colors.primary.withValues(alpha: 0.5),
                   border: enable
                       ? null
-                      : Border.all(color: borderColor ?? AppColor.border),
+                      : Border.all(color: borderColor ?? context.colors.border),
                   boxShadow: enable
                       ? [
                           BoxShadow(
-                            color: (backgroundColor ?? AppColor.primary)
+                            color: (backgroundColor ?? context.colors.primary)
                                 .withValues(alpha: 0.3),
                             blurRadius: 14,
                             offset: const Offset(0, 5),
@@ -110,7 +110,7 @@ class CustomButton extends StatelessWidget {
                         CustomText(
                           "${title?.tr}",
                           style: textStyle,
-                          color: AppColor.white,
+                          color: context.colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),

@@ -1,8 +1,8 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 
-import '../core/helper/custom_colors.dart';
 import 'custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class TitleModal extends StatelessWidget {
   final String txt;
@@ -14,7 +14,7 @@ class TitleModal extends StatelessWidget {
       height: 45,
       width: context.appSize.width,
       decoration: BoxDecoration(
-        color: AppColor.borderF9,
+        color: context.colors.borderF9,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Center(child: CustomText(txt)),

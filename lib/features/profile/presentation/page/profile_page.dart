@@ -1,7 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/helper/custom_colors.dart';
 import '../../../../core/services/hive_service.dart';
 import '../../../../widgets/custom_text.dart';
 import '../../../auth/domain/entities/submit_username.dart';
@@ -10,6 +9,7 @@ import '../../../edit_profile/presentation/page/edit_profile_page.dart';
 import '../../../main/presentation/page/institutes_page.dart';
 import '../../../../widgets/exit_modal.dart';
 import '../../../../widgets/base_modal.dart';
+import '/core/theme/theme_context.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -56,12 +56,12 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColor.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColor.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: AppColor.ink.withValues(alpha: 0.06),
+            color: context.colors.ink.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -75,7 +75,7 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColor.ink,
+              color: context.colors.ink,
             ),
           ),
           SizedBox(height: 20),
@@ -89,17 +89,17 @@ class _ProfilePageState extends State<ProfilePage> {
             child: OutlinedButton.icon(
               onPressed: () =>
                   CustomNavigator.pushNamed(EditProfilePage.routeName),
-              icon: Icon(Icons.edit_outlined, size: 18, color: AppColor.ink),
+              icon: Icon(Icons.edit_outlined, size: 18, color: context.colors.ink),
               label: Text(
                 "ویرایش پروفایل",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColor.ink,
+                  color: context.colors.ink,
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColor.border, width: 1),
+                side: BorderSide(color: context.colors.border, width: 1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -115,8 +115,8 @@ class _ProfilePageState extends State<ProfilePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(value, style: TextStyle(fontSize: 14, color: AppColor.ink)),
-        Text(label, style: TextStyle(fontSize: 14, color: AppColor.inkMuted)),
+        Text(value, style: TextStyle(fontSize: 14, color: context.colors.ink)),
+        Text(label, style: TextStyle(fontSize: 14, color: context.colors.inkMuted)),
       ],
     );
   }
@@ -128,12 +128,12 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColor.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColor.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: AppColor.ink.withValues(alpha: 0.06),
+            color: context.colors.ink.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -147,14 +147,14 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColor.ink,
+              color: context.colors.ink,
             ),
           ),
           SizedBox(height: 16),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColor.borderF9,
+              color: context.colors.borderF9,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -164,7 +164,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Container(
                     width: 40,
                     height: 40,
-                    color: AppColor.primaryTint,
+                    color: context.colors.primaryTint,
                     child: (logoUrl != null && logoUrl.isNotEmpty)
                         ? Image.network(
                             logoUrl,
@@ -172,10 +172,10 @@ class _ProfilePageState extends State<ProfilePage> {
                             errorBuilder: (_, __, ___) => Icon(
                               Icons.school,
                               size: 20,
-                              color: AppColor.primary,
+                              color: context.colors.primary,
                             ),
                           )
-                        : Icon(Icons.school, size: 20, color: AppColor.primary),
+                        : Icon(Icons.school, size: 20, color: context.colors.primary),
                   ),
                 ),
                 Expanded(
@@ -189,7 +189,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColor.ink,
+                        color: context.colors.ink,
                       ),
                     ),
                   ),
@@ -208,18 +208,18 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: Icon(
                 Icons.swap_horiz_rounded,
                 size: 18,
-                color: AppColor.ink,
+                color: context.colors.ink,
               ),
               label: Text(
                 "تغییر مؤسسه",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColor.ink,
+                  color: context.colors.ink,
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColor.border, width: 1),
+                side: BorderSide(color: context.colors.border, width: 1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -250,17 +250,17 @@ class _ProfilePageState extends State<ProfilePage> {
               },
             ),
           ),
-          icon: Icon(Icons.logout_rounded, size: 20, color: AppColor.ink),
+          icon: Icon(Icons.logout_rounded, size: 20, color: context.colors.ink),
           label: Text(
             "خروج",
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: AppColor.ink,
+              color: context.colors.ink,
             ),
           ),
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: AppColor.border, width: 1),
+            side: BorderSide(color: context.colors.border, width: 1),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

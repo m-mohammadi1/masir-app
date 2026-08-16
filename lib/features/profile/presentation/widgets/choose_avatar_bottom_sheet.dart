@@ -4,9 +4,9 @@ import 'package:mohammad/widgets/base_modal.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 
 import '../../../../core/helper/assets.dart';
-import '../../../../core/helper/custom_colors.dart';
 import '../../../../widgets/custom_text.dart';
 import '../../../../widgets/dynamic_height_grid_view.dart';
+import '/core/theme/theme_context.dart';
 
 class ChooseAvatarBottomSheet {
   static void show(BuildContext context) {
@@ -44,8 +44,8 @@ class _ChooseAvatarBottomSheet extends StatelessWidget {
               return Container(
                 padding: EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColor.border150,
-                  border: Border.all(color: AppColor.border),
+                  color: context.colors.border150,
+                  border: Border.all(color: context.colors.border),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 alignment: Alignment.center,
@@ -65,7 +65,7 @@ class _ChooseAvatarBottomSheet extends StatelessWidget {
                     CustomText(
                       "آواتار".tr,
                       fontSize: 14,
-                      color: AppColor.secondary,
+                      color: context.colors.secondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ],

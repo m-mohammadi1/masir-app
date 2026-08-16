@@ -8,12 +8,12 @@ import '/routes.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
 import 'core/helper/assets.dart';
-import 'core/helper/custom_colors.dart';
 import 'core/helper/custom_themes.dart';
 import 'core/services/hive_service.dart';
 import 'core/services/service_locator.dart';
 import 'fcm.dart';
 import 'firebase_options.dart';
+import '/core/theme/theme_context.dart';
 
 @pragma('vm:entry-point')
 Future<void> background(RemoteMessage message) async {
@@ -112,7 +112,7 @@ class _MyAppState extends State<MyApp> {
         routerConfig: router,
         builder: (context, widget) {
           GEasyHelper.background = Container(
-            color: AppColor.background,
+            color: context.colors.background,
             height: MediaQuery.sizeOf(context).height,
             width: MediaQuery.sizeOf(context).width,
           );

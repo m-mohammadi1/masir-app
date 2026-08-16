@@ -6,8 +6,8 @@ import 'package:mohammad/features/main/presentation/bloc/main_bloc.dart';
 import 'package:mohammad/features/profile/presentation/page/profile_page.dart';
 import '../../../home/page/courses_page.dart';
 import '/core/helper/assets.dart';
-import '/core/helper/custom_colors.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class MainPage extends StatefulWidget {
   static const String routeName = "/";
@@ -52,7 +52,7 @@ class _MainPageState extends State<MainPage> {
       },
       canPop: false,
       child: Scaffold(
-        backgroundColor: AppColor.background,
+        backgroundColor: context.colors.background,
         body: Column(
           children: [
             Expanded(child: pages[index]),
@@ -63,13 +63,13 @@ class _MainPageState extends State<MainPage> {
                 borderRadius: BorderRadius.circular(38),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColor.ink.withValues(alpha: 0.08),
+                    color: context.colors.ink.withValues(alpha: 0.08),
                     blurRadius: 14,
                     offset: const Offset(0, 4),
                   ),
                 ],
-                border: Border.all(color: AppColor.border),
-                color: AppColor.surface,
+                border: Border.all(color: context.colors.border),
+                color: context.colors.surface,
               ),
               margin: EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -92,15 +92,15 @@ class _MainPageState extends State<MainPage> {
                               : Assets.home,
                           width: 24,
                           color: index == 2
-                              ? AppColor.primary
-                              : AppColor.secondary,
+                              ? context.colors.primary
+                              : context.colors.secondary,
                         ),
                         2.h,
                         CustomText(
                           'کاوش',
                           color: index == 2
-                              ? AppColor.primary
-                              : AppColor.secondary,
+                              ? context.colors.primary
+                              : context.colors.secondary,
                         ),
                       ],
                     ),
@@ -121,15 +121,15 @@ class _MainPageState extends State<MainPage> {
                               : Assets.home,
                           width: 24,
                           color: index == 1
-                              ? AppColor.primary
-                              : AppColor.secondary,
+                              ? context.colors.primary
+                              : context.colors.secondary,
                         ),
                         2.h,
                         CustomText(
                           'دوره هاى من',
                           color: index == 1
-                              ? AppColor.primary
-                              : AppColor.secondary,
+                              ? context.colors.primary
+                              : context.colors.secondary,
                         ),
                       ],
                     ),
@@ -150,15 +150,15 @@ class _MainPageState extends State<MainPage> {
                               : Assets.profile,
                           width: 24,
                           color: index == 0
-                              ? AppColor.primary
-                              : AppColor.secondary,
+                              ? context.colors.primary
+                              : context.colors.secondary,
                         ),
                         2.h,
                         CustomText(
                           'پروفایل',
                           color: index == 0
-                              ? AppColor.primary
-                              : AppColor.secondary,
+                              ? context.colors.primary
+                              : context.colors.secondary,
                         ),
                       ],
                     ),

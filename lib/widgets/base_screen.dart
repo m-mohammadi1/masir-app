@@ -1,8 +1,8 @@
 import 'package:easy_helper/easy_helper.dart';
 
-import '/core/helper/custom_colors.dart';
 import '/core/helper/paper_surface.dart';
 import 'package:flutter/material.dart';
+import '/core/theme/theme_context.dart';
 
 class BaseScreen extends StatefulWidget {
   final Widget body;
@@ -42,7 +42,7 @@ class _BaseScreenState extends State<BaseScreen> {
         key: _key,
         drawerScrimColor: Colors.transparent,
         resizeToAvoidBottomInset: true,
-        backgroundColor: widget.backgroundColor ?? AppColor.background,
+        backgroundColor: widget.backgroundColor ?? context.colors.background,
         drawerEnableOpenDragGesture: false,
         floatingActionButton: widget.floatActionButton,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

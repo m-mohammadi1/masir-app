@@ -1,4 +1,3 @@
-import '/core/helper/custom_colors.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/request_quiz_submit_model.dart';
@@ -7,6 +6,7 @@ import 'package:mohammad/features/quiz/presentation/page/quiz_layout_helper.dart
 import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 
 class QuizUnitContent extends StatefulWidget {
   final UnitsModel data;
@@ -116,7 +116,7 @@ class QuizUnitContentState extends State<QuizUnitContent> {
             'حد نصاب: $_passThreshold٪',
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: AppColor.inkMuted,
+            color: context.colors.inkMuted,
           ),
         ],
         16.h,
@@ -165,14 +165,14 @@ class _QuizTypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColor.primaryTint,
+        color: context.colors.primaryTint,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         label,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: AppColor.primary,
+        color: context.colors.primary,
       ),
     );
   }
@@ -186,20 +186,20 @@ class _CompletedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColor.green100,
+        color: context.colors.green100,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColor.success.withValues(alpha: 0.4)),
+        border: Border.all(color: context.colors.success.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle_outline, size: 16, color: AppColor.success),
+          Icon(Icons.check_circle_outline, size: 16, color: context.colors.success),
           6.w,
           CustomText(
             'تکمیل شده',
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColor.success,
+            color: context.colors.success,
           ),
         ],
       ),
@@ -233,12 +233,12 @@ class _QuizQuestionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColor.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColor.border),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
-            color: AppColor.ink.withValues(alpha: 0.04),
+            color: context.colors.ink.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -251,7 +251,7 @@ class _QuizQuestionCard extends StatelessWidget {
             '$index. ${question.text ?? ''}',
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: AppColor.ink,
+            color: context.colors.ink,
           ),
           16.h,
           switch (layoutType) {
@@ -340,10 +340,10 @@ class _MultiChoiceOptions extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColor.surface,
+                color: context.colors.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppColor.primary : AppColor.border,
+                  color: isSelected ? context.colors.primary : context.colors.border,
                   width: isSelected ? 1.5 : 1,
                 ),
               ),
@@ -354,7 +354,7 @@ class _MultiChoiceOptions extends StatelessWidget {
                       options[index],
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: AppColor.ink,
+                      color: context.colors.ink,
                     ),
                   ),
                   12.w,
@@ -365,8 +365,8 @@ class _MultiChoiceOptions extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: isSelected
-                            ? AppColor.primary
-                            : AppColor.inkFaint,
+                            ? context.colors.primary
+                            : context.colors.inkFaint,
                         width: 2,
                       ),
                     ),
@@ -377,7 +377,7 @@ class _MultiChoiceOptions extends StatelessWidget {
                               height: 12,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppColor.primary,
+                                color: context.colors.primary,
                               ),
                             ),
                           )
@@ -415,10 +415,10 @@ class _QuizOutlineButton extends StatelessWidget {
         child: Container(
           height: 44,
           decoration: BoxDecoration(
-            color: selected ? AppColor.primaryTint : AppColor.surface,
+            color: selected ? context.colors.primaryTint : context.colors.surface,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: selected ? AppColor.primary : AppColor.border,
+              color: selected ? context.colors.primary : context.colors.border,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -427,7 +427,7 @@ class _QuizOutlineButton extends StatelessWidget {
               title,
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: selected ? AppColor.primary : AppColor.ink,
+              color: selected ? context.colors.primary : context.colors.ink,
             ),
           ),
         ),
