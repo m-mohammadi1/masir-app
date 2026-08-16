@@ -37,6 +37,18 @@ import '../../features/auth/presentation/bloc/submit_register/submit_register_bl
     as _i369;
 import '../../features/auth/presentation/bloc/submit_username/submit_username_bloc.dart'
     as _i386;
+import '../../features/discovery/data/datasource/discovery_remote_data_source.dart'
+    as _i335;
+import '../../features/discovery/data/repository/discovery_repository_impl.dart'
+    as _i768;
+import '../../features/discovery/domain/repository/discovery_repository.dart'
+    as _i240;
+import '../../features/discovery/domain/usecases/discovery_usecases.dart'
+    as _i884;
+import '../../features/discovery/presentation/bloc/main_feed/main_feed_bloc.dart'
+    as _i198;
+import '../../features/discovery/presentation/bloc/topics/topics_bloc.dart'
+    as _i1010;
 import '../../features/edit_profile/data/datasource/edit_profile_remote_data_source.dart'
     as _i687;
 import '../../features/edit_profile/data/repository/edit_profile_repository_impl.dart'
@@ -161,6 +173,11 @@ extension GetItInjectableX on _i174.GetIt {
       signalsReady: true,
       preResolve: true,
     );
+    gh.factory<_i335.DiscoveryRemoteDataSource>(
+      () => _i335.DiscoveryRemoteDataSourceImpl(
+        restfulApi: gh<_i669.IRestfulApi>(),
+      ),
+    );
     gh.factory<_i435.InstituteRemoteDataSource>(
       () => _i435.InstituteRemoteDataSourceImpl(
         restfulApi: gh<_i669.IRestfulApi>(),
@@ -221,6 +238,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i511.AboutUsRepository>(
       () => _i821.AboutUsRepositoryImpl(
         remoteDataSource: gh<_i670.AboutUsRemoteDataSource>(),
+      ),
+    );
+    gh.factory<_i240.DiscoveryRepository>(
+      () => _i768.DiscoveryRepositoryImpl(
+        remoteDataSource: gh<_i335.DiscoveryRemoteDataSource>(),
       ),
     );
     gh.factory<_i768.InstituteRepository>(
@@ -399,6 +421,18 @@ extension GetItInjectableX on _i174.GetIt {
         markNotificationReadUseCase: gh<_i917.MarkNotificationReadUseCase>(),
       ),
     );
+    gh.factory<_i884.GetMainFeedUseCase>(
+      () =>
+          _i884.GetMainFeedUseCase(repository: gh<_i240.DiscoveryRepository>()),
+    );
+    gh.factory<_i884.GetTopicsUseCase>(
+      () => _i884.GetTopicsUseCase(repository: gh<_i240.DiscoveryRepository>()),
+    );
+    gh.factory<_i198.MainFeedBloc>(
+      () => _i198.MainFeedBloc(
+        getMainFeedUseCase: gh<_i884.GetMainFeedUseCase>(),
+      ),
+    );
     gh.factory<_i386.SubmitUsernameBloc>(
       () => _i386.SubmitUsernameBloc(
         submitUsernameUseCase: gh<_i672.SubmitUsernameUseCase>(),
@@ -449,6 +483,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i1032.MySubscriptionsBloc(
         mySubscriptionsUseCase: gh<_i671.MySubscriptionsUseCase>(),
       ),
+    );
+    gh.factory<_i1010.TopicsBloc>(
+      () => _i1010.TopicsBloc(getTopicsUseCase: gh<_i884.GetTopicsUseCase>()),
     );
     gh.factory<_i84.EditProfileBloc>(
       () => _i84.EditProfileBloc(

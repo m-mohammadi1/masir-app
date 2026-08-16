@@ -2,7 +2,10 @@ import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
+import 'package:mohammad/features/main/data/models/request_courses_model.dart';
 import 'package:mohammad/features/main/presentation/bloc/courses/courses_bloc.dart';
+import 'package:mohammad/features/discovery/presentation/bloc/topics/topics_bloc.dart';
+import 'package:mohammad/features/discovery/presentation/widgets/topic_chip_row.dart';
 import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
@@ -25,11 +28,20 @@ class CoursesScreen extends StatefulWidget {
 class _CoursesScreenState extends State<CoursesScreen> {
   final coursesBloc = inject<CoursesBloc>();
   final mySubscriptions = inject<MySubscriptionsBloc>();
+  final topicsBloc = inject<TopicsBloc>();
+  String? _topic;
 
   @override
   void initState() {
     super.initState();
-    coursesBloc.add(CoursesEvent.courses());
+    topicsBloc.add(const TopicsEvent.load());
+    coursesBloc.add(const CoursesEvent.courses());
+  }
+
+  void _load() {
+    coursesBloc.add(CoursesEvent.courses(
+      params: RequestCoursesModel(topic: _topic),
+    ));
   }
 
   @override
@@ -43,7 +55,16 @@ class _CoursesScreenState extends State<CoursesScreen> {
           CustomAppBar(title: "دوره‌ها"),
           8.h,
           CustomText("همه دوره‌های منتشرشده"),
-          20.h,
+          12.h,
+          TopicChipRow(
+            bloc: topicsBloc,
+            selectedSlug: _topic,
+            onSelected: (slug) {
+              setState(() => _topic = slug);
+              _load();
+            },
+          ),
+          12.h,
           Expanded(
             child: BlocBuilder<CoursesBloc, CoursesState>(
               bloc: coursesBloc,
@@ -52,7 +73,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   loading: (_) => const SkeletonList(itemHeight: 220),
                   error: (_, message) => CustomError(
                     message: message,
-                    retry: () => coursesBloc.add(CoursesEvent.courses()),
+                    retry: () => _load(),
                   ),
                   success: (isLoading, data) {
                     if (data.isEmpty) {
@@ -154,6 +175,17 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                             textAlign: TextAlign.right,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                        if (course.topic?.name != null) ...[
+                                          SizedBox(height: 6),
+                                          Text(
+                                            course.topic!.name!,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: context.colors.inkMuted,
+                                            ),
+                                            textAlign: TextAlign.right,
                                           ),
                                         ],
                                         if (course.teachers.isNotEmpty) ...[

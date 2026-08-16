@@ -1,3 +1,4 @@
+import '/features/main/domain/entities/courses.dart';
 import '/features/main/domain/entities/institutes.dart';
 
 class InstitutesModel extends InstitutesEntity {
@@ -8,7 +9,19 @@ class InstitutesModel extends InstitutesEntity {
     super.type,
     super.description,
     super.logoUrl,
+    super.coverUrl,
+    super.themePreset,
+    super.topic,
   });
+
+  static CourseTopic? _topic(dynamic raw) {
+    if (raw is! Map) return null;
+    return CourseTopic(
+      id: raw['id']?.toString(),
+      slug: raw['slug']?.toString(),
+      name: raw['name']?.toString(),
+    );
+  }
 
   @override
   InstitutesModel fromJson(Map<String, dynamic> json) {
@@ -19,6 +32,9 @@ class InstitutesModel extends InstitutesEntity {
       type: json['type'],
       description: json['description'],
       logoUrl: json['logo_url'],
+      coverUrl: json['cover_url'],
+      themePreset: json['theme_preset'],
+      topic: _topic(json['topic']),
     );
   }
 }

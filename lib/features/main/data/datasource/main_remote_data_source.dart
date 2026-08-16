@@ -136,9 +136,11 @@ class MainRemoteDataSourceImpl implements MainRemoteDataSource {
   @override
   Future<List<CoursesEntity>> courses({RequestCoursesModel? params}) async {
     final instituteId = params?.instituteId;
+    final topic = params?.topic;
+    final topicQ = (topic != null && topic.isNotEmpty) ? '&topic=$topic' : '';
     final path = (instituteId != null && instituteId.isNotEmpty)
-        ? 'institutes/$instituteId/courses?page=1&per_page=200'
-        : 'courses?page=1&per_page=200';
+        ? 'institutes/$instituteId/courses?page=1&per_page=200$topicQ'
+        : 'courses?page=1&per_page=200$topicQ';
     var response = await restfulApi.get(
       path: path,
       result: const CoursesModel().setResults(['data', 'items']),
@@ -151,8 +153,10 @@ class MainRemoteDataSourceImpl implements MainRemoteDataSource {
   Future<List<InstitutesEntity>> institutes({
     RequestInstitutesModel? params,
   }) async {
+    final topic = params?.topic;
+    final topicQ = (topic != null && topic.isNotEmpty) ? '&topic=$topic' : '';
     var response = await restfulApi.get(
-      path: 'institutes?page=1&per_page=200',
+      path: 'institutes?page=1&per_page=200$topicQ',
       result: const InstitutesModel().setResults(['data', 'items']),
       // request: params,
     );

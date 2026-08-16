@@ -2,7 +2,10 @@ import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
+import 'package:mohammad/features/main/data/models/request_institutes_model.dart';
 import 'package:mohammad/features/main/presentation/bloc/institutes/institutes_bloc.dart';
+import 'package:mohammad/features/discovery/presentation/bloc/topics/topics_bloc.dart';
+import 'package:mohammad/features/discovery/presentation/widgets/topic_chip_row.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
@@ -22,11 +25,20 @@ class InstitutesPage extends StatefulWidget {
 
 class _InstitutesPageState extends State<InstitutesPage> {
   final bloc = inject<InstitutesBloc>();
+  final topicsBloc = inject<TopicsBloc>();
+  String? _topic;
 
   @override
   void initState() {
     super.initState();
-    bloc.add(InstitutesEvent.institutes());
+    topicsBloc.add(const TopicsEvent.load());
+    bloc.add(const InstitutesEvent.institutes());
+  }
+
+  void _load() {
+    bloc.add(InstitutesEvent.institutes(
+      params: RequestInstitutesModel(topic: _topic),
+    ));
   }
 
   void _openInstitute(InstitutesModel institute) {
@@ -44,7 +56,16 @@ class _InstitutesPageState extends State<InstitutesPage> {
           const CustomAppBar(title: "مؤسسه‌ها"),
           8.h,
           const CustomText("مؤسسه‌ای را انتخاب کنید و وارد دنیای آن شوید"),
-          20.h,
+          12.h,
+          TopicChipRow(
+            bloc: topicsBloc,
+            selectedSlug: _topic,
+            onSelected: (slug) {
+              setState(() => _topic = slug);
+              _load();
+            },
+          ),
+          12.h,
           Expanded(
             child: BlocBuilder<InstitutesBloc, InstitutesState>(
               bloc: bloc,
@@ -53,7 +74,7 @@ class _InstitutesPageState extends State<InstitutesPage> {
                   loading: (_) => const SkeletonList(),
                   error: (_, message) => CustomError(
                     message: message,
-                    retry: () => bloc.add(InstitutesEvent.institutes()),
+                    retry: () => _load(),
                   ),
                   success: (_, data) {
                     if (data.isEmpty) {
@@ -100,10 +121,21 @@ class _InstitutesPageState extends State<InstitutesPage> {
                                 ),
                                 12.w,
                                 Expanded(
-                                  child: CustomText(
-                                    institute.name ?? '',
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      CustomText(
+                                        institute.name ?? '',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                      if (institute.topic?.name != null)
+                                        CustomText(
+                                          institute.topic!.name!,
+                                          fontSize: 12,
+                                          color: context.colors.inkMuted,
+                                        ),
+                                    ],
                                   ),
                                 ),
                                 const Icon(Icons.chevron_left),
