@@ -17,6 +17,9 @@ class UnitContentFramework extends StatelessWidget {
   final String primaryButtonTitle;
   final bool isSubmitting;
   final Widget? headerIcon;
+  final Widget? banner;
+  final Widget? footer;
+  final VoidCallback? onAttachmentTap;
 
   const UnitContentFramework({
     super.key,
@@ -31,6 +34,9 @@ class UnitContentFramework extends StatelessWidget {
     this.primaryButtonTitle = 'تکمیل شد',
     this.isSubmitting = false,
     this.headerIcon,
+    this.banner,
+    this.footer,
+    this.onAttachmentTap,
   });
 
   @override
@@ -46,17 +52,24 @@ class UnitContentFramework extends StatelessWidget {
             if (isCompleted) ...[8.w, _CompletedBadge()],
           ],
         ),
+        if (banner != null) ...[12.h, banner!],
         16.h,
         Expanded(
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _InstructionCard(
-                  instructionText: instructionText,
-                  attachmentUrl: attachmentUrl,
-                ),
-                if (content != null) ...[16.h, content!],
+                if (instructionText.isNotEmpty)
+                  _InstructionCard(
+                    instructionText: instructionText,
+                    attachmentUrl: attachmentUrl,
+                    onAttachmentTap: onAttachmentTap,
+                  ),
+                if (content != null) ...[
+                  if (instructionText.isNotEmpty) 16.h,
+                  content!,
+                ],
+                if (footer != null) ...[16.h, footer!],
               ],
             ),
           ),
@@ -128,8 +141,13 @@ class _CompletedBadge extends StatelessWidget {
 class _InstructionCard extends StatelessWidget {
   final String instructionText;
   final String? attachmentUrl;
+  final VoidCallback? onAttachmentTap;
 
-  const _InstructionCard({required this.instructionText, this.attachmentUrl});
+  const _InstructionCard({
+    required this.instructionText,
+    this.attachmentUrl,
+    this.onAttachmentTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +172,7 @@ class _InstructionCard extends StatelessWidget {
           if (attachmentUrl != null && attachmentUrl!.isNotEmpty) ...[
             16.h,
             OnClick(
-              onTap: () {},
+              onTap: onAttachmentTap,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

@@ -15,6 +15,8 @@ class QuizUnitContent extends StatefulWidget {
   final bool isSubmitting;
   final void Function(List<QuizSubmitAnswerModel> answers)? onSubmit;
   final VoidCallback onBack;
+  final Widget? banner;
+  final Widget? footer;
 
   const QuizUnitContent({
     super.key,
@@ -23,6 +25,8 @@ class QuizUnitContent extends StatefulWidget {
     this.isSubmitting = false,
     this.onSubmit,
     required this.onBack,
+    this.banner,
+    this.footer,
   });
 
   @override
@@ -114,6 +118,7 @@ class QuizUnitContentState extends State<QuizUnitContent> {
             if (widget.isCompleted) ...[8.w, const _CompletedBadge()],
           ],
         ),
+        if (widget.banner != null) ...[12.h, widget.banner!],
         if (_passThreshold != null) ...[
           12.h,
           CustomText(
@@ -146,6 +151,7 @@ class QuizUnitContentState extends State<QuizUnitContent> {
           ),
         ),
         16.h,
+        if (widget.footer != null) ...[widget.footer!, 12.h],
         UnitActionButtons(
           showPrimary: !widget.isCompleted,
           primaryTitle: 'ارسال پاسخ',

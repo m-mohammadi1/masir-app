@@ -15,6 +15,8 @@ class QuizResultContent extends StatelessWidget {
   final Map<String, dynamic> userAnswers;
   final VoidCallback onRetry;
   final VoidCallback onBack;
+  final Widget? banner;
+  final Widget? footer;
 
   const QuizResultContent({
     super.key,
@@ -23,6 +25,8 @@ class QuizResultContent extends StatelessWidget {
     required this.userAnswers,
     required this.onRetry,
     required this.onBack,
+    this.banner,
+    this.footer,
   });
 
   List<UnitsQuestionModel> get _questions =>
@@ -52,6 +56,7 @@ class QuizResultContent extends StatelessWidget {
         CustomAppBar(title: title, icon: unitTeacherHeaderIcon(data.teachers)),
         16.h,
         Row(children: [_QuizTypeBadge(label: data.type ?? 'quiz')]),
+        if (banner != null) ...[12.h, banner!],
         12.h,
         Row(
           children: [
@@ -71,17 +76,30 @@ class QuizResultContent extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
-            color: context.colors.surface,
+            color: passed
+                ? context.colors.success.withValues(alpha: 0.12)
+                : context.colors.primaryTint,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.colors.border),
-          ),
-          child: Center(
-            child: CustomText(
-              passed ? 'قبول شدید' : 'قبول نشدید',
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: context.colors.ink,
+            border: Border.all(
+              color: passed ? context.colors.success : context.colors.primary,
             ),
+          ),
+          child: Column(
+            children: [
+              CustomText(
+                passed ? 'قبول شدید' : 'قبول نشدید',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: passed ? context.colors.success : context.colors.primary,
+              ),
+              8.h,
+              CustomText(
+                'نمره: $score٪',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: context.colors.ink,
+              ),
+            ],
           ),
         ),
         16.h,
@@ -103,6 +121,7 @@ class QuizResultContent extends StatelessWidget {
           ),
         ),
         16.h,
+        if (footer != null) ...[footer!, 12.h],
         if (!passed) CustomButton(title: 'تلاش مجدد', onTap: onRetry),
         if (!passed) 12.h,
         OnClick(
@@ -250,14 +269,14 @@ class _ResultBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: isCorrect
             ? context.colors.success.withValues(alpha: 0.95)
-            : context.colors.borderF9,
+            : context.colors.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: CustomText(
         isCorrect ? 'درست' : 'نادرست',
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: isCorrect ? context.colors.white : context.colors.inkMuted,
+        color: isCorrect ? context.colors.white : context.colors.primary,
       ),
     );
   }

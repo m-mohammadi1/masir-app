@@ -16,8 +16,11 @@ import 'package:mohammad/features/quiz/presentation/widgets/quiz_result_content.
 import 'package:mohammad/features/quiz/presentation/widgets/quiz_unit_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_content_framework.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/video_unit_content.dart';
+import 'package:mohammad/features/home/page/detail_course_page.dart';
 import 'package:mohammad/widgets/base_screen.dart';
+import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/theme_context.dart';
 import '/widgets/custom_error.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
@@ -100,6 +103,73 @@ class _UnitPageState extends State<UnitPage> {
   }
 
   void _handleBack() => CustomNavigator.pop();
+
+  Widget? _previewBanner(UnitsModel data) {
+    if (data.isPreview != true) return null;
+    return Builder(
+      builder: (context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.colors.primaryTint,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: CustomText(
+          'پیش‌نمایش رایگان',
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: context.colors.primary,
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget? _previewFooter(UnitsModel data) {
+    if (data.isLastPreview != true) return null;
+    final courseId = data.courseId;
+    return Builder(
+      builder: (context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.colors.primary.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CustomText(
+              'پایان بخش رایگان',
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: context.colors.ink,
+              textAlign: TextAlign.center,
+            ),
+            8.h,
+            CustomText(
+              'برای ادامه مسیر ثبت‌نام کنید',
+              fontSize: 13,
+              color: context.colors.inkMuted,
+              textAlign: TextAlign.center,
+            ),
+            12.h,
+            CustomButton(
+              title: 'شروع رایگان',
+              onTap: () {
+                if (courseId == null || courseId.isEmpty) return;
+                CustomNavigator.pushNamed(
+                  DetailCoursePage.routeName,
+                  arguments: courseId,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _submitAnswers(List<QuizSubmitAnswerModel> answers) {
     setState(() => _isSubmitting = true);
@@ -232,6 +302,8 @@ class _UnitPageState extends State<UnitPage> {
         userAnswers: _userAnswers,
         onRetry: _onQuizRetry,
         onBack: _handleBack,
+        banner: _previewBanner(data),
+        footer: _previewFooter(data),
       );
     }
 
@@ -243,6 +315,8 @@ class _UnitPageState extends State<UnitPage> {
         isSubmitting: _isSubmitting,
         onSubmit: widget.isCompleted ? null : _submitQuiz,
         onBack: _handleBack,
+        banner: _previewBanner(data),
+        footer: _previewFooter(data),
       );
     }
 
@@ -253,6 +327,8 @@ class _UnitPageState extends State<UnitPage> {
         isSubmitting: _isSubmitting,
         onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
         onBack: _handleBack,
+        banner: _previewBanner(data),
+        footer: _previewFooter(data),
       );
     }
 
@@ -263,6 +339,8 @@ class _UnitPageState extends State<UnitPage> {
         isSubmitting: _isSubmitting,
         onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
         onBack: _handleBack,
+        banner: _previewBanner(data),
+        footer: _previewFooter(data),
       );
     }
 
@@ -273,6 +351,8 @@ class _UnitPageState extends State<UnitPage> {
         isSubmitting: _isSubmitting,
         onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
         onBack: _handleBack,
+        banner: _previewBanner(data),
+        footer: _previewFooter(data),
       );
     }
 
@@ -283,6 +363,8 @@ class _UnitPageState extends State<UnitPage> {
         isSubmitting: _isSubmitting,
         onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
         onBack: _handleBack,
+        banner: _previewBanner(data),
+        footer: _previewFooter(data),
       );
     }
 
@@ -311,6 +393,8 @@ class _UnitPageState extends State<UnitPage> {
       attachmentUrl: attachmentUrl,
       isSubmitting: _isSubmitting,
       headerIcon: unitTeacherHeaderIcon(data.teachers),
+      banner: _previewBanner(data),
+      footer: _previewFooter(data),
       content: widget.isCompleted
           ? null
           : buildQuizLayout(

@@ -9,10 +9,12 @@ import 'package:mohammad/features/main/domain/entities/outline_course.dart';
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
 import 'package:mohammad/core/helper/paper_surface.dart';
 import 'package:mohammad/features/main/presentation/page/outline/roadmap/paper_theme.dart';
+import 'package:mohammad/features/home/page/detail_course_page.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_app_bar.dart';
+import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
 import '/widgets/custom_error.dart';
@@ -355,6 +357,8 @@ class _OutlinePageState extends State<OutlinePage>
         return 'آزمون';
       case 'audio':
         return 'صوتی';
+      case 'video':
+        return 'ویدیو';
       default:
         return type;
     }
@@ -370,9 +374,73 @@ class _OutlinePageState extends State<OutlinePage>
         return Icons.help_outline;
       case 'audio':
         return Icons.headphones_outlined;
+      case 'video':
+        return Icons.videocam_outlined;
       default:
         return Icons.article_outlined;
     }
+  }
+
+  bool _shouldShowPreviewBar(List<OutlineModuleEntity> modules) {
+    var hasUnlockedPreview = false;
+    var hasLockedPaid = false;
+    for (final module in modules) {
+      for (final path in module.paths ?? []) {
+        for (final unit in path.units ?? []) {
+          final preview = unit.isPreview == true;
+          final locked = unit.locked ?? false;
+          if (preview && !locked) hasUnlockedPreview = true;
+          if (!preview && locked) hasLockedPaid = true;
+        }
+      }
+    }
+    return hasUnlockedPreview && hasLockedPaid;
+  }
+
+  int _previewCount(List<OutlineModuleEntity> modules) {
+    var count = 0;
+    for (final module in modules) {
+      for (final path in module.paths ?? []) {
+        for (final unit in path.units ?? []) {
+          if (unit.isPreview == true) count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  void _promptSubscribe() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CustomText(
+                'برای ادامه این واحد ثبت‌نام کنید',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                textAlign: TextAlign.center,
+              ),
+              16.h,
+              CustomButton(
+                title: 'شروع رایگان',
+                onTap: () {
+                  Navigator.pop(context);
+                  CustomNavigator.pushNamed(
+                    DetailCoursePage.routeName,
+                    arguments: widget.id,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _onUnitTap({
@@ -382,7 +450,11 @@ class _OutlinePageState extends State<OutlinePage>
     required String? status,
     required bool locked,
   }) async {
-    if (locked || id == null || id.isEmpty) return;
+    if (id == null || id.isEmpty) return;
+    if (locked) {
+      _promptSubscribe();
+      return;
+    }
 
     await CustomNavigator.pushNamed(
       UnitPage.routeName,
@@ -579,6 +651,7 @@ class _OutlinePageState extends State<OutlinePage>
                 icon: _getTypeIcon(unitType),
                 isCompleted: isCompleted,
                 isLocked: isLocked,
+                isPreview: unit.isPreview == true,
                 isCurrent: isCurrent,
                 isLeft: isLeft,
                 maxLabelWidth: (canvasWidth * 0.44).clamp(80.0, 130.0),
@@ -683,6 +756,17 @@ class _OutlinePageState extends State<OutlinePage>
                               ),
                             ),
                           ),
+                          if (_shouldShowPreviewBar(modules))
+                            _PreviewSubscribeBar(
+                              previewCount: data.previewUnitCount ??
+                                  _previewCount(modules),
+                              onSubscribe: () {
+                                CustomNavigator.pushNamed(
+                                  DetailCoursePage.routeName,
+                                  arguments: widget.id,
+                                );
+                              },
+                            ),
                         ],
                       ),
                     );
@@ -692,6 +776,44 @@ class _OutlinePageState extends State<OutlinePage>
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PreviewSubscribeBar extends StatelessWidget {
+  final int previewCount;
+  final VoidCallback onSubscribe;
+
+  const _PreviewSubscribeBar({
+    required this.previewCount,
+    required this.onSubscribe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+      decoration: BoxDecoration(
+        color: PaperTheme.of(context).cardPaper,
+        border: Border(
+          top: BorderSide(color: PaperTheme.of(context).paperEdge),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          CustomText(
+            '$previewCount واحد اول رایگان است',
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            textAlign: TextAlign.center,
+            color: PaperTheme.of(context).ink,
+          ),
+          const SizedBox(height: 8),
+          CustomButton(title: 'شروع رایگان', onTap: onSubscribe),
+        ],
       ),
     );
   }
@@ -1418,6 +1540,7 @@ class _RoadUnitNode extends StatelessWidget {
   final IconData icon;
   final bool isCompleted;
   final bool isLocked;
+  final bool isPreview;
   final bool isCurrent;
   final bool isLeft;
   final double maxLabelWidth;
@@ -1429,6 +1552,7 @@ class _RoadUnitNode extends StatelessWidget {
     required this.icon,
     required this.isCompleted,
     required this.isLocked,
+    required this.isPreview,
     required this.isCurrent,
     required this.isLeft,
     required this.maxLabelWidth,
@@ -1533,13 +1657,23 @@ class _RoadUnitNode extends StatelessWidget {
               color: PaperTheme.of(context).inkMuted,
               textAlign: isLeft ? TextAlign.left : TextAlign.right,
             ),
+            if (isPreview && !isLocked) ...[
+              const SizedBox(height: 2),
+              CustomText(
+                'رایگان',
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: PaperTheme.of(context).accent,
+                textAlign: isLeft ? TextAlign.left : TextAlign.right,
+              ),
+            ],
           ],
         ),
       ),
     );
 
     return OnClick(
-      onTap: isLocked ? null : onTap,
+      onTap: onTap,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         textDirection: TextDirection.ltr,

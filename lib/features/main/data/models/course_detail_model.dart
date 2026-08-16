@@ -13,11 +13,12 @@ class CourseDetailModel extends CourseDetailEntity {
 
   @override
   CourseDetailModel fromJson(Map<String, dynamic> json) {
+    final outline = json['outline'];
     return CourseDetailModel(
       coursesModel: CoursesModel.fromJson(json),
-      moduleCount: json['outline']['module_count'],
-      pathCount: json['outline']['path_count'],
-      unitCount: json['outline']['unit_count'],
+      moduleCount: outline is Map ? outline['module_count'] as int? : null,
+      pathCount: outline is Map ? outline['path_count'] as int? : null,
+      unitCount: outline is Map ? outline['unit_count'] as int? : null,
       teachers: parseCourseTeachers(json['teachers']),
     );
   }

@@ -100,6 +100,25 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
       children: [
         BlocBuilder(
           bloc: viewModel,
+          builder: (context, state) {
+            if (state is AudioErrorState) {
+              return CustomText(
+                state.message,
+                fontSize: 13,
+                color: context.colors.primary,
+              );
+            }
+            if (state is AudioLoadingState) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: CircularProgressIndicator(color: context.colors.primary),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+        BlocBuilder(
+          bloc: viewModel,
           buildWhen: (previous, current) => current is AudioCurrentTimeState,
           builder: (context, state) {
             if (state is AudioCurrentTimeState) {

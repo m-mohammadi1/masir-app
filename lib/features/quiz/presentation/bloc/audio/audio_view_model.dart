@@ -70,19 +70,23 @@ class AudioViewModel extends Cubit<AudioBaseState> {
   }
 
   void _play() async {
-    var data = await _getFile(url);
-    if (data != null) {
-      await _audio.play(DeviceFileSource(data.path));
-    } else {
-      await _audio.play(UrlSource(url));
-      _downloadFile(url);
-    }
+    try {
+      var data = await _getFile(url);
+      if (data != null) {
+        await _audio.play(DeviceFileSource(data.path));
+      } else {
+        await _audio.play(UrlSource(url));
+        _downloadFile(url);
+      }
 
-    _stream;
-    _playing = false;
-    _fullTime =
-        (await _audio.getDuration() ?? Duration.zero).inSeconds.toDouble();
-    _current = _printDuration(await _audio.getDuration() ?? Duration.zero);
+      _stream;
+      _playing = false;
+      _fullTime =
+          (await _audio.getDuration() ?? Duration.zero).inSeconds.toDouble();
+      _current = _printDuration(await _audio.getDuration() ?? Duration.zero);
+    } catch (_) {
+      if (!isClosed) emit(AudioErrorState());
+    }
   }
 
   void seekTo(double second) async {

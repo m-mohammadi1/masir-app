@@ -6,6 +6,7 @@ class OutlineCourseModel extends OutlineCourseEntity {
     super.id,
     super.title,
     super.courseProgressPercent,
+    super.previewUnitCount,
     super.modules,
     super.teachers,
   });
@@ -16,6 +17,7 @@ class OutlineCourseModel extends OutlineCourseEntity {
       id: json['id'],
       title: json['title'],
       courseProgressPercent: json['course_progress_percent'],
+      previewUnitCount: json['preview_unit_count'],
       modules: (json['modules'] as List<dynamic>?)
           ?.map((e) => OutlineModuleModel.fromJson(e))
           .toList(),
@@ -78,6 +80,7 @@ class OutlineUnitModel extends OutlineUnitEntity {
     super.order,
     super.status,
     super.locked,
+    super.isPreview,
   });
 
   factory OutlineUnitModel.fromJson(Map<String, dynamic> json) {
@@ -88,6 +91,7 @@ class OutlineUnitModel extends OutlineUnitEntity {
       order: json['order'],
       status: json['status'],
       locked: json['locked'],
+      isPreview: json['is_preview'] == true,
     );
   }
 }

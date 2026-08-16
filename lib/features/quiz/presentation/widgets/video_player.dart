@@ -118,6 +118,8 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
               child: VideoPlayer(_controller),
             ),
           ),
+          if (value.isBuffering)
+            Center(child: CircularProgressIndicator(color: _accent)),
           if (_showControls) ...[
             Container(color: Colors.black26),
             IconButton(

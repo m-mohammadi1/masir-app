@@ -10,6 +10,8 @@ abstract class UnitsEntity extends BaseResult {
   final int? order;
   final UnitsPayloadEntity? payload;
   final List<CourseTeacherSummary> teachers;
+  final bool? isPreview;
+  final bool? isLastPreview;
 
   const UnitsEntity({
     this.id,
@@ -19,10 +21,13 @@ abstract class UnitsEntity extends BaseResult {
     this.order,
     this.payload,
     this.teachers = const [],
+    this.isPreview,
+    this.isLastPreview,
   });
 
   @override
-  List<Object?> get props => [id, courseId, title, type, order, payload, teachers];
+  List<Object?> get props =>
+      [id, courseId, title, type, order, payload, teachers, isPreview, isLastPreview];
 }
 
 abstract class UnitsPayloadEntity extends BaseResult {

@@ -20,10 +20,10 @@ abstract class CourseDetailEntity extends BaseResult {
 
   @override
   List<Object?> get props => [
-    coursesModel,
-    moduleCount,
-    pathCount,
-    unitCount,
-    teachers,
-  ];
+        coursesModel,
+        moduleCount,
+        pathCount,
+        unitCount,
+        teachers,
+      ];
 }

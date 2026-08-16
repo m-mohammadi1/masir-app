@@ -6,6 +6,11 @@ class AudioLoadingState extends AudioBaseState {}
 
 class AudioPlayState extends AudioBaseState {}
 
+class AudioErrorState extends AudioBaseState {
+  final String message;
+  AudioErrorState([this.message = 'خطا در پخش صوت']);
+}
+
 class AudioCurrentTimeState extends AudioBaseState {
   final String time;
   final String current;

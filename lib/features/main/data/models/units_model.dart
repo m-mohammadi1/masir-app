@@ -10,6 +10,8 @@ class UnitsModel extends UnitsEntity {
     super.order,
     super.payload,
     super.teachers,
+    super.isPreview,
+    super.isLastPreview,
   });
 
   @override
@@ -24,6 +26,8 @@ class UnitsModel extends UnitsEntity {
           ? UnitsPayloadModel.fromJson(json['payload'])
           : null,
       teachers: parseCourseTeachers(json['teachers']),
+      isPreview: json['is_preview'] == true,
+      isLastPreview: json['is_last_preview'] == true,
     );
   }
 
@@ -38,6 +42,8 @@ class UnitsModel extends UnitsEntity {
           ? UnitsPayloadModel.fromJson(json['payload'])
           : null,
       teachers: parseCourseTeachers(json['teachers']),
+      isPreview: json['is_preview'] == true,
+      isLastPreview: json['is_last_preview'] == true,
     );
   }
 }
