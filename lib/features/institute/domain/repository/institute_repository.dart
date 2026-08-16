@@ -5,8 +5,11 @@ import 'package:injectable/injectable.dart';
 import '../../data/datasource/institute_remote_data_source.dart';
 import '../../data/models/request_institute_id_model.dart';
 import '../../data/models/request_wallet_model.dart';
+import '../../data/models/request_announcements_model.dart';
 import '../entities/institute_detail.dart';
 import '../entities/wallet_card.dart';
+import '../entities/announcement.dart';
+import '../entities/app_notification.dart';
 
 abstract class InstituteRepository {
   final InstituteRemoteDataSource remoteDataSource;
@@ -28,4 +31,24 @@ abstract class InstituteRepository {
 
   @factoryMethod
   Future<Either<Failure, EmptyResult>> enter({RequestInstituteIdModel? params});
+
+  @factoryMethod
+  Future<Either<Failure, List<AnnouncementEntity>>> announcements({
+    RequestAnnouncementsModel? params,
+  });
+
+  @factoryMethod
+  Future<Either<Failure, AnnouncementEntity>> announcementDetail({
+    RequestAnnouncementIdModel? params,
+  });
+
+  @factoryMethod
+  Future<Either<Failure, List<AppNotificationEntity>>> notifications({
+    RequestNotificationsModel? params,
+  });
+
+  @factoryMethod
+  Future<Either<Failure, EmptyResult>> markNotificationRead({
+    RequestNotificationIdModel? params,
+  });
 }

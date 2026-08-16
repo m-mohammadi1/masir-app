@@ -9,6 +9,7 @@ import '/core/theme/institute_presets.dart';
 import '/core/theme/theme_context.dart';
 import '/features/institute/data/models/request_institute_id_model.dart';
 import '/features/institute/domain/usecases/enter_institute.dart';
+import '/features/institute/presentation/bloc/announcements/announcements_bloc.dart';
 import '/features/institute/presentation/bloc/institute_detail/institute_detail_bloc.dart';
 import '/features/institute/presentation/bloc/join_institute/join_institute_bloc.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
@@ -36,7 +37,9 @@ class _InstituteShellState extends State<InstituteShell> {
   late final InstituteDetailBloc _detailBloc;
   late final JoinInstituteBloc _joinBloc;
   late final WalletBloc _walletBloc;
+  late final AnnouncementsBloc _announcementsBloc;
   bool _entered = false;
+  bool _announcementsLoaded = false;
 
   @override
   void initState() {
@@ -44,6 +47,7 @@ class _InstituteShellState extends State<InstituteShell> {
     _detailBloc = inject<InstituteDetailBloc>();
     _joinBloc = inject<JoinInstituteBloc>();
     _walletBloc = inject<WalletBloc>();
+    _announcementsBloc = inject<AnnouncementsBloc>();
     _detailBloc.add(
       InstituteDetailEvent.load(
         params: RequestInstituteIdModel(id: widget.instituteId),
@@ -66,6 +70,7 @@ class _InstituteShellState extends State<InstituteShell> {
     _detailBloc.close();
     _joinBloc.close();
     _walletBloc.close();
+    _announcementsBloc.close();
     super.dispose();
   }
 
@@ -98,6 +103,7 @@ class _InstituteShellState extends State<InstituteShell> {
         BlocProvider.value(value: _detailBloc),
         BlocProvider.value(value: _joinBloc),
         BlocProvider.value(value: _walletBloc),
+        BlocProvider.value(value: _announcementsBloc),
       ],
       child: BlocListener<InstituteDetailBloc, InstituteDetailState>(
         listener: (context, state) {
@@ -109,6 +115,12 @@ class _InstituteShellState extends State<InstituteShell> {
                   name: data.name,
                   slug: data.slug,
                   logoUrl: data.logoUrl,
+                );
+              }
+              if (data.membership.isMember && !_announcementsLoaded) {
+                _announcementsLoaded = true;
+                _announcementsBloc.add(
+                  AnnouncementsEvent.load(instituteId: widget.instituteId),
                 );
               }
             },
@@ -217,7 +229,13 @@ class _Header extends StatelessWidget {
                   fontSize: 16,
                 ),
               ),
-              Icon(Icons.notifications_none, color: context.colors.ink),
+              OnClick(
+                onTap: () => context.go('/i/$instituteId/inbox'),
+                child: Icon(
+                  Icons.notifications_none,
+                  color: context.colors.ink,
+                ),
+              ),
               8.w,
               OnClick(
                 onTap: () => CustomNavigator.go(MainPage.routeName),

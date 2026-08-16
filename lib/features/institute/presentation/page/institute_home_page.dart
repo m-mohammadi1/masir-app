@@ -2,17 +2,21 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '/core/helper/jalali_format.dart';
 import '/core/services/service_locator.dart';
 import '/core/theme/theme_context.dart';
+import '/features/institute/data/models/announcement_model.dart';
 import '/features/institute/data/models/institute_detail_model.dart';
 import '/features/institute/data/models/request_institute_id_model.dart';
 import '/features/institute/data/models/wallet_card_model.dart';
+import '/features/institute/presentation/bloc/announcements/announcements_bloc.dart';
 import '/features/institute/presentation/bloc/institute_detail/institute_detail_bloc.dart';
 import '/features/institute/presentation/bloc/join_institute/join_institute_bloc.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
+import '/features/institute/presentation/widgets/announcement_preview_card.dart';
 import '/features/main/data/models/request_courses_model.dart';
 import '/features/main/presentation/bloc/courses/courses_bloc.dart';
 import '/features/main/presentation/page/outline_page.dart';
@@ -152,20 +156,7 @@ class _HomeBody extends StatelessWidget {
           ),
         ],
         16.h,
-        BlocBuilder<WalletBloc, WalletState>(
-          builder: (context, walletState) {
-            final card = walletState.whenOrNull(
-              success: (_, data) {
-                for (final item in data) {
-                  if (item.instituteId == detail.id) return item;
-                }
-                return null;
-              },
-            );
-            if (card?.nextAction == null) return const SizedBox.shrink();
-            return _ContinueCard(card: card!);
-          },
-        ),
+        ..._homeMiddle(context, detail),
         16.h,
         CustomText('دوره‌ها', fontWeight: FontWeight.w600, fontSize: 16),
         8.h,
@@ -269,6 +260,41 @@ class _HomeBody extends StatelessWidget {
     );
   }
 
+  List<Widget> _homeMiddle(
+    BuildContext context,
+    InstituteDetailModel detail,
+  ) {
+    final announcementsState = context.watch<AnnouncementsBloc>().state;
+    final announcements = announcementsState.maybeWhen(
+      success: (_, items, _, _) => items,
+      orElse: () => const <AnnouncementModel>[],
+    );
+    final unreadOnTop = announcements.any((item) => item.isUnread);
+    final announcementsSlot = _AnnouncementsHomeSlot(
+      instituteId: detail.id ?? '',
+      items: announcements,
+    );
+    final continueCard = BlocBuilder<WalletBloc, WalletState>(
+      builder: (context, walletState) {
+        final card = walletState.whenOrNull(
+          success: (_, data) {
+            for (final item in data) {
+              if (item.instituteId == detail.id) return item;
+            }
+            return null;
+          },
+        );
+        if (card?.nextAction == null) return const SizedBox.shrink();
+        return _ContinueCard(card: card!);
+      },
+    );
+    if (announcements.isEmpty) return [continueCard];
+    if (unreadOnTop) {
+      return [announcementsSlot, 16.h, continueCard];
+    }
+    return [continueCard, 16.h, announcementsSlot];
+  }
+
   IconData _iconFor(String? kind) {
     switch (kind) {
       case 'instagram':
@@ -278,6 +304,44 @@ class _HomeBody extends StatelessWidget {
       default:
         return Icons.language;
     }
+  }
+}
+
+class _AnnouncementsHomeSlot extends StatelessWidget {
+  final String instituteId;
+  final List<AnnouncementModel> items;
+
+  const _AnnouncementsHomeSlot({
+    required this.instituteId,
+    required this.items,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    final preview = items.take(2).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CustomText('اطلاعیه‌ها', fontWeight: FontWeight.w600, fontSize: 16),
+        8.h,
+        for (final item in preview) ...[
+          AnnouncementPreviewCard(
+            item: item,
+            onTap: () => context.go('/i/$instituteId/announcements/${item.id}'),
+          ),
+          8.h,
+        ],
+        OnClick(
+          onTap: () => context.go('/i/$instituteId/announcements'),
+          child: CustomText(
+            'همه‌ی اطلاعیه‌ها',
+            color: context.colors.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 }
 

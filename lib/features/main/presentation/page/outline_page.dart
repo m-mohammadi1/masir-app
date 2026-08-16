@@ -238,6 +238,7 @@ class _TrailNode {
   /// Whether the segment *leading into* this node should be drawn as
   /// already-walked (green) rather than still-ahead (purple).
   final bool incomingSolid;
+  final String? anchorId;
   final Widget Function(double canvasWidth) build;
 
   const _TrailNode({
@@ -249,6 +250,7 @@ class _TrailNode {
     this.curveKickA = 0,
     this.curveKickB = 0,
     required this.incomingSolid,
+    this.anchorId,
     required this.build,
   });
 }
@@ -276,9 +278,15 @@ List<double> _computeCentersY(List<_TrailNode> nodes) {
 
 class OutlinePage extends StatefulWidget {
   final String title, id;
+  final String? moduleId;
   static const String routeName = "/outline";
 
-  const OutlinePage({super.key, required this.title, required this.id});
+  const OutlinePage({
+    super.key,
+    required this.title,
+    required this.id,
+    this.moduleId,
+  });
 
   @override
   State<OutlinePage> createState() => _OutlinePageState();
@@ -312,12 +320,18 @@ class _OutlinePageState extends State<OutlinePage>
     _entranceController.forward(from: 0);
   }
 
-  /// Scrolls straight to the current unit's precomputed Y — no GlobalKey,
-  /// no `ensureVisible` retry loop. The position is known analytically the
-  /// moment the node list is built, so this can never fail to find it.
+  /// Scrolls straight to a precomputed Y — no GlobalKey, no `ensureVisible`
+  /// retry loop. Prefer a chapter `moduleId` when the announcement deep-link
+  /// provided one; otherwise land on the current unit.
   void _scrollToCurrentUnitOnce(_NodeBuildResult result) {
     if (_hasScrolledToCurrent) return;
-    final index = result.currentUnitIndex;
+    int? index;
+    final moduleId = widget.moduleId;
+    if (moduleId != null && moduleId.isNotEmpty) {
+      final found = result.nodes.indexWhere((n) => n.anchorId == moduleId);
+      if (found >= 0) index = found;
+    }
+    index ??= result.currentUnitIndex;
     if (index == null) {
       _hasScrolledToCurrent = true;
       return;
@@ -578,6 +592,7 @@ class _OutlinePageState extends State<OutlinePage>
           incomingSolid: previousModuleFullyCompleted ?? false,
           curveKickA: jitter(16),
           curveKickB: jitter(16),
+          anchorId: module.id,
           build: (_) => _ChapterHeader(
             index: moduleIndex,
             title: module.title ?? '',

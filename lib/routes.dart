@@ -11,8 +11,11 @@ import 'features/home/page/courses_screen.dart';
 import 'features/home/page/detail_course_page.dart';
 import 'features/home/page/route_map_page.dart';
 import 'features/intro/presentation/page/intro_screen.dart';
+import 'features/institute/presentation/page/announcement_detail_page.dart';
+import 'features/institute/presentation/page/institute_announcements_page.dart';
 import 'features/institute/presentation/page/institute_courses_page.dart';
 import 'features/institute/presentation/page/institute_home_page.dart';
+import 'features/institute/presentation/page/institute_inbox_page.dart';
 import 'features/institute/presentation/page/institute_me_page.dart';
 import 'features/teacher/presentation/page/institute_teachers_page.dart';
 import 'features/teacher/presentation/page/teacher_page.dart';
@@ -85,10 +88,14 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: OutlinePage.routeName,
-          builder: (context, state) => OutlinePage(
-            id: (state.extra as Map<String, String>)['id']!,
-            title: (state.extra as Map<String, String>)['title']!,
-          ),
+          builder: (context, state) {
+            final extra = state.extra as Map<String, String>;
+            return OutlinePage(
+              id: extra['id']!,
+              title: extra['title']!,
+              moduleId: extra['moduleId'],
+            );
+          },
         ),
       ],
     ),
@@ -151,6 +158,25 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/i/:instituteId/me',
           builder: (context, state) => const InstituteMePage(),
+        ),
+        GoRoute(
+          path: '/i/:instituteId/announcements',
+          builder: (context, state) => InstituteAnnouncementsPage(
+            instituteId: state.pathParameters['instituteId'] ?? '',
+          ),
+        ),
+        GoRoute(
+          path: '/i/:instituteId/announcements/:announcementId',
+          builder: (context, state) => AnnouncementDetailPage(
+            instituteId: state.pathParameters['instituteId'] ?? '',
+            announcementId: state.pathParameters['announcementId'] ?? '',
+          ),
+        ),
+        GoRoute(
+          path: '/i/:instituteId/inbox',
+          builder: (context, state) => InstituteInboxPage(
+            instituteId: state.pathParameters['instituteId'] ?? '',
+          ),
         ),
       ],
     ),

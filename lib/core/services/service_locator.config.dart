@@ -58,14 +58,28 @@ import '../../features/institute/data/repository/institute_repository_impl.dart'
 import '../../features/institute/domain/repository/institute_repository.dart'
     as _i768;
 import '../../features/institute/domain/usecases/enter_institute.dart' as _i733;
+import '../../features/institute/domain/usecases/get_announcement.dart'
+    as _i212;
+import '../../features/institute/domain/usecases/get_announcements.dart'
+    as _i96;
 import '../../features/institute/domain/usecases/get_institute_detail.dart'
     as _i461;
+import '../../features/institute/domain/usecases/get_notifications.dart'
+    as _i903;
 import '../../features/institute/domain/usecases/get_wallet.dart' as _i150;
 import '../../features/institute/domain/usecases/join_institute.dart' as _i611;
+import '../../features/institute/domain/usecases/mark_notification_read.dart'
+    as _i917;
+import '../../features/institute/presentation/bloc/announcement_detail/announcement_detail_bloc.dart'
+    as _i235;
+import '../../features/institute/presentation/bloc/announcements/announcements_bloc.dart'
+    as _i920;
 import '../../features/institute/presentation/bloc/institute_detail/institute_detail_bloc.dart'
     as _i723;
 import '../../features/institute/presentation/bloc/join_institute/join_institute_bloc.dart'
     as _i993;
+import '../../features/institute/presentation/bloc/notifications/notifications_bloc.dart'
+    as _i281;
 import '../../features/institute/presentation/bloc/wallet/wallet_bloc.dart'
     as _i376;
 import '../../features/main/data/datasource/main_remote_data_source.dart'
@@ -281,8 +295,23 @@ extension GetItInjectableX on _i174.GetIt {
         repository: gh<_i768.InstituteRepository>(),
       ),
     );
+    gh.factory<_i212.GetAnnouncementUseCase>(
+      () => _i212.GetAnnouncementUseCase(
+        repository: gh<_i768.InstituteRepository>(),
+      ),
+    );
+    gh.factory<_i96.GetAnnouncementsUseCase>(
+      () => _i96.GetAnnouncementsUseCase(
+        repository: gh<_i768.InstituteRepository>(),
+      ),
+    );
     gh.factory<_i461.GetInstituteDetailUseCase>(
       () => _i461.GetInstituteDetailUseCase(
+        repository: gh<_i768.InstituteRepository>(),
+      ),
+    );
+    gh.factory<_i903.GetNotificationsUseCase>(
+      () => _i903.GetNotificationsUseCase(
         repository: gh<_i768.InstituteRepository>(),
       ),
     );
@@ -291,6 +320,11 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i611.JoinInstituteUseCase>(
       () => _i611.JoinInstituteUseCase(
+        repository: gh<_i768.InstituteRepository>(),
+      ),
+    );
+    gh.factory<_i917.MarkNotificationReadUseCase>(
+      () => _i917.MarkNotificationReadUseCase(
         repository: gh<_i768.InstituteRepository>(),
       ),
     );
@@ -359,6 +393,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i953.CoursesBloc>(
       () => _i953.CoursesBloc(coursesUseCase: gh<_i617.CoursesUseCase>()),
     );
+    gh.factory<_i281.NotificationsBloc>(
+      () => _i281.NotificationsBloc(
+        getNotificationsUseCase: gh<_i903.GetNotificationsUseCase>(),
+        markNotificationReadUseCase: gh<_i917.MarkNotificationReadUseCase>(),
+      ),
+    );
     gh.factory<_i386.SubmitUsernameBloc>(
       () => _i386.SubmitUsernameBloc(
         submitUsernameUseCase: gh<_i672.SubmitUsernameUseCase>(),
@@ -380,6 +420,12 @@ extension GetItInjectableX on _i174.GetIt {
         courseDetailUseCase: gh<_i380.CourseDetailUseCase>(),
       ),
     );
+    gh.factory<_i235.AnnouncementDetailBloc>(
+      () => _i235.AnnouncementDetailBloc(
+        getAnnouncementUseCase: gh<_i212.GetAnnouncementUseCase>(),
+        markNotificationReadUseCase: gh<_i917.MarkNotificationReadUseCase>(),
+      ),
+    );
     gh.factory<_i258.EditPasswordBloc>(
       () => _i258.EditPasswordBloc(
         editPasswordUseCase: gh<_i190.EditPasswordUseCase>(),
@@ -393,6 +439,11 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i505.QuizBloc>(
       () => _i505.QuizBloc(quizUseCase: gh<_i177.QuizUseCase>()),
+    );
+    gh.factory<_i920.AnnouncementsBloc>(
+      () => _i920.AnnouncementsBloc(
+        getAnnouncementsUseCase: gh<_i96.GetAnnouncementsUseCase>(),
+      ),
     );
     gh.factory<_i1032.MySubscriptionsBloc>(
       () => _i1032.MySubscriptionsBloc(
