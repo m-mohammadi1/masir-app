@@ -30,6 +30,8 @@ class MasirColors extends ThemeExtension<MasirColors> {
   final Color trailWalkedEdge;
   final Color trailUnwalked;
   final Color trailUnwalkedEdge;
+  final Color accent;
+  final Color onPrimary;
 
   const MasirColors({
     required this.primary,
@@ -59,6 +61,8 @@ class MasirColors extends ThemeExtension<MasirColors> {
     required this.trailWalkedEdge,
     required this.trailUnwalked,
     required this.trailUnwalkedEdge,
+    required this.accent,
+    required this.onPrimary,
   });
 
   Color get pagePaper => background;
@@ -67,8 +71,7 @@ class MasirColors extends ThemeExtension<MasirColors> {
   Color get text => ink;
   Color get textGray => inkMuted;
   Color get textDefault => ink;
-  Color get accent => primary;
-  Color get onPrimary => white;
+  Color get primarySoft => primaryTint;
 
   static const light = MasirColors(
     primary: LightColors.primary,
@@ -98,6 +101,8 @@ class MasirColors extends ThemeExtension<MasirColors> {
     trailWalkedEdge: LightColors.trailWalkedEdge,
     trailUnwalked: LightColors.trailUnwalked,
     trailUnwalkedEdge: LightColors.trailUnwalkedEdge,
+    accent: LightColors.primary,
+    onPrimary: LightColors.white,
   );
 
   static const dark = MasirColors(
@@ -128,6 +133,8 @@ class MasirColors extends ThemeExtension<MasirColors> {
     trailWalkedEdge: DarkColors.trailWalkedEdge,
     trailUnwalked: DarkColors.trailUnwalked,
     trailUnwalkedEdge: DarkColors.trailUnwalkedEdge,
+    accent: DarkColors.primary,
+    onPrimary: DarkColors.white,
   );
 
   @override
@@ -159,6 +166,8 @@ class MasirColors extends ThemeExtension<MasirColors> {
     Color? trailWalkedEdge,
     Color? trailUnwalked,
     Color? trailUnwalkedEdge,
+    Color? accent,
+    Color? onPrimary,
   }) {
     return MasirColors(
       primary: primary ?? this.primary,
@@ -188,6 +197,8 @@ class MasirColors extends ThemeExtension<MasirColors> {
       trailWalkedEdge: trailWalkedEdge ?? this.trailWalkedEdge,
       trailUnwalked: trailUnwalked ?? this.trailUnwalked,
       trailUnwalkedEdge: trailUnwalkedEdge ?? this.trailUnwalkedEdge,
+      accent: accent ?? this.accent,
+      onPrimary: onPrimary ?? this.onPrimary,
     );
   }
 
@@ -223,6 +234,8 @@ class MasirColors extends ThemeExtension<MasirColors> {
       trailWalkedEdge: mix(trailWalkedEdge, other.trailWalkedEdge),
       trailUnwalked: mix(trailUnwalked, other.trailUnwalked),
       trailUnwalkedEdge: mix(trailUnwalkedEdge, other.trailUnwalkedEdge),
+      accent: mix(accent, other.accent),
+      onPrimary: mix(onPrimary, other.onPrimary),
     );
   }
 }
