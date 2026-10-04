@@ -14,49 +14,6 @@ class MasirMotion {
   );
 }
 
-/// A centred popup that pops in with a gentle overshoot and shrinks away when
-/// closed, over a softly fading scrim.
-Future<T?> showMasirDialog<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-  bool barrierDismissible = true,
-}) {
-  return showGeneralDialog<T>(
-    context: context,
-    barrierDismissible: barrierDismissible,
-    barrierLabel: 'close',
-    barrierColor: Colors.black.withValues(alpha: 0.5),
-    transitionDuration: const Duration(milliseconds: 420),
-    pageBuilder: (context, _, _) => SafeArea(child: builder(context)),
-    transitionBuilder: (context, animation, _, child) {
-      final entering = animation.status != AnimationStatus.reverse;
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutBack,
-        reverseCurve: Curves.easeInCubic,
-      );
-      final fade = CurvedAnimation(
-        parent: animation,
-        curve: const Interval(0, 0.6, curve: Curves.easeOut),
-        reverseCurve: Curves.easeIn,
-      );
-      return FadeTransition(
-        opacity: fade,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: Offset(0, entering ? 0.08 : 0.04),
-            end: Offset.zero,
-          ).animate(curved),
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.82, end: 1).animate(curved),
-            child: child,
-          ),
-        ),
-      );
-    },
-  );
-}
-
 /// A fade-up entrance for a section or row. Items with a growing [index]
 /// start a little later (40ms steps, capped), so a page fills in as a gentle
 /// cascade instead of appearing all at once.

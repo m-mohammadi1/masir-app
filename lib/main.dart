@@ -8,6 +8,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '/routes.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
+import '/widgets/masir_notice.dart';
+import '/widgets/masir_toast.dart';
 import 'core/helper/assets.dart';
 import 'core/helper/custom_themes.dart';
 import 'core/services/hive_service.dart';
@@ -26,6 +28,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GEasyHelper.errorNetwork = MasirCopy.networkError;
   GEasyHelper.vpnError = MasirCopy.vpnError;
+  CustomToast.presenter = (context, message, type, duration, onTap) =>
+      MasirToast.show(
+        context,
+        title: message,
+        tone: switch (type) {
+          Type.success => NoticeTone.success,
+          Type.error => NoticeTone.error,
+          Type.info => NoticeTone.info,
+        },
+        duration: duration,
+        onTap: onTap,
+      );
 
   await HiveService.init();
   await setup();

@@ -1,6 +1,5 @@
 import '/core/feedback/masir_feedback.dart';
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
-import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import '/core/copy/masir_copy.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,7 +33,9 @@ import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 import '/widgets/chunky_box.dart';
 import '/core/theme/institute_themed.dart';
+import '/widgets/masir_notice.dart';
 import '/widgets/masir_page.dart';
+import '/widgets/masir_toast.dart';
 import '/widgets/state_view.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
@@ -89,9 +90,6 @@ class _UnitPageState extends State<UnitPage> {
 
   /// Resolving / switching to the next unit.
   bool _advancing = false;
-
-  /// Title of the unit we just moved on to, for the "well done" banner.
-  String? _bannerNext;
 
   @override
   void initState() {
@@ -325,8 +323,13 @@ class _UnitPageState extends State<UnitPage> {
       _homeworkAnswer = null;
       _isSubmitting = false;
       _advancing = false;
-      _bannerNext = _unitTitle;
     });
+    MasirToast.show(
+      context,
+      title: MasirCopy.cheer(),
+      message: 'درس بعدی: $_unitTitle',
+      tone: NoticeTone.success,
+    );
     _fetchUnit();
   }
 
@@ -388,8 +391,8 @@ class _UnitPageState extends State<UnitPage> {
     );
   }
 
-  /// Fades between units when the student moves on, and shows the short
-  /// "well done" banner over the incoming unit.
+  /// Fades between units when the student moves on. The "well done" notice is
+  /// shown by [_advance] through the shared toast.
   Widget _withTransition(Widget child) {
     return Stack(
       children: [
@@ -423,19 +426,6 @@ class _UnitPageState extends State<UnitPage> {
             child: KeyedSubtree(key: ValueKey(_unitId), child: child),
           ),
         ),
-        if (_bannerNext != null)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _NextUnitBanner(
-              key: ValueKey('banner-$_unitId'),
-              nextTitle: _bannerNext!,
-              onDone: () {
-                if (mounted) setState(() => _bannerNext = null);
-              },
-            ),
-          ),
       ],
     );
   }
@@ -589,165 +579,6 @@ class _UnitPageState extends State<UnitPage> {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// Big, friendly confirmation shown over the next unit right after the
-/// student finishes one: what they just did, and what comes now.
-class _NextUnitBanner extends StatefulWidget {
-  final String nextTitle;
-  final VoidCallback onDone;
-
-  const _NextUnitBanner({
-    super.key,
-    required this.nextTitle,
-    required this.onDone,
-  });
-
-  @override
-  State<_NextUnitBanner> createState() => _NextUnitBannerState();
-}
-
-class _NextUnitBannerState extends State<_NextUnitBanner>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2600),
-  );
-  final ConfettiController _confetti = ConfettiController(
-    duration: const Duration(milliseconds: 700),
-  );
-  final String _cheer = MasirCopy.cheer();
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_confettiPlayed) {
-      _confettiPlayed = true;
-      if (!MediaQuery.disableAnimationsOf(context)) _confetti.play();
-    }
-  }
-
-  bool _confettiPlayed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.forward().whenComplete(() {
-      if (mounted) widget.onDone();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _confetti.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final top = MediaQuery.paddingOf(context).top + MasirSpace.md;
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        // Slide in during the first 15%, hold, then lift away over the last 20%.
-        final t = _controller.value;
-        final shown = t < 0.15
-            ? Curves.easeOutBack.transform(t / 0.15)
-            : t > 0.8
-            ? 1 - Curves.easeInCubic.transform((t - 0.8) / 0.2)
-            : 1.0;
-        return Opacity(
-          opacity: shown.clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(0, -(1 - shown) * 80),
-            child: child,
-          ),
-        );
-      },
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          MasirSpace.gutter,
-          top,
-          MasirSpace.gutter,
-          0,
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: ChunkyBox(
-            fill: c.green,
-            edge: c.greenEdge,
-            radius: MasirRadius.hero,
-            padding: const EdgeInsets.symmetric(
-              horizontal: MasirSpace.xl,
-              vertical: MasirSpace.lg,
-            ),
-            onTap: widget.onDone,
-            child: Row(
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(
-                        begin: MediaQuery.disableAnimationsOf(context) ? 1 : 0,
-                        end: 1,
-                      ),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.elasticOut,
-                      builder: (context, scale, child) =>
-                          Transform.scale(scale: scale, child: child),
-                      child: Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: c.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.check_rounded,
-                          size: 34,
-                          color: c.green,
-                        ),
-                      ),
-                    ),
-                    ConfettiWidget(
-                      confettiController: _confetti,
-                      blastDirectionality: BlastDirectionality.explosive,
-                      emissionFrequency: 0.2,
-                      numberOfParticles: 10,
-                      maxBlastForce: 14,
-                      minBlastForce: 6,
-                      gravity: 0.3,
-                      colors: [c.white, c.sun, c.coral, c.primary],
-                    ),
-                  ],
-                ),
-                const SizedBox(width: MasirSpace.lg),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CustomText.title(_cheer, color: c.white),
-                      const SizedBox(height: 2),
-                      CustomText.body(
-                        'درس بعدی: ${widget.nextTitle}',
-                        color: c.white.withValues(alpha: 0.92),
-                        maxLines: 2,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

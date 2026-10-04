@@ -274,32 +274,35 @@ void main() {
     expect(find.text('ثبت‌نام'), findsNothing);
   });
 
-  testWidgets('path-completed popup names the path and can be dismissed', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: light,
-        locale: const Locale('fa'),
-        builder: (context, c) =>
-            Directionality(textDirection: TextDirection.rtl, child: c!),
-        home: const Scaffold(
-          body: PathCompletedDialog(
-            pathTitle: 'مسیر اول',
-            unitCount: 3,
-            chapterDone: false,
-            courseDone: false,
-          ),
-        ),
-      ),
+  test('path-completed notice names the path and its size', () {
+    final path = pathCompletedNotice(
+      pathTitle: 'مسیر اول',
+      unitCount: 3,
+      chapterDone: false,
+      courseDone: false,
     );
-    await tester.pump(const Duration(seconds: 1));
+    expect(path.title, 'این مسیر کامل شد!');
+    expect(path.message, 'مسیر اول · ۳ واحد تموم شد');
+    expect(path.icon, Icons.workspace_premium_rounded);
 
-    expect(find.text('این مسیر کامل شد!'), findsOneWidget);
-    expect(find.text('مسیر اول'), findsOneWidget);
-    expect(find.text('۳ واحد تموم شد'), findsOneWidget);
-    expect(find.text('ادامه مسیر'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+    final chapter = pathCompletedNotice(
+      pathTitle: '',
+      unitCount: 2,
+      chapterDone: true,
+      courseDone: false,
+    );
+    expect(chapter.title, 'یک فصل کامل شد!');
+    expect(chapter.message, '۲ واحد تموم شد');
+
+    final course = pathCompletedNotice(
+      pathTitle: 'x',
+      unitCount: 0,
+      chapterDone: true,
+      courseDone: true,
+    );
+    expect(course.title, 'دوره رو تموم کردی!');
+    expect(course.message, 'x');
+    expect(course.icon, Icons.emoji_events_rounded);
   });
 
   testWidgets('a course with no free preview still offers "ثبت‌نام"', (

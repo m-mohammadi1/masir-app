@@ -2,8 +2,22 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 
+/// Lets the app draw toasts with its own widget. See [CustomToast.presenter].
+typedef ToastPresenter =
+    void Function(
+      BuildContext context,
+      String message,
+      Type type,
+      Duration duration,
+      VoidCallback? onTap,
+    );
+
 class CustomToast {
   CustomToast._();
+
+  /// When set, every [toast] is drawn by this instead of the built-in pill, so
+  /// the app owns the look of all its feedback messages.
+  static ToastPresenter? presenter;
 
   static Color _accent(Type t) {
     if (t == Type.success) return const Color(0XFF009966);
@@ -33,6 +47,11 @@ class CustomToast {
     OverlayState? overlayState,
   }) async {
     if (message.isEmpty) return;
+    final custom = presenter;
+    if (custom != null) {
+      custom(context, message, type, displayDuration, onTap);
+      return;
+    }
     if (type == Type.error) debugPrint("Error Toast log is: $message");
 
     final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
@@ -44,9 +63,8 @@ class CustomToast {
       autoCloseDuration: displayDuration,
       alignment: Alignment.topCenter,
       dismissDirection: DismissDirection.up,
-      animationDuration: reduceMotion
-          ? Duration.zero
-          : const Duration(milliseconds: 460),
+      animationDuration:
+          reduceMotion ? Duration.zero : const Duration(milliseconds: 460),
       animationBuilder: (context, animation, alignment, child) {
         if (reduceMotion) return child;
         final pop = CurvedAnimation(
@@ -83,10 +101,7 @@ class CustomToast {
             },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: _soft(type, dark),
                 borderRadius: BorderRadius.circular(20),
@@ -114,9 +129,10 @@ class CustomToast {
                     child: Text(
                       message,
                       style: TextStyle(
-                        color: dark
-                            ? const Color(0xFFF2F3F7)
-                            : const Color(0xFF252525),
+                        color:
+                            dark
+                                ? const Color(0xFFF2F3F7)
+                                : const Color(0xFF252525),
                         fontFamily: "Masir",
                         fontWeight: FontWeight.w700,
                         fontSize: 13,

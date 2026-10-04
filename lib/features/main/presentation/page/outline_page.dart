@@ -23,8 +23,9 @@ import '/widgets/chunky_box.dart';
 import '/widgets/icon_tile.dart';
 import '/widgets/masir_card.dart';
 import '/widgets/masir_motion.dart';
+import '/widgets/masir_notice.dart';
+import '/widgets/masir_toast.dart';
 import '/widgets/masir_page.dart';
-import '/widgets/pill_chip.dart';
 import '/widgets/progress_pill.dart';
 import '/widgets/unit_kit/unit_type_style.dart';
 import '/widgets/state_view.dart';
@@ -503,21 +504,22 @@ class _OutlinePageState extends State<OutlinePage>
   Future<void> _showPathCompleted(
     ({OutlineModuleEntity module, OutlinePathEntity path, int index}) spot,
     OutlineCourseEntity course,
-  ) {
+  ) async {
     final modules = course.modules ?? [];
+    final notice = pathCompletedNotice(
+      pathTitle: spot.path.title ?? '',
+      unitCount: spot.path.units?.length ?? 0,
+      chapterDone: _isModuleFullyCompleted(spot.module),
+      courseDone: modules.isNotEmpty && modules.every(_isModuleFullyCompleted),
+    );
     MasirFeedback.celebrate();
-    return showMasirDialog<void>(
-      context: context,
-      builder: (_) => InstituteThemed(
-        preset: widget.themePreset,
-        child: PathCompletedDialog(
-          pathTitle: spot.path.title ?? '',
-          unitCount: spot.path.units?.length ?? 0,
-          chapterDone: _isModuleFullyCompleted(spot.module),
-          courseDone:
-              modules.isNotEmpty && modules.every(_isModuleFullyCompleted),
-        ),
-      ),
+    MasirToast.show(
+      context,
+      title: notice.title,
+      message: notice.message,
+      tone: NoticeTone.success,
+      icon: notice.icon,
+      duration: MasirToast.celebration,
     );
   }
 
@@ -959,117 +961,30 @@ class _ContinueBar extends StatelessWidget {
   }
 }
 
-/// Celebration shown on the roadmap after the last unit of a path is done.
+/// What to tell the student when the last unit of a path is done.
 @visibleForTesting
-class PathCompletedDialog extends StatelessWidget {
-  final String pathTitle;
-  final int unitCount;
-  final bool chapterDone;
-  final bool courseDone;
-
-  const PathCompletedDialog({
-    super.key,
-    required this.pathTitle,
-    required this.unitCount,
-    required this.chapterDone,
-    required this.courseDone,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final title = courseDone
-        ? 'دوره رو تموم کردی!'
-        : chapterDone
-        ? 'یک فصل کامل شد!'
-        : 'این مسیر کامل شد!';
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: MasirSpace.lg,
-        vertical: MasirSpace.xxl,
-      ),
-      child: ChunkyBox(
-        fill: c.surface,
-        edge: c.lip,
-        borderColor: c.border,
-        radius: MasirRadius.hero,
-        padding: const EdgeInsets.fromLTRB(
-          MasirSpace.xl,
-          MasirSpace.xxl,
-          MasirSpace.xl,
-          MasirSpace.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 650),
-                curve: Curves.easeOutBack,
-                builder: (context, t, child) => Transform.scale(
-                  scale: 0.4 + 0.6 * t,
-                  child: Opacity(opacity: t.clamp(0.0, 1.0), child: child),
-                ),
-                child: SizedBox(
-                  width: 128,
-                  height: 128 + Chunky.lip,
-                  child: ChunkyBox(
-                    fill: c.sun,
-                    edge: c.sunEdge,
-                    radius: 64,
-                    alignment: Alignment.center,
-                    child: Icon(
-                      courseDone
-                          ? Icons.emoji_events_rounded
-                          : Icons.workspace_premium_rounded,
-                      size: 68,
-                      color: c.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: MasirSpace.xl),
-            CustomText.display(title, textAlign: TextAlign.center),
-            if (pathTitle.isNotEmpty) ...[
-              const SizedBox(height: MasirSpace.xs),
-              CustomText.headline(
-                pathTitle,
-                textAlign: TextAlign.center,
-                color: c.inkMuted,
-              ),
-            ],
-            const SizedBox(height: MasirSpace.lg),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: MasirSpace.sm,
-              runSpacing: MasirSpace.sm,
-              children: [
-                if (unitCount > 0)
-                  PillChip(
-                    '${faDigits(unitCount)} واحد تموم شد',
-                    icon: Icons.check_circle_rounded,
-                    tone: PillTone.success,
-                  ),
-                if (chapterDone && !courseDone)
-                  const PillChip('فصل کامل شد', tone: PillTone.sun),
-              ],
-            ),
-            const SizedBox(height: MasirSpace.xxl),
-            CustomButton(
-              title: courseDone ? 'ایول!' : 'ادامه مسیر',
-              height: 56,
-              onTap: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+({String title, String message, IconData icon}) pathCompletedNotice({
+  required String pathTitle,
+  required int unitCount,
+  required bool chapterDone,
+  required bool courseDone,
+}) {
+  final title = courseDone
+      ? 'دوره رو تموم کردی!'
+      : chapterDone
+      ? 'یک فصل کامل شد!'
+      : 'این مسیر کامل شد!';
+  final parts = [
+    if (pathTitle.isNotEmpty) pathTitle,
+    if (unitCount > 0) '${faDigits(unitCount)} واحد تموم شد',
+  ];
+  return (
+    title: title,
+    message: parts.join(' · '),
+    icon: courseDone
+        ? Icons.emoji_events_rounded
+        : Icons.workspace_premium_rounded,
+  );
 }
 
 // ---------------------------------------------------------------------------
