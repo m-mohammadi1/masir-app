@@ -8,6 +8,7 @@ import '/features/institute/data/models/wallet_card_model.dart';
 import '/widgets/brand_media.dart';
 import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
+import '/widgets/pill_chip.dart';
 import '/widgets/progress_pill.dart';
 import '/core/theme/masir_style.dart';
 
@@ -17,11 +18,15 @@ class MembershipCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool compact;
 
+  /// Optional label on the cover, e.g. "مؤسسه‌ی فعلی".
+  final String? badge;
+
   const MembershipCard({
     super.key,
     required this.card,
     this.onTap,
     this.compact = false,
+    this.badge,
   });
 
   @override
@@ -60,6 +65,16 @@ class MembershipCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (badge != null)
+                PositionedDirectional(
+                  top: MasirSpace.sm,
+                  end: MasirSpace.sm,
+                  child: PillChip(
+                    badge!,
+                    icon: Icons.check_circle_rounded,
+                    tone: PillTone.onDark,
+                  ),
+                ),
               PositionedDirectional(
                 bottom: -logoSize / 2,
                 start: 14,

@@ -116,7 +116,13 @@ class _InstituteShellState extends State<InstituteShell> {
         listener: (context, state) {
           state.whenOrNull(
             success: (_, data) {
-              if (data.id != null) {
+              // Only a member's first institute becomes current on its own.
+              // Browsing others must not change it (the switcher and joining
+              // do that explicitly), or the close confirmation could never
+              // tell the current institute apart.
+              if (data.id != null &&
+                  data.membership.isMember &&
+                  !HiveService.hasCurrentInstitute) {
                 HiveService.setCurrentInstitute(
                   id: data.id!,
                   name: data.name,

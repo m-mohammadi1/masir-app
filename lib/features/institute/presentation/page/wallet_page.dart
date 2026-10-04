@@ -3,17 +3,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '/core/services/service_locator.dart';
-import '/core/theme/theme_context.dart';
 import '/features/institute/data/models/wallet_card_model.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
+import '/features/institute/presentation/widgets/current_institute_card.dart';
 import '/features/institute/presentation/widgets/membership_card.dart';
 import '/features/main/presentation/page/institutes_page.dart';
-import '/widgets/chunky_box.dart';
-import '/widgets/custom_text.dart';
+import '/core/services/hive_service.dart';
+import '/widgets/icon_tile.dart';
+import '/widgets/list_row.dart';
+import '/widgets/masir_motion.dart';
 import '/widgets/masir_page.dart';
 import '/widgets/state_view.dart';
-import '/core/helper/jalali_format.dart';
 import '/core/theme/masir_style.dart';
+
+/// One list, most useful first: the current institute, then institutes with
+/// something to continue, then the ones not started yet. Ties keep the order
+/// the server sent.
+List<WalletCardModel> orderWalletCards(
+  List<WalletCardModel> data,
+  String? currentId,
+) {
+  int rank(WalletCardModel e) {
+    if (currentId != null && e.instituteId == currentId) return 0;
+    return e.nextAction?.courseId != null ? 1 : 2;
+  }
+
+  final indexed = [for (var i = 0; i < data.length; i++) (i, data[i])];
+  indexed.sort((a, b) {
+    final byRank = rank(a.$2).compareTo(rank(b.$2));
+    return byRank != 0 ? byRank : a.$1.compareTo(b.$1);
+  });
+  return [for (final e in indexed) e.$2];
+}
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -25,9 +46,6 @@ class WalletPage extends StatefulWidget {
 class _WalletPageState extends State<WalletPage> {
   final bloc = inject<WalletBloc>();
 
-  /// 'learning' | 'joined'
-  String _segment = 'learning';
-
   @override
   void initState() {
     super.initState();
@@ -38,7 +56,7 @@ class _WalletPageState extends State<WalletPage> {
   Widget build(BuildContext context) {
     return MasirPage.tab(
       title: 'مؤسسه‌های من',
-      subtitle: 'کارت‌های عضویت تو',
+      subtitle: 'هر جا عضوی، از همین‌جا ادامه بده',
       body: BlocBuilder<WalletBloc, WalletState>(
         bloc: bloc,
         builder: (context, state) {
@@ -62,24 +80,14 @@ class _WalletPageState extends State<WalletPage> {
                       CustomNavigator.pushNamed(InstitutesPage.routeName),
                 );
               }
-              final learning = data
-                  .where((e) => e.segment != 'joined')
-                  .toList();
-              final joined = data.where((e) => e.segment == 'joined').toList();
-              final shown = _segment == 'learning' ? learning : joined;
-              return Column(
-                children: [
-                  _SegmentSwitch(
-                    selected: _segment,
-                    learningCount: learning.length,
-                    joinedCount: joined.length,
-                    onChanged: (v) => setState(() => _segment = v),
-                  ),
-                  const SizedBox(height: MasirSpace.lg),
-                  Expanded(
-                    child: _CardList(cards: shown, segment: _segment),
-                  ),
-                ],
+              final currentId = CurrentInstituteCard.resolve(
+                data,
+                HiveService.currentInstituteId,
+              )?.instituteId;
+              return _CardList(
+                cards: orderWalletCards(data, currentId),
+                currentId: currentId,
+                onRefresh: () async => bloc.add(const WalletEvent.wallet()),
               );
             },
           );
@@ -91,85 +99,59 @@ class _WalletPageState extends State<WalletPage> {
 
 class _CardList extends StatelessWidget {
   final List<WalletCardModel> cards;
-  final String segment;
+  final String? currentId;
+  final Future<void> Function() onRefresh;
 
-  const _CardList({required this.cards, required this.segment});
-
-  @override
-  Widget build(BuildContext context) {
-    if (cards.isEmpty) {
-      return StateView.empty(
-        text: segment == 'learning'
-            ? 'هنوز درسی شروع نکرده‌ای'
-            : 'همه‌ی مؤسساتت رو شروع کردی',
-        description: segment == 'learning'
-            ? 'از بخش «عضو شده» یه دوره انتخاب کن و بریم سراغش.'
-            : 'دمت گرم! یه مؤسسه‌ی تازه هم پیدا کن.',
-        icon: segment == 'learning'
-            ? Icons.rocket_launch_rounded
-            : Icons.celebration_rounded,
-      );
-    }
-    return ListView.separated(
-      padding: const EdgeInsets.only(bottom: MasirSpace.xl),
-      itemCount: cards.length,
-      separatorBuilder: (_, _) => MasirSpace.lg.h,
-      itemBuilder: (context, index) {
-        final card = cards[index];
-        return MembershipCard(
-          card: card,
-          onTap: () {
-            if (card.instituteId != null) {
-              CustomNavigator.pushNamed('/i/${card.instituteId}/home');
-            }
-          },
-        );
-      },
-    );
-  }
-}
-
-class _SegmentSwitch extends StatelessWidget {
-  final String selected;
-  final int learningCount;
-  final int joinedCount;
-  final ValueChanged<String> onChanged;
-
-  const _SegmentSwitch({
-    required this.selected,
-    required this.learningCount,
-    required this.joinedCount,
-    required this.onChanged,
+  const _CardList({
+    required this.cards,
+    required this.currentId,
+    required this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
-    Widget tab(String key, String label, int count) {
-      final on = selected == key;
-      return Expanded(
-        child: ChunkyBox(
-          height: 48,
-          radius: MasirRadius.row,
-          fill: on ? c.primary : c.surface,
-          edge: on ? c.primaryEdge : c.lip,
-          borderColor: on ? null : c.border,
-          alignment: Alignment.center,
-          onTap: () => onChanged(key),
-          child: CustomText.bodyStrong(
-            '$label · ${faDigits(count)}',
-            color: on ? c.onPrimary : c.ink,
-          ),
-        ),
-      );
-    }
-
-    return Row(
-      children: [
-        tab('learning', 'در حال یادگیری', learningCount),
-        12.w,
-        tab('joined', 'عضو شده', joinedCount),
-      ],
+    // Only worth a badge when there is more than one to tell apart.
+    final showBadge = cards.length > 1;
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: MasirSpace.xl),
+        itemCount: cards.length + 1,
+        separatorBuilder: (_, _) => MasirSpace.lg.h,
+        itemBuilder: (context, index) {
+          if (index == cards.length) {
+            return MasirEntrance(
+              index: index,
+              child: ListRow(
+                leading: const IconTile(
+                  Icons.add_rounded,
+                  tone: IconTileTone.sun,
+                ),
+                title: 'پیدا کردن مؤسسه‌ی تازه',
+                subtitle: 'با کد دعوت یا از ویترین',
+                onTap: () =>
+                    CustomNavigator.pushNamed(InstitutesPage.routeName),
+              ),
+            );
+          }
+          final card = cards[index];
+          return MasirEntrance(
+            index: index,
+            child: MembershipCard(
+              card: card,
+              badge: showBadge && card.instituteId == currentId
+                  ? 'مؤسسه‌ی فعلی'
+                  : null,
+              onTap: () {
+                if (card.instituteId != null) {
+                  CustomNavigator.pushNamed('/i/${card.instituteId}/home');
+                }
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 }

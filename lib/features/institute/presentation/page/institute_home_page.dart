@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '/core/helper/jalali_format.dart';
+import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
 import '/core/theme/theme_context.dart';
 import '/features/institute/data/models/announcement_model.dart';
@@ -64,6 +65,20 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
         state.whenOrNull(
           success: () {
             MasirFeedback.success();
+            // Joining makes this the student's current institute.
+            context.read<InstituteDetailBloc>().state.whenOrNull(
+              success: (_, data) {
+                if (data.id != null) {
+                  HiveService.setCurrentInstitute(
+                    id: data.id!,
+                    name: data.name,
+                    slug: data.slug,
+                    logoUrl: data.logoUrl,
+                    themePreset: data.themePreset,
+                  );
+                }
+              },
+            );
             context.read<InstituteDetailBloc>().add(
               const InstituteDetailEvent.markJoined(),
             );
