@@ -9,7 +9,10 @@ import '/core/services/service_locator.dart';
 import '/features/otp/presentation/page/otp_screen.dart';
 import '/widgets/base_modal.dart';
 import '/widgets/base_screen.dart';
+import '/core/theme/masir_style.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_button.dart';
+import '/widgets/pill_chip.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/custom_text_field.dart';
 
@@ -119,37 +122,44 @@ class _AuthScreenState extends State<AuthScreen> {
     return BaseScreen(
       backgroundColor: context.colors.background,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 280,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.topCenter,
-                  radius: 1.1,
-                  colors: [
-                    context.colors.primary.withValues(alpha: 0.14),
-                    context.colors.background.withValues(alpha: 0),
-                  ],
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _AuthLogo(),
+              16.h,
+              CustomText(
+                _mode == _AuthMode.login ? "خوش برگشتی!" : "بیا شروع کنیم",
+                fontSize: MasirText.displaySize,
+                fontWeight: FontWeight.w800,
+                textAlign: TextAlign.center,
+              ),
+              6.h,
+              CustomText(
+                _mode == _AuthMode.login
+                    ? "نام کاربری و رمز عبورت رو وارد کن"
+                    : "کد دعوت و شماره موبایلت رو وارد کن",
+                fontSize: 14,
+                color: context.colors.inkMuted,
+                textAlign: TextAlign.center,
+              ),
+              24.h,
+              _ModeTabs(mode: _mode, onChanged: _switchMode),
+              24.h,
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: KeyedSubtree(
+                  key: ValueKey(_mode),
+                  child: _mode == _AuthMode.login
+                      ? _buildLoginContent()
+                      : _buildRegisterContent(),
                 ),
               ),
-            ),
+            ],
           ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: _AuthCard(
-                child: _mode == _AuthMode.login
-                    ? _buildLoginContent()
-                    : _buildRegisterContent(),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -158,22 +168,6 @@ class _AuthScreenState extends State<AuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _AuthLogo(),
-        20.h,
-        const CustomText(
-          "ورود به اپ مسیر",
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          textAlign: TextAlign.center,
-        ),
-        8.h,
-        CustomText(
-          "نام کاربری و رمز عبور خود را وارد کنید",
-          fontSize: 13,
-          color: context.colors.text92,
-          textAlign: TextAlign.center,
-        ),
-        28.h,
         _AuthTextField(
           label: "نام کاربری",
           controller: _usernameController,
@@ -207,9 +201,6 @@ class _AuthScreenState extends State<AuthScreen> {
               title: "ورود",
               enable: _isLoginValid,
               loading: state.isLoading,
-              backgroundColor: context.colors.primary,
-              enableColor: context.colors.primary.withValues(alpha: 0.45),
-              buttonSizeRadius: 10,
               onTap: _onLogin,
             );
           },
@@ -234,20 +225,15 @@ class _AuthScreenState extends State<AuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const CustomText(
-          "ثبت ‌نام",
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          textAlign: TextAlign.center,
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: const PillChip(
+            'کد دعوتِ مؤسسه',
+            icon: Icons.confirmation_number_rounded,
+            tone: PillTone.sun,
+          ),
         ),
         8.h,
-        CustomText(
-          "کد دعوت و شماره موبایل خود را وارد کنید",
-          fontSize: 13,
-          color: context.colors.text92,
-          textAlign: TextAlign.center,
-        ),
-        28.h,
         _AuthTextField(
           label: "کد دعوت",
           controller: _inviteCodeController,
@@ -296,9 +282,6 @@ class _AuthScreenState extends State<AuthScreen> {
               title: "بعدی",
               loading: state.isLoading,
               enable: _isRegisterValid,
-              backgroundColor: context.colors.primary,
-              enableColor: context.colors.primary.withValues(alpha: 0.45),
-              buttonSizeRadius: 10,
               onTap: _onRegisterNext,
             );
           },
@@ -313,29 +296,55 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
-class _AuthCard extends StatelessWidget {
-  final Widget child;
+class _ModeTabs extends StatelessWidget {
+  final _AuthMode mode;
+  final ValueChanged<_AuthMode> onChanged;
 
-  const _AuthCard({required this.child});
+  const _ModeTabs({required this.mode, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.colors.border),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.ink.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+    final c = context.colors;
+    Widget tab(String label, _AuthMode m) {
+      final selected = mode == m;
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onChanged(m),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected ? c.surface : Colors.transparent,
+              borderRadius: BorderRadius.circular(MasirRadius.pill),
+              border: selected
+                  ? Border.all(color: c.primary, width: Chunky.border)
+                  : null,
+            ),
+            child: CustomText(
+              label,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: selected ? c.primary : c.inkMuted,
+            ),
           ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: c.border100,
+        borderRadius: BorderRadius.circular(MasirRadius.pill),
+      ),
+      child: Row(
+        children: [
+          tab('ورود', _AuthMode.login),
+          tab('ثبت‌نام', _AuthMode.register),
         ],
       ),
-      child: child,
     );
   }
 }
@@ -346,21 +355,20 @@ class _AuthLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: context.colors.primary,
-          borderRadius: BorderRadius.circular(14),
-        ),
+      child: ChunkyBox(
+        fill: context.colors.primary,
+        edge: context.colors.primaryEdge,
+        radius: 24,
+        width: 84,
+        height: 88,
         alignment: Alignment.center,
         child: Directionality(
           textDirection: TextDirection.ltr,
-          child: const CustomText(
+          child: CustomText(
             "R/",
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+            fontSize: 34,
+            fontWeight: FontWeight.w800,
+            color: context.colors.onPrimary,
           ),
         ),
       ),
@@ -405,13 +413,13 @@ class _AuthTextField extends StatelessWidget {
       maxLength: maxLength,
       action: action,
       onChanged: onChanged,
-      textFieldRadius: 10,
+      textFieldRadius: 16,
       borderColor: isFocused ? context.colors.primary : context.colors.border,
       backgroundColor: isFocused ? context.colors.primary100 : context.colors.surface,
       labelStyle: customTextStyle(
         context,
         fontSize: 13,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w700,
         color: context.colors.ink,
       ),
     );
@@ -432,12 +440,9 @@ class _AuthLink extends StatelessWidget {
         child: CustomText(
           text,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13,
-            color: context.colors.primary,
-            decoration: TextDecoration.underline,
-            decorationColor: context.colors.primary,
-          ),
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+          color: context.colors.primary,
         ),
       ),
     );

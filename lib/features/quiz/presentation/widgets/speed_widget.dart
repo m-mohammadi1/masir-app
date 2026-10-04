@@ -23,7 +23,7 @@ class _SpeedWidgetState extends State<SpeedWidget> {
   Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
-        height: 28,
+        height: 36,
         child: ListView.builder(
           itemCount: data.length,
           shrinkWrap: true,
@@ -37,13 +37,18 @@ class _SpeedWidgetState extends State<SpeedWidget> {
               widget.onChanged(speeds[index]);
             },
             child: Container(
-              width: 44,
-              height: 26,
+              width: 54,
+              height: 34,
               alignment: Alignment.center,
               margin: EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                border: Border.all(width: 2, color: widget.color),
-                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  width: 2,
+                  color: data[index] == selected
+                      ? widget.color
+                      : context.colors.border,
+                ),
+                borderRadius: BorderRadius.circular(20),
                 color: data[index] == selected
                     ? widget.color
                     : context.colors.surface,
@@ -51,7 +56,10 @@ class _SpeedWidgetState extends State<SpeedWidget> {
               child: CustomText(
                 data[index],
                 fontSize: 12,
-                color: data[index] == selected ? context.colors.white : widget.color,
+                fontWeight: FontWeight.w800,
+                color: data[index] == selected
+                    ? context.colors.onPrimary
+                    : context.colors.inkMuted,
               ),
             ),
           ),

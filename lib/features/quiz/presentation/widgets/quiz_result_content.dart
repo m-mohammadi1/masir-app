@@ -1,15 +1,23 @@
+import 'dart:math' as math;
+
+import 'package:confetti/confetti.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/quiz_submit_model.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/page/quiz_layout_helper.dart';
-import 'package:mohammad/widgets/custom_app_bar.dart';
+import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import 'package:mohammad/widgets/pill_chip.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
+import '/features/main/presentation/page/outline/roadmap/paper_theme.dart'
+    show persianDigits;
+import '/features/quiz/presentation/widgets/unit_top_bar.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
-class QuizResultContent extends StatelessWidget {
+class QuizResultContent extends StatefulWidget {
   final UnitsModel data;
   final QuizSubmitResponseModel result;
   final Map<String, dynamic> userAnswers;
@@ -29,13 +37,39 @@ class QuizResultContent extends StatelessWidget {
     this.footer,
   });
 
-  List<UnitsQuestionModel> get _questions =>
-      (data.payload?.questions ?? []).cast<UnitsQuestionModel>();
+  @override
+  State<QuizResultContent> createState() => _QuizResultContentState();
+}
 
-  int? get _passThreshold => data.payload?.passThreshold;
+class _QuizResultContentState extends State<QuizResultContent> {
+  final ConfettiController _confetti = ConfettiController(
+    duration: const Duration(seconds: 2),
+  );
+  bool _fired = false;
+
+  List<UnitsQuestionModel> get _questions =>
+      (widget.data.payload?.questions ?? []).cast<UnitsQuestionModel>();
+
+  int? get _passThreshold => widget.data.payload?.passThreshold;
+
+  bool get _passed => widget.result.passed ?? false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_fired || !_passed) return;
+    _fired = true;
+    if (!MediaQuery.of(context).disableAnimations) _confetti.play();
+  }
+
+  @override
+  void dispose() {
+    _confetti.dispose();
+    super.dispose();
+  }
 
   bool? _isCorrect(String questionId) {
-    final results = result.results ?? [];
+    final results = widget.result.results ?? [];
     for (final item in results) {
       if (item.questionId == questionId) {
         return item.correct;
@@ -46,152 +80,226 @@ class QuizResultContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = data.title ?? '';
-    final passed = result.passed ?? false;
-    final score = result.score ?? 0;
+    final c = context.colors;
+    final title = widget.data.title ?? '';
+    final passed = _passed;
+    final score = (widget.result.score ?? 0).toInt();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Stack(
       children: [
-        CustomAppBar(title: title, icon: unitTeacherHeaderIcon(data.teachers)),
-        16.h,
-        Row(children: [_QuizTypeBadge(label: data.type ?? 'quiz')]),
-        if (banner != null) ...[12.h, banner!],
-        12.h,
-        Row(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _InfoChip(label: 'نمره: $score٪'),
-            const Spacer(),
-            if (_passThreshold != null)
-              CustomText(
-                'حد نصاب: $_passThreshold٪',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: context.colors.inkMuted,
+            UnitTopBar(
+              title: title,
+              onClose: widget.onBack,
+              trailing: unitTeacherHeaderIcon(widget.data.teachers),
+            ),
+            if (widget.banner != null) ...[12.h, widget.banner!],
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.only(top: 20, bottom: 12),
+                children: [
+                  _ScoreHero(
+                    score: score,
+                    passed: passed,
+                    threshold: _passThreshold,
+                  ),
+                  if (_questions.isNotEmpty) ...[
+                    24.h,
+                    CustomText(
+                      'مرور پاسخ‌ها',
+                      fontSize: MasirText.titleSize,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    12.h,
+                  ],
+                  for (var i = 0; i < _questions.length; i++) ...[
+                    _ResultQuestionCard(
+                      index: i + 1,
+                      question: _questions[i],
+                      isCorrect: _isCorrect(_questions[i].id ?? ''),
+                      userAnswer: widget.userAnswers[_questions[i].id ?? ''],
+                    ),
+                    12.h,
+                  ],
+                  if (widget.footer != null) widget.footer!,
+                ],
               ),
+            ),
+            UnitBottomBar(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (passed)
+                    CustomButton(
+                      title: 'ادامه مسیر',
+                      variant: ButtonVariant.success,
+                      height: 54,
+                      onTap: widget.onBack,
+                    )
+                  else ...[
+                    CustomButton(
+                      title: 'تلاش مجدد',
+                      height: 54,
+                      onTap: widget.onRetry,
+                    ),
+                    4.h,
+                    OnClick(
+                      onTap: widget.onBack,
+                      child: SizedBox(
+                        height: 40,
+                        child: Center(
+                          child: CustomText(
+                            'بازگشت به مسیر',
+                            color: c.inkMuted,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
-        16.h,
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            color: passed
-                ? context.colors.success.withValues(alpha: 0.12)
-                : context.colors.primaryTint,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: passed ? context.colors.success : context.colors.primary,
-            ),
-          ),
-          child: Column(
-            children: [
-              CustomText(
-                passed ? 'قبول شدید' : 'قبول نشدید',
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: passed ? context.colors.success : context.colors.primary,
-              ),
-              8.h,
-              CustomText(
-                'نمره: $score٪',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: context.colors.ink,
-              ),
-            ],
-          ),
-        ),
-        16.h,
-        Expanded(
-          child: ListView.separated(
-            padding: EdgeInsets.zero,
-            itemCount: _questions.length,
-            separatorBuilder: (_, __) => 12.h,
-            itemBuilder: (context, index) {
-              final question = _questions[index];
-              final questionId = question.id ?? '';
-              return _ResultQuestionCard(
-                index: index + 1,
-                question: question,
-                isCorrect: _isCorrect(questionId),
-                userAnswer: userAnswers[questionId],
-              );
-            },
-          ),
-        ),
-        16.h,
-        if (footer != null) ...[footer!, 12.h],
-        if (!passed) CustomButton(title: 'تلاش مجدد', onTap: onRetry),
-        if (!passed) 12.h,
-        OnClick(
-          onTap: onBack,
-          child: Container(
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: context.colors.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: context.colors.border),
-            ),
-            child: CustomText(
-              'بازگشت به مسیر',
-              color: context.colors.ink,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confetti,
+              blastDirection: math.pi / 2,
+              blastDirectionality: BlastDirectionality.explosive,
+              emissionFrequency: 0.06,
+              numberOfParticles: 14,
+              gravity: 0.25,
+              colors: [c.primary, c.green, c.sun, c.coral],
             ),
           ),
         ),
-        20.h,
       ],
     );
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  final String label;
+class _ScoreHero extends StatelessWidget {
+  final int score;
+  final bool passed;
+  final int? threshold;
 
-  const _InfoChip({required this.label});
+  const _ScoreHero({
+    required this.score,
+    required this.passed,
+    required this.threshold,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: context.colors.borderF9,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: CustomText(
-        label,
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: context.colors.inkMuted,
+    final c = context.colors;
+    final accent = passed ? c.green : c.sun;
+    final edge = passed ? c.greenEdge : c.sunEdge;
+    final soft = passed ? c.green100 : c.sunSoft;
+    final reduce = MediaQuery.of(context).disableAnimations;
+
+    return ChunkyBox(
+      fill: soft,
+      edge: edge,
+      borderColor: accent,
+      radius: MasirRadius.card,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      child: Column(
+        children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: reduce ? score.toDouble() : 0, end: score.toDouble()),
+            duration: reduce ? Duration.zero : const Duration(milliseconds: 1100),
+            curve: Curves.easeOutCubic,
+            builder: (context, v, _) {
+              return SizedBox(
+                width: 150,
+                height: 150,
+                child: CustomPaint(
+                  painter: _RingPainter(
+                    progress: v / 100,
+                    color: accent,
+                    track: c.surface,
+                  ),
+                  child: Center(
+                    child: CustomText(
+                      '${persianDigits(v.round())}٪',
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      color: edge,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          16.h,
+          CustomText(
+            passed ? 'آفرین! قبول شدی' : 'این بار نشد، ولی نزدیکی',
+            fontSize: MasirText.titleSize,
+            fontWeight: FontWeight.w800,
+            color: edge,
+            textAlign: TextAlign.center,
+          ),
+          if (threshold != null) ...[
+            8.h,
+            PillChip(
+              'حد نصاب ${persianDigits(threshold!)}٪',
+              tone: passed ? PillTone.success : PillTone.sun,
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
-class _QuizTypeBadge extends StatelessWidget {
-  final String label;
+class _RingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color track;
 
-  const _QuizTypeBadge({required this.label});
+  _RingPainter({
+    required this.progress,
+    required this.color,
+    required this.track,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: context.colors.primaryTint,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: CustomText(
-        label,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: context.colors.primary,
-      ),
+  void paint(Canvas canvas, Size size) {
+    const stroke = 16.0;
+    final rect = Offset.zero & size;
+    final arc = rect.deflate(stroke / 2);
+    final base = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..color = track;
+    canvas.drawArc(arc, 0, math.pi * 2, false, base);
+    final fg = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+    // RTL-friendly: start at top, sweep clockwise.
+    canvas.drawArc(
+      arc,
+      -math.pi / 2,
+      math.pi * 2 * progress.clamp(0.0, 1.0),
+      false,
+      fg,
     );
   }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.progress != progress || old.color != color || old.track != track;
 }
 
 class _ResultQuestionCard extends StatelessWidget {
@@ -209,45 +317,71 @@ class _ResultQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final layoutType = quizLayoutTypeFromQuestion(question.type);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.colors.border),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.ink.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return ChunkyBox(
+      fill: c.surface,
+      edge: c.lip,
+      borderColor: c.border,
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              if (isCorrect != null) _ResultBadge(isCorrect: isCorrect!),
-            ],
-          ),
-          12.h,
-          CustomText(
-            '$index. ${question.text ?? ''}',
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: context.colors.ink,
-          ),
-          16.h,
-          switch (layoutType) {
-            QuizLayoutType.trueFalse => _ResultTrueFalseOptions(
-              selectedValue: userAnswer is bool ? userAnswer as bool : null,
+          if (isCorrect != null)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: PillChip(
+                isCorrect! ? 'درست' : 'نادرست',
+                icon: isCorrect!
+                    ? Icons.check_circle_rounded
+                    : Icons.cancel_rounded,
+                tone: isCorrect! ? PillTone.success : PillTone.coral,
+              ),
             ),
-            QuizLayoutType.multiChoice => _ResultMultiChoiceOptions(
-              options: question.options ?? [],
-              selectedIndex: userAnswer is int ? userAnswer as int : null,
+          if (isCorrect != null) 12.h,
+          CustomText(
+            '${persianDigits(index)}. ${question.text ?? ''}',
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: c.ink,
+          ),
+          14.h,
+          switch (layoutType) {
+            QuizLayoutType.trueFalse => Row(
+              children: [
+                Expanded(
+                  child: _ResultTile(
+                    title: 'درست',
+                    selected: userAnswer == true,
+                    isCorrect: isCorrect,
+                  ),
+                ),
+                12.w,
+                Expanded(
+                  child: _ResultTile(
+                    title: 'نادرست',
+                    selected: userAnswer == false,
+                    isCorrect: isCorrect,
+                  ),
+                ),
+              ],
+            ),
+            QuizLayoutType.multiChoice => Column(
+              children: [
+                for (var i = 0; i < (question.options ?? []).length; i++)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: i == question.options!.length - 1 ? 0 : 10,
+                    ),
+                    child: _ResultTile(
+                      title: question.options![i],
+                      selected: userAnswer is int && userAnswer == i + 1,
+                      isCorrect: isCorrect,
+                      left: true,
+                    ),
+                  ),
+              ],
             ),
             _ => const SizedBox.shrink(),
           },
@@ -257,154 +391,82 @@ class _ResultQuestionCard extends StatelessWidget {
   }
 }
 
-class _ResultBadge extends StatelessWidget {
-  final bool isCorrect;
+/// Read-only answer tile. The user's pick turns green when the question was
+/// correct and coral when it was not; other options stay neutral.
+class _ResultTile extends StatelessWidget {
+  final String title;
+  final bool selected;
+  final bool? isCorrect;
+  final bool left;
 
-  const _ResultBadge({required this.isCorrect});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: isCorrect
-            ? context.colors.success.withValues(alpha: 0.95)
-            : context.colors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: CustomText(
-        isCorrect ? 'درست' : 'نادرست',
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: isCorrect ? context.colors.white : context.colors.primary,
-      ),
-    );
-  }
-}
-
-class _ResultTrueFalseOptions extends StatelessWidget {
-  final bool? selectedValue;
-
-  const _ResultTrueFalseOptions({required this.selectedValue});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _ResultOptionButton(
-            title: 'درست',
-            selected: selectedValue == true,
-          ),
-        ),
-        12.w,
-        Expanded(
-          child: _ResultOptionButton(
-            title: 'نادرست',
-            selected: selectedValue == false,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ResultMultiChoiceOptions extends StatelessWidget {
-  final List<String> options;
-  final int? selectedIndex;
-
-  const _ResultMultiChoiceOptions({
-    required this.options,
-    required this.selectedIndex,
+  const _ResultTile({
+    required this.title,
+    required this.selected,
+    required this.isCorrect,
+    this.left = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(options.length, (index) {
-        final optionNumber = index + 1;
-        final isSelected = selectedIndex == optionNumber;
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: index == options.length - 1 ? 0 : 10,
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: isSelected ? context.colors.primaryTint : context.colors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? context.colors.primary : context.colors.border,
-                width: isSelected ? 1.5 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: CustomText(
-                    options[index],
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: context.colors.ink,
-                  ),
-                ),
-                12.w,
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? context.colors.primary : context.colors.inkFaint,
-                      width: 2,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Center(
-                          child: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: context.colors.primary,
-                            ),
-                          ),
-                        )
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _ResultOptionButton extends StatelessWidget {
-  final String title;
-  final bool selected;
-
-  const _ResultOptionButton({required this.title, required this.selected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: selected ? context.colors.primary : context.colors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: selected ? context.colors.primary : context.colors.border,
-        ),
+    final c = context.colors;
+    Color fill = c.surface, edge = c.lip, border = c.border, text = c.inkMuted;
+    IconData? icon;
+    if (selected) {
+      if (isCorrect == true) {
+        fill = c.green100;
+        edge = c.greenEdge;
+        border = c.green;
+        text = c.greenEdge;
+        icon = Icons.check_rounded;
+      } else if (isCorrect == false) {
+        fill = c.coralSoft;
+        edge = c.coralEdge;
+        border = c.coral;
+        text = c.coralEdge;
+        icon = Icons.close_rounded;
+      } else {
+        fill = c.primaryTint;
+        edge = c.primaryEdge;
+        border = c.primary;
+        text = c.primary;
+      }
+    }
+    return ChunkyBox(
+      fill: fill,
+      edge: edge,
+      borderColor: border,
+      radius: 16,
+      padding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: left ? 14 : 0,
       ),
-      child: Center(
-        child: CustomText(
-          title,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: selected ? context.colors.white : context.colors.ink,
-        ),
+      height: left ? null : 54,
+      alignment: left ? null : Alignment.center,
+      child: Row(
+        mainAxisAlignment:
+            left ? MainAxisAlignment.start : MainAxisAlignment.center,
+        children: [
+          if (left)
+            Expanded(
+              child: CustomText(
+                title,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: selected ? text : c.ink,
+              ),
+            )
+          else
+            CustomText(
+              title,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: selected ? text : c.ink,
+            ),
+          if (icon != null) ...[
+            10.w,
+            Icon(icon, size: 20, color: text),
+          ],
+        ],
       ),
     );
   }

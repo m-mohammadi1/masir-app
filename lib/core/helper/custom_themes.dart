@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/core/theme/masir_colors.dart';
+import '/core/theme/masir_style.dart';
 
 ThemeData _buildTheme(Brightness brightness) {
   final colors =
@@ -10,6 +11,7 @@ ThemeData _buildTheme(Brightness brightness) {
           secondary: colors.secondary,
           surface: colors.surface,
           onSurface: colors.ink,
+          error: colors.coral,
           brightness: Brightness.dark,
         )
       : ColorScheme.light(
@@ -17,20 +19,28 @@ ThemeData _buildTheme(Brightness brightness) {
           secondary: colors.secondary,
           surface: colors.surface,
           onSurface: colors.ink,
+          error: colors.coral,
           brightness: Brightness.light,
         );
 
+  OutlineInputBorder inputBorder(Color color, [double width = 2]) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: color, width: width),
+      );
+
   return ThemeData(
-    fontFamily: 'YekanBakh',
+    fontFamily: kMasirFont,
     brightness: brightness,
     scaffoldBackgroundColor: colors.background,
     colorScheme: scheme,
     primaryColor: colors.primary,
     cardColor: colors.surface,
     dividerColor: colors.border,
-    dividerTheme: DividerThemeData(color: colors.border, thickness: 1),
+    dividerTheme: DividerThemeData(color: colors.border, thickness: 2),
     useMaterial3: true,
     extensions: [colors],
+    splashFactory: NoSplash.splashFactory,
     appBarTheme: AppBarTheme(
       backgroundColor: colors.background,
       foregroundColor: colors.ink,
@@ -40,69 +50,63 @@ ThemeData _buildTheme(Brightness brightness) {
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: colors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(MasirRadius.sheet),
+        ),
       ),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: colors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colors.border),
+        borderRadius: BorderRadius.circular(MasirRadius.sheet),
+        side: BorderSide(color: colors.border, width: 2),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: colors.surface,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: colors.border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: colors.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: colors.primary, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: colors.error),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: colors.error, width: 1.5),
-      ),
-      disabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: colors.secondaryDisable),
-      ),
+      border: inputBorder(colors.border),
+      enabledBorder: inputBorder(colors.border),
+      focusedBorder: inputBorder(colors.primary),
+      errorBorder: inputBorder(colors.coral),
+      focusedErrorBorder: inputBorder(colors.coral),
+      disabledBorder: inputBorder(colors.border100),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         backgroundColor: colors.surface,
         foregroundColor: colors.ink,
-        elevation: 1.5,
-        shadowColor: colors.ink.withValues(alpha: 0.16),
-        side: BorderSide(color: colors.border, width: 1.1),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 0,
+        side: BorderSide(color: colors.border, width: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        textStyle: const TextStyle(
+          fontFamily: kMasirFont,
+          fontWeight: FontWeight.w800,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: colors.primary,
-        foregroundColor: colors.white,
-        elevation: 3,
-        shadowColor: colors.primary.withValues(alpha: 0.35),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        foregroundColor: colors.onPrimary,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        textStyle: const TextStyle(
+          fontFamily: kMasirFont,
+          fontWeight: FontWeight.w800,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: colors.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        textStyle: const TextStyle(
+          fontFamily: kMasirFont,
+          fontWeight: FontWeight.w800,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
   );

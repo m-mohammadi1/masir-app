@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '/core/theme/masir_colors.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
+import '/widgets/chunky_box.dart';
 
-/// Shared "paper sheet" card styling used across the app.
+/// Shared chunky card: 2px border plus a solid 4px lip.
+///
+/// Name kept as `PaperCard` so existing call sites keep working.
 class PaperCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -10,51 +14,41 @@ class PaperCard extends StatelessWidget {
   final double borderRadius;
   final VoidCallback? onTap;
 
+  /// Soft tinted variant (e.g. highlight a "continue" card).
+  final Color? tint;
+  final Color? tintEdge;
+
   const PaperCard({
     super.key,
     required this.child,
     this.padding,
     this.margin,
-    this.borderRadius = 14,
+    this.borderRadius = MasirRadius.card,
     this.onTap,
+    this.tint,
+    this.tintEdge,
   });
 
   static BoxDecoration decoration(
     MasirColors colors, {
-    double borderRadius = 14,
+    double borderRadius = MasirRadius.card,
   }) {
-    return BoxDecoration(
-      color: colors.surface,
-      borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: colors.border, width: 1.1),
-      boxShadow: [
-        BoxShadow(
-          color: colors.ink.withValues(alpha: 0.06),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    );
+    return Chunky.surface(colors, radius: borderRadius);
   }
 
   @override
   Widget build(BuildContext context) {
-    final content = Container(
-      margin: margin,
+    final c = context.colors;
+    final card = ChunkyBox(
+      fill: tint ?? c.surface,
+      edge: tintEdge ?? c.lip,
+      borderColor: tintEdge ?? c.border,
+      radius: borderRadius,
       padding: padding ?? const EdgeInsets.all(16),
-      decoration: decoration(context.colors, borderRadius: borderRadius),
+      onTap: onTap,
       child: child,
     );
-
-    if (onTap == null) return content;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: content,
-      ),
-    );
+    if (margin == null) return card;
+    return Padding(padding: margin!, child: card);
   }
 }

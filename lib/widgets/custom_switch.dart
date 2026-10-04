@@ -25,9 +25,9 @@ class CustomSwitch extends StatefulWidget {
 }
 
 class _CustomSwitchState extends State<CustomSwitch> {
-  static const double _width = 42;
-  static const double _height = 24;
-  static const double _thumbSize = 18;
+  static const double _width = 52;
+  static const double _height = 32;
+  static const double _thumbSize = 24;
 
   @override
   Widget build(BuildContext context) {
@@ -52,14 +52,8 @@ class _CustomSwitchState extends State<CustomSwitch> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(_height),
                       color: widget.active
-                          ? context.colors.primaryTint
-                          : context.colors.surface,
-                      border: Border.all(
-                        color: widget.active
-                            ? context.colors.primary
-                            : context.colors.border,
-                        width: 1.2,
-                      ),
+                          ? context.colors.primary
+                          : context.colors.border,
                     ),
                     child: AnimatedAlign(
                       duration: const Duration(milliseconds: 180),
@@ -73,22 +67,15 @@ class _CustomSwitchState extends State<CustomSwitch> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: widget.active
-                              ? context.colors.primary
-                              : context.colors.inkFaint,
-                          boxShadow: [
-                            BoxShadow(
-                              color: context.colors.ink.withValues(alpha: 0.22),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
+                          color: Colors.white,
                         ),
                         child: widget.icon != null
                             ? IconTheme(
                                 data: IconThemeData(
-                                  size: 12,
-                                  color: context.colors.surface,
+                                  size: 14,
+                                  color: widget.active
+                                      ? context.colors.primary
+                                      : context.colors.inkMuted,
                                 ),
                                 child: widget.icon!,
                               )
@@ -99,7 +86,7 @@ class _CustomSwitchState extends State<CustomSwitch> {
                 ),
               ),
         8.w,
-        CustomText(widget.title, fontSize: 12, fontWeight: FontWeight.w500),
+        CustomText(widget.title, fontSize: 13, fontWeight: FontWeight.w600),
       ],
     );
   }

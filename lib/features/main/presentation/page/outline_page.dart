@@ -721,6 +721,14 @@ class _OutlinePageState extends State<OutlinePage>
 
   @override
   Widget build(BuildContext context) {
+    // The roadmap keeps its original paper palette; see RoadmapPalette.
+    return RoadmapPalette.scope(
+      context,
+      child: Builder(builder: _buildRoadmap),
+    );
+  }
+
+  Widget _buildRoadmap(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: BaseScreen(

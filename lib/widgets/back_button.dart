@@ -2,6 +2,7 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/core/helper/assets.dart';
 import '/core/theme/theme_context.dart';
+import '/widgets/chunky_box.dart';
 
 class CustomBackButton extends StatelessWidget {
   final Function? backAction;
@@ -10,9 +11,17 @@ class CustomBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Align(
       alignment: AlignmentDirectional.topStart,
-      child: OnClick(
+      child: ChunkyBox(
+        width: 40,
+        height: 40,
+        radius: 14,
+        fill: c.surface,
+        edge: c.lip,
+        borderColor: c.border,
+        alignment: Alignment.center,
         onTap: () {
           if (backAction != null) {
             backAction!();
@@ -20,17 +29,10 @@ class CustomBackButton extends StatelessWidget {
             Navigator.pop(context);
           }
         },
-        child: Container(
-          height: 32,
-          width: 32,
-          decoration: BoxDecoration(
-            color: context.colors.text92.withValues(alpha: .15),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(7),
-            child: CustomImage(assets: Assets.arrowBack),
-          ),
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CustomImage(assets: Assets.arrowBack, color: c.ink),
         ),
       ),
     );

@@ -11,6 +11,10 @@ import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '../../data/models/institutes_model.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/institute_presets.dart';
+import '/widgets/brand_media.dart';
+import '/widgets/chunky_box.dart';
+import '/widgets/pill_chip.dart';
 import '/widgets/custom_error.dart';
 import '/widgets/empty_widget.dart';
 import '/widgets/skeleton.dart';
@@ -55,7 +59,10 @@ class _InstitutesPageState extends State<InstitutesPage> {
         children: [
           const CustomAppBar(title: "مؤسسه‌ها"),
           8.h,
-          const CustomText("مؤسسه‌ای را انتخاب کنید و وارد دنیای آن شوید"),
+          CustomText(
+            "یک مؤسسه انتخاب کن و وارد دنیایش شو",
+            color: context.colors.inkMuted,
+          ),
           12.h,
           TopicChipRow(
             bloc: topicsBloc,
@@ -90,57 +97,48 @@ class _InstitutesPageState extends State<InstitutesPage> {
                       separatorBuilder: (_, _) => 12.h,
                       itemBuilder: (context, index) {
                         final institute = data[index];
-                        return OnClick(
+                        final preset = presetFor(institute.themePreset);
+                        return ChunkyBox(
+                          fill: context.colors.surface,
+                          edge: preset.edge,
+                          borderColor: preset.primary,
+                          padding: const EdgeInsets.all(14),
                           onTap: () => _openInstitute(institute),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: context.colors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: context.colors.border),
-                            ),
-                            child: Row(
-                              children: [
-                                ClipOval(
-                                  child: Container(
-                                    width: 56,
-                                    height: 56,
-                                    color: context.colors.borderF9,
-                                    child:
-                                        institute.logoUrl != null &&
-                                            institute.logoUrl!.isNotEmpty
-                                        ? Image.network(
-                                            institute.logoUrl!,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Icon(
-                                            Icons.school,
-                                            color: context.colors.inkMuted,
-                                          ),
-                                  ),
-                                ),
-                                12.w,
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      CustomText(
-                                        institute.name ?? '',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
+                          child: Row(
+                            children: [
+                              InstituteLogo(
+                                logoUrl: institute.logoUrl,
+                                name: institute.name ?? '',
+                                preset: preset,
+                                size: 56,
+                                ring: false,
+                              ),
+                              14.w,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CustomText(
+                                      institute.name ?? '',
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                      maxLines: 1,
+                                    ),
+                                    if (institute.topic?.name != null) ...[
+                                      6.h,
+                                      PillChip(
+                                        institute.topic!.name!,
+                                        color: preset.primary,
                                       ),
-                                      if (institute.topic?.name != null)
-                                        CustomText(
-                                          institute.topic!.name!,
-                                          fontSize: 12,
-                                          color: context.colors.inkMuted,
-                                        ),
                                     ],
-                                  ),
+                                  ],
                                 ),
-                                const Icon(Icons.chevron_left),
-                              ],
-                            ),
+                              ),
+                              Icon(
+                                Icons.chevron_left_rounded,
+                                color: context.colors.locked,
+                              ),
+                            ],
                           ),
                         );
                       },

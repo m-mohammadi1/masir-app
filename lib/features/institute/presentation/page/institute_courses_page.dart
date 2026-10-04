@@ -1,16 +1,16 @@
-import 'package:easy_helper/easy_helper.dart';
+import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '/core/services/service_locator.dart';
 import '/core/theme/theme_context.dart';
+import '/features/institute/presentation/widgets/course_card.dart';
 import '/features/main/data/models/request_courses_model.dart';
 import '/features/main/presentation/bloc/courses/courses_bloc.dart';
 import '/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import '/features/main/presentation/page/outline_page.dart';
-import '/features/teacher/domain/entities/teacher.dart';
-import '/features/teacher/presentation/widgets/course_teacher_row.dart';
+import '/widgets/custom_error.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/empty_widget.dart';
 import '/widgets/skeleton.dart';
@@ -39,85 +39,93 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
     subscriptionsBloc.add(MySubscriptionsEvent.mySubscriptions());
   }
 
+  void _open(String? id, String? title) {
+    CustomNavigator.pushNamed(
+      OutlinePage.routeName,
+      arguments: {'id': id ?? '', 'title': title ?? ''},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(
       bloc: subscriptionsBloc,
       builder: (context, subState) {
-        final mineIds =
+        final progressById =
             subState.whenOrNull(
-              success: (_, data) => data.map((e) => e.courseId ?? '').toSet(),
+              success: (_, data) => {
+                for (final e in data)
+                  if (e.courseId != null) e.courseId!: e.courseProgressPercent ?? 0,
+              },
             ) ??
-            <String>{};
+            <String, int>{};
 
         return BlocBuilder<CoursesBloc, CoursesState>(
           bloc: coursesBloc,
           builder: (context, state) {
             return state.when(
-              loading: (_) => const SkeletonList(),
-              error: (_, message) => Center(child: CustomText(message)),
+              loading: (_) => const SkeletonList(itemHeight: 96),
+              error: (_, message) => CustomError(
+                message: message,
+                retry: () => coursesBloc.add(
+                  CoursesEvent.courses(
+                    params: RequestCoursesModel(
+                      instituteId:
+                          GoRouterState.of(context).pathParameters['instituteId'] ??
+                          '',
+                    ),
+                  ),
+                ),
+              ),
               success: (_, data) {
                 if (data.isEmpty) {
                   return const EmptyWidget(
                     text: 'دوره‌ای یافت نشد',
                     description: 'این مؤسسه هنوز دوره‌ای منتشر نکرده است.',
-                    icon: Icons.menu_book_outlined,
+                    icon: Icons.menu_book_rounded,
                   );
                 }
                 final mine = data
-                    .where((c) => mineIds.contains(c.id))
+                    .where((c) => progressById.containsKey(c.id))
                     .toList();
                 final others = data
-                    .where((c) => !mineIds.contains(c.id))
+                    .where((c) => !progressById.containsKey(c.id))
                     .toList();
                 return ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   children: [
-                    if (mine.isNotEmpty) ...[
-                      CustomText(
-                        'دوره‌های من',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                      8.h,
-                      for (final course in mine)
-                        _CourseTile(
-                          title: course.title ?? '',
-                          teachers: course.teachers,
-                          onTap: () => CustomNavigator.pushNamed(
-                            OutlinePage.routeName,
-                            arguments: {
-                              'id': course.id ?? '',
-                              'title': course.title ?? '',
-                            },
-                          ),
-                        ),
-                      16.h,
-                    ],
-                    CustomText(
-                      'دوره‌های دیگر',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                    const CustomText(
+                      'دوره‌ها',
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
                     ),
-                    8.h,
+                    16.h,
+                    if (mine.isNotEmpty) ...[
+                      const _SectionTitle('دوره‌های من'),
+                      for (final course in mine) ...[
+                        CourseCard(
+                          course: course,
+                          progress: progressById[course.id],
+                          onTap: () => _open(course.id, course.title),
+                        ),
+                        12.h,
+                      ],
+                      12.h,
+                    ],
+                    const _SectionTitle('دوره‌های دیگر'),
                     if (others.isEmpty)
                       CustomText(
-                        'دوره دیگری نیست',
+                        'همه‌ی دوره‌ها را شروع کرده‌ای. آفرین!',
                         color: context.colors.inkMuted,
                       )
                     else
-                      for (final course in others)
-                        _CourseTile(
-                          title: course.title ?? '',
-                          teachers: course.teachers,
-                          onTap: () => CustomNavigator.pushNamed(
-                            OutlinePage.routeName,
-                            arguments: {
-                              'id': course.id ?? '',
-                              'title': course.title ?? '',
-                            },
-                          ),
+                      for (final course in others) ...[
+                        CourseCard(
+                          course: course,
+                          onTap: () => _open(course.id, course.title),
                         ),
+                        12.h,
+                      ],
                   ],
                 );
               },
@@ -129,36 +137,15 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
   }
 }
 
-class _CourseTile extends StatelessWidget {
-  final String title;
-  final List<CourseTeacherSummary> teachers;
-  final VoidCallback onTap;
-
-  const _CourseTile({
-    required this.title,
-    required this.teachers,
-    required this.onTap,
-  });
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        onTap: onTap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: context.colors.border),
-        ),
-        title: CustomText(title),
-        subtitle: teachers.isEmpty
-            ? null
-            : Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: CourseTeacherRow(teachers: teachers),
-              ),
-        trailing: const Icon(Icons.chevron_left),
-      ),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: CustomText(text, fontWeight: FontWeight.w800, fontSize: 18),
     );
   }
 }

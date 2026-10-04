@@ -15,9 +15,9 @@ class TitleModal extends StatelessWidget {
       width: context.appSize.width,
       decoration: BoxDecoration(
         color: context.colors.borderF9,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: Center(child: CustomText(txt)),
+      child: Center(child: CustomText(txt, fontWeight: FontWeight.w800)),
     );
   }
 }

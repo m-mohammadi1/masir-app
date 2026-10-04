@@ -8,6 +8,8 @@ import '/features/institute/presentation/bloc/institute_detail/institute_detail_
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
 import '/features/institute/presentation/widgets/membership_card.dart';
 import '/widgets/custom_text.dart';
+import '/widgets/paper_card.dart';
+import '/widgets/pill_chip.dart';
 import '/widgets/skeleton.dart';
 
 class InstituteMePage extends StatelessWidget {
@@ -15,30 +17,43 @@ class InstituteMePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return BlocBuilder<InstituteDetailBloc, InstituteDetailState>(
       builder: (context, detailState) {
         return detailState.when(
           loading: (_) => const SkeletonList(),
           error: (_, _) => const SizedBox.shrink(),
           success: (_, detail) {
+            final isMember = detail.membership.isMember;
             return ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
-                CustomText('من در این مؤسسه', fontWeight: FontWeight.bold, fontSize: 20),
-                8.h,
-                CustomText(
-                  detail.membership.isMember ? 'در حال یادگیری' : 'هنوز عضو نشده‌اید',
-                  color: context.colors.inkMuted,
+                const CustomText(
+                  'من در این مؤسسه',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 28,
                 ),
-                if (detail.membership.memberSince != null) ...[
-                  4.h,
-                  CustomText(
-                    formatMemberSince(detail.membership.memberSince),
-                    fontSize: 12,
-                    color: context.colors.inkMuted,
-                  ),
-                ],
-                16.h,
+                12.h,
+                Row(
+                  children: [
+                    PillChip(
+                      isMember ? 'عضو' : 'هنوز عضو نشده‌ای',
+                      tone: isMember ? PillTone.success : PillTone.neutral,
+                      icon: isMember
+                          ? Icons.verified_rounded
+                          : Icons.lock_outline_rounded,
+                    ),
+                    if (detail.membership.memberSince != null) ...[
+                      8.w,
+                      CustomText(
+                        formatMemberSince(detail.membership.memberSince),
+                        fontSize: 12,
+                        color: c.inkMuted,
+                      ),
+                    ],
+                  ],
+                ),
+                20.h,
                 BlocBuilder<WalletBloc, WalletState>(
                   builder: (context, walletState) {
                     final card = walletState.whenOrNull(
@@ -50,15 +65,28 @@ class InstituteMePage extends StatelessWidget {
                       },
                     );
                     if (card == null) {
-                      return CustomText(
-                        'کارت عضویت پس از عضویت اینجا نمایش داده می‌شود.',
-                        color: context.colors.inkMuted,
+                      return PaperCard(
+                        tint: c.primaryTint,
+                        tintEdge: c.primary.withValues(alpha: 0.35),
+                        child: Row(
+                          children: [
+                            Icon(Icons.badge_rounded, color: c.primary, size: 32),
+                            12.w,
+                            Expanded(
+                              child: CustomText(
+                                'کارت عضویتت پس از عضو شدن اینجا نمایش داده می‌شود.',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: c.ink,
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     }
                     return MembershipCard(card: card);
                   },
                 ),
-                24.h,
               ],
             );
           },

@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '/core/services/service_locator.dart';
+import '/core/theme/theme_context.dart';
+import '/features/institute/data/models/wallet_card_model.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
 import '/features/institute/presentation/widgets/membership_card.dart';
+import '/features/main/presentation/page/institutes_page.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_error.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/empty_widget.dart';
@@ -20,6 +24,9 @@ class WalletPage extends StatefulWidget {
 class _WalletPageState extends State<WalletPage> {
   final bloc = inject<WalletBloc>();
 
+  /// 'learning' | 'joined'
+  String _segment = 'learning';
+
   @override
   void initState() {
     super.initState();
@@ -28,59 +35,170 @@ class _WalletPageState extends State<WalletPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          context.appSize.width.w,
-          60.h,
-          const CustomText('مؤسسات من', fontWeight: FontWeight.bold, fontSize: 20),
-          8.h,
-          const CustomText('کارت‌های عضویت شما'),
-          20.h,
-          Expanded(
-            child: BlocBuilder<WalletBloc, WalletState>(
-              bloc: bloc,
-              builder: (context, state) {
-                return state.when(
-                  loading: (_) => const SkeletonList(itemHeight: 220),
-                  error: (_, message) => CustomError(
-                    message: message,
-                    retry: () => bloc.add(const WalletEvent.wallet()),
-                  ),
-                  success: (_, data) {
-                    if (data.isEmpty) {
-                      return const EmptyWidget(
-                        text: 'مؤسسه‌ای ندارید',
-                        description: 'از خانه یک مؤسسه پیدا کنید و عضو شوید.',
-                        icon: Icons.school_outlined,
-                      );
-                    }
-                    return ListView.separated(
-                      itemCount: data.length,
-                      separatorBuilder: (_, _) => 12.h,
-                      itemBuilder: (context, index) {
-                        final card = data[index];
-                        return MembershipCard(
-                          card: card,
-                          onTap: () {
-                            if (card.instituteId != null) {
-                              CustomNavigator.pushNamed(
-                                '/i/${card.instituteId}/home',
-                              );
-                            }
-                          },
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        context.appSize.width.w,
+        56.h,
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: CustomText(
+            'مؤسسات من',
+            fontWeight: FontWeight.w800,
+            fontSize: 28,
           ),
-        ],
-      ),
+        ),
+        4.h,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: CustomText(
+            'کارت‌های عضویت تو',
+            fontSize: 14,
+            color: context.colors.inkMuted,
+          ),
+        ),
+        16.h,
+        Expanded(
+          child: BlocBuilder<WalletBloc, WalletState>(
+            bloc: bloc,
+            builder: (context, state) {
+              return state.when(
+                loading: (_) => const SkeletonList(itemHeight: 220),
+                error: (_, message) => CustomError(
+                  message: message,
+                  retry: () => bloc.add(const WalletEvent.wallet()),
+                ),
+                success: (_, data) {
+                  if (data.isEmpty) {
+                    return EmptyWidget(
+                      text: 'هنوز عضو جایی نیستی',
+                      description: 'یک مؤسسه پیدا کن و با یک لمس عضو شو.',
+                      icon: Icons.school_rounded,
+                      actionLabel: 'پیدا کردن مؤسسه',
+                      onAction: () =>
+                          CustomNavigator.pushNamed(InstitutesPage.routeName),
+                    );
+                  }
+                  final learning = data
+                      .where((e) => e.segment != 'joined')
+                      .toList();
+                  final joined = data
+                      .where((e) => e.segment == 'joined')
+                      .toList();
+                  final shown = _segment == 'learning' ? learning : joined;
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _SegmentSwitch(
+                          selected: _segment,
+                          learningCount: learning.length,
+                          joinedCount: joined.length,
+                          onChanged: (v) => setState(() => _segment = v),
+                        ),
+                      ),
+                      16.h,
+                      Expanded(child: _CardList(cards: shown, segment: _segment)),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
+  }
+}
+
+class _CardList extends StatelessWidget {
+  final List<WalletCardModel> cards;
+  final String segment;
+
+  const _CardList({required this.cards, required this.segment});
+
+  @override
+  Widget build(BuildContext context) {
+    if (cards.isEmpty) {
+      return EmptyWidget(
+        text: segment == 'learning'
+            ? 'هنوز درسی شروع نکرده‌ای'
+            : 'همه‌ی مؤسساتت را شروع کرده‌ای',
+        description: segment == 'learning'
+            ? 'از بخش «عضو شده» یک دوره انتخاب کن و شروع کن.'
+            : 'آفرین! مؤسسه‌ی تازه‌ای هم پیدا کن.',
+        icon: segment == 'learning'
+            ? Icons.rocket_launch_rounded
+            : Icons.celebration_rounded,
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      itemCount: cards.length,
+      separatorBuilder: (_, _) => 16.h,
+      itemBuilder: (context, index) {
+        final card = cards[index];
+        return MembershipCard(
+          card: card,
+          onTap: () {
+            if (card.instituteId != null) {
+              CustomNavigator.pushNamed('/i/${card.instituteId}/home');
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+class _SegmentSwitch extends StatelessWidget {
+  final String selected;
+  final int learningCount;
+  final int joinedCount;
+  final ValueChanged<String> onChanged;
+
+  const _SegmentSwitch({
+    required this.selected,
+    required this.learningCount,
+    required this.joinedCount,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    Widget tab(String key, String label, int count) {
+      final on = selected == key;
+      return Expanded(
+        child: ChunkyBox(
+          height: 48,
+          radius: 16,
+          fill: on ? c.primary : c.surface,
+          edge: on ? c.primaryEdge : c.lip,
+          borderColor: on ? null : c.border,
+          alignment: Alignment.center,
+          onTap: () => onChanged(key),
+          child: CustomText(
+            '$label · ${_digits(count)}',
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: on ? c.onPrimary : c.ink,
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        tab('learning', 'در حال یادگیری', learningCount),
+        12.w,
+        tab('joined', 'عضو شده', joinedCount),
+      ],
+    );
+  }
+
+  String _digits(int n) {
+    const p = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return n.toString().split('').map((e) => p[int.parse(e)]).join();
   }
 }

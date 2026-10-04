@@ -6,9 +6,10 @@ import 'package:mohammad/features/auth/data/models/request_submit_register_model
 import 'package:mohammad/features/auth/presentation/bloc/submit_register/submit_register_bloc.dart';
 import 'package:mohammad/features/register/presentation/page/register_page.dart';
 import '../../../../widgets/custom_text_field.dart';
-import '/core/helper/assets.dart';
 import '/widgets/back_button.dart';
 import '/widgets/base_screen.dart';
+import '/core/theme/masir_style.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
 import 'package:otp_text_field_v2/otp_field_style_v2.dart';
@@ -104,70 +105,85 @@ class _OtpScreenState extends State<OtpScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           CustomBackButton(),
-          64.h,
-          Column(
-            children: [
-              Row(
-                children: [
-                  CustomImage(assets: Assets.light, height: 24),
-                  5.w,
-                  CustomText(
-                    "وارد كردن كد تأييد",
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ],
+          32.h,
+          Center(
+            child: ChunkyBox(
+              fill: context.colors.primaryTint,
+              edge: context.colors.primary.withValues(alpha: 0.35),
+              radius: 28,
+              width: 84,
+              height: 88,
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.sms_rounded,
+                size: 40,
+                color: context.colors.primary,
               ),
-              8.h,
-              Row(
-                children: [
-                  CustomText(
-                    "کدتایید به شماره",
-                    fontWeight: FontWeight.w500,
-                    color: context.colors.text92,
-                  ),
-                  Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: CustomText(
-                      " ${widget.phoneNumber} ",
-                      color: context.colors.secondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  CustomText(
-                    "ارسال شده را وارد کنید.",
-                    color: context.colors.text92,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-          16.h,
-          OnClick(
-            onTap: () {
-              CustomNavigator.pop();
-            },
-            child: Row(
+          20.h,
+          SizedBox(
+            width: double.infinity,
+            child: Column(
               children: [
                 CustomText(
-                  "شماره موبایل اشتباه است؟",
-                  color: context.colors.text92,
-                  fontSize: 12,
+                  "کد تأییدت رو وارد کن",
+                  fontSize: MasirText.displaySize,
+                  fontWeight: FontWeight.w800,
+                  textAlign: TextAlign.center,
                 ),
-                6.w,
+                8.h,
                 CustomText(
-                  "ویرایش شماره",
-                  color: context.colors.primary,
-                  fontSize: 12,
+                  "کد ۶ رقمی به شماره‌ی",
+                  color: context.colors.inkMuted,
+                  textAlign: TextAlign.center,
                 ),
-                4.w,
-                CustomImage(assets: Assets.edit),
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: CustomText(
+                    widget.phoneNumber,
+                    color: context.colors.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+                CustomText(
+                  "پیامک شد.",
+                  color: context.colors.inkMuted,
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
-
-          16.h,
+          12.h,
+          Center(
+            child: OnClick(
+              onTap: () {
+                CustomNavigator.pop();
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.edit_rounded,
+                      size: 16, color: context.colors.primary),
+                  6.w,
+                  CustomText(
+                    "ویرایش شماره",
+                    color: context.colors.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          24.h,
+          CustomText(
+            "برای ورودهای بعدی یک رمز عبور انتخاب کن",
+            fontSize: 12,
+            color: context.colors.inkMuted,
+          ),
+          8.h,
           _AuthTextField(
             label: "رمز عبور",
             controller: pass,
@@ -195,26 +211,32 @@ class _OtpScreenState extends State<OtpScreen> {
                 Directionality(
                   textDirection: TextDirection.ltr,
                   child: SizedBox(
-                    height: 55,
+                    height: 60,
                     child: OTPTextFieldV2(
                       controller: controller,
                       length: 6,
                       width: MediaQuery.of(context).size.width,
                       textFieldAlignment: MainAxisAlignment.spaceBetween,
-                      fieldWidth: 55,
+                      fieldWidth: 48,
                       cursorColor: context.colors.primary,
-                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                      contentPadding: EdgeInsets.symmetric(vertical: 14),
                       otpFieldStyle: OtpFieldStyle(
-                        borderColor: context.colors.primary,
+                        borderColor: context.colors.border,
+                        enabledBorderColor: context.colors.border,
                         focusBorderColor: context.colors.primary,
-                        backgroundColor: context.colors.borderF9,
+                        backgroundColor: context.colors.surface,
                       ),
 
                       fieldStyle: FieldStyle.box,
                       textDirection: TextDirection.ltr,
-                      outlineBorderRadius: 8,
+                      outlineBorderRadius: 16,
                       autoFocus: false,
-                      style: TextStyle(fontSize: 17),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'Masir',
+                        color: context.colors.ink,
+                      ),
                       onChanged: (pin) {
                         _otpForm.add(OtpFormEvent.refreshEvent());
                       },
@@ -259,12 +281,14 @@ class _OtpScreenState extends State<OtpScreen> {
                           children: [
                             CustomText(
                               "هنوز کد رو دریافت نکردید؟ ارسال مجدد در ",
-                              fontSize: 12,
+                              fontSize: 13,
+                              color: context.colors.inkMuted,
                             ),
                             CustomText(
                               "$_formattedTime ${"ثانیه"}",
                               color: context.colors.primary,
-                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
                             ),
                           ],
                         );
@@ -338,13 +362,13 @@ class _AuthTextField extends StatelessWidget {
       maxLength: maxLength,
       action: action,
       onChanged: onChanged,
-      textFieldRadius: 10,
+      textFieldRadius: 16,
       borderColor: isFocused ? context.colors.primary : context.colors.border,
       backgroundColor: isFocused ? context.colors.primary100 : context.colors.surface,
       labelStyle: customTextStyle(
         context,
         fontSize: 13,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w700,
         color: context.colors.ink,
       ),
     );

@@ -34,8 +34,8 @@ class _CustomRadioButtonState extends State<CustomRadioButton> {
                 children: [
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    width: 20,
-                    height: 20,
+                    width: 24,
+                    height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: context.colors.surface,
@@ -43,12 +43,15 @@ class _CustomRadioButtonState extends State<CustomRadioButton> {
                         color: i == selected
                             ? context.colors.primary
                             : context.colors.border,
-                        width: i == selected ? 6 : 1.3,
+                        width: i == selected ? 8 : 2,
                       ),
                     ),
                   ),
-                  15.w,
-                  CustomText(widget.values[i]),
+                  12.w,
+                  CustomText(
+                    widget.values[i],
+                    fontWeight: i == selected ? FontWeight.w800 : FontWeight.w600,
+                  ),
                 ],
               ),
             ),

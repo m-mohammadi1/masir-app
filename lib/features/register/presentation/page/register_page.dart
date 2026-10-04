@@ -4,8 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/auth/data/models/request_submit_username_model.dart';
 import 'package:mohammad/features/auth/presentation/bloc/submit_username/submit_username_bloc.dart';
-import 'package:mohammad/widgets/auth_app_bar.dart';
 import 'package:mohammad/widgets/base_screen.dart';
+import '/core/theme/masir_style.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/chunky_box.dart';
+import '/widgets/custom_text.dart';
 import '../../../../widgets/custom_button.dart';
 import '../../../../widgets/custom_text_field.dart';
 import '../../../main/presentation/page/main_page.dart';
@@ -29,9 +32,36 @@ class _RegisterPageState extends State<RegisterPage> {
     return BaseScreen(
       body: Column(
         children: [
+          48.h,
+          Center(
+            child: ChunkyBox(
+              fill: context.colors.primaryTint,
+              edge: context.colors.primary.withValues(alpha: 0.35),
+              radius: 28,
+              width: 84,
+              height: 88,
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.person_rounded,
+                size: 44,
+                color: context.colors.primary,
+              ),
+            ),
+          ),
           20.h,
-          AuthAppBar(title: "ثبت نام کاربری"),
-          60.h,
+          CustomText(
+            "اسمت رو انتخاب کن",
+            fontSize: MasirText.displaySize,
+            fontWeight: FontWeight.w800,
+            textAlign: TextAlign.center,
+          ),
+          8.h,
+          CustomText(
+            "با این نام کاربری وارد مسیر می‌شی",
+            color: context.colors.inkMuted,
+            textAlign: TextAlign.center,
+          ),
+          32.h,
           CustomTextField(
             controller: _nameController,
             labelText: "نام کاربری",

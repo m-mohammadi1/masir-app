@@ -1,4 +1,4 @@
-import 'package:easy_helper/easy_helper.dart' hide CustomError;
+import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 
 import '/core/services/service_locator.dart';
@@ -9,7 +9,10 @@ import '/features/home/page/detail_course_page.dart';
 import '/features/main/data/models/request_course_detail_model.dart';
 import '/features/main/domain/usecases/course_detail_usecase.dart';
 import '/features/main/presentation/page/outline_page.dart';
+import '/widgets/brand_media.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
+import '/widgets/pill_chip.dart';
 import '/widgets/skeleton.dart';
 
 class SectionRenderer extends StatelessWidget {
@@ -37,10 +40,33 @@ class SectionRenderer extends StatelessWidget {
 }
 
 class SectionSkeleton extends StatelessWidget {
-  const SectionSkeleton({super.key});
+  final bool hero;
+
+  const SectionSkeleton({super.key, this.hero = false});
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    if (hero) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: SkeletonText(width: 120, height: 18),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SkeletonBox(
+              width: screenWidth - 32,
+              height: 200,
+              radius: 24,
+            ),
+          ),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -50,13 +76,14 @@ class SectionSkeleton extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 160,
+          height: 200,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: 3,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (_, _) => const SkeletonBox(width: 220, height: 160, radius: 16),
+            itemBuilder: (_, _) =>
+                const SkeletonBox(width: 168, height: 200, radius: 20),
           ),
         ),
       ],
@@ -71,26 +98,32 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: CustomText(title, fontWeight: FontWeight.w600, fontSize: 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: CustomText(title, fontWeight: FontWeight.w800, fontSize: 18),
     );
   }
 }
 
-class _TopicTag extends StatelessWidget {
-  final String? name;
-  const _TopicTag(this.name);
+/// Staggered pop-in used by every carousel item.
+class _PopIn extends StatelessWidget {
+  final int index;
+  final Widget child;
+  const _PopIn({required this.index, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    if (name == null || name!.isEmpty) return const SizedBox.shrink();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: context.colors.surface.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(999),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 320 + (index.clamp(0, 6)) * 70),
+      curve: Curves.easeOutBack,
+      builder: (context, v, child) => Opacity(
+        opacity: v.clamp(0.0, 1.0),
+        child: Transform.translate(
+          offset: Offset(0, (1 - v) * 16),
+          child: child,
+        ),
       ),
-      child: CustomText(name!, fontSize: 11),
+      child: child,
     );
   }
 }
@@ -106,8 +139,8 @@ class _InstituteCarousel extends StatelessWidget {
     final items = section.items.whereType<FeedInstituteItem>().toList();
     if (items.isEmpty) return const SizedBox.shrink();
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final height = featured ? 200.0 : 140.0;
-    final width = featured ? screenWidth - 32 : 200.0;
+    final height = featured ? 224.0 : 168.0;
+    final width = featured ? screenWidth - 48 : 168.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -116,80 +149,177 @@ class _InstituteCarousel extends StatelessWidget {
           height: height,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: featured ? 12 : 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: items.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final item = items[index];
-              final preset =
-                  kInstitutePresets[item.themePreset] ??
-                  kInstitutePresets[kDefaultPreset]!;
-              return OnClick(
-                onTap: () {
-                  if (item.id != null) {
-                    CustomNavigator.pushNamed('/i/${item.id}/home');
-                  }
-                },
-                child: Container(
-                  width: width,
-                  decoration: BoxDecoration(
-                    color: featured ? preset.primarySoft : context.colors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.colors.border),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            if (item.coverUrl != null && item.coverUrl!.isNotEmpty)
-                              Image.network(item.coverUrl!, fit: BoxFit.cover)
-                            else
-                              ColoredBox(color: preset.primary),
-                            if (item.logoUrl != null && item.logoUrl!.isNotEmpty)
-                              Positioned(
-                                bottom: 8,
-                                right: 8,
-                                child: ClipOval(
-                                  child: Image.network(
-                                    item.logoUrl!,
-                                    width: 36,
-                                    height: 36,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CustomText(
-                              item.name ?? '',
-                              fontWeight: FontWeight.w600,
-                              maxLines: 1,
-                            ),
-                            if (item.topic?.name != null) ...[
-                              const SizedBox(height: 4),
-                              _TopicTag(item.topic?.name),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              return _PopIn(
+                index: index,
+                child: featured
+                    ? _FeaturedInstituteCard(item: item, width: width)
+                    : _QuietInstituteCard(item: item, width: width),
               );
             },
           ),
         ),
       ],
+    );
+  }
+}
+
+void _openInstitute(FeedInstituteItem item) {
+  if (item.id != null) {
+    CustomNavigator.pushNamed('/i/${item.id}/home');
+  }
+}
+
+class _FeaturedInstituteCard extends StatelessWidget {
+  final FeedInstituteItem item;
+  final double width;
+
+  const _FeaturedInstituteCard({required this.item, required this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    final preset = presetFor(item.themePreset);
+    return ChunkyBox(
+      width: width,
+      fill: preset.primary,
+      edge: preset.edge,
+      radius: 24,
+      onTap: () => _openInstitute(item),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CoverImage(url: item.coverUrl, fallback: preset.primary),
+          // Readable bottom scrim tinted with the brand colour.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  preset.edge.withValues(alpha: 0.35),
+                  preset.edge.withValues(alpha: 0.9),
+                ],
+                stops: const [0.3, 0.6, 1.0],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                InstituteLogo(
+                  logoUrl: item.logoUrl,
+                  name: item.name ?? '',
+                  preset: preset,
+                  size: 52,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (item.topic?.name != null) ...[
+                        PillChip(item.topic!.name!, tone: PillTone.onDark),
+                        const SizedBox(height: 6),
+                      ],
+                      CustomText(
+                        item.name ?? '',
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                        color: Colors.white,
+                        maxLines: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuietInstituteCard extends StatelessWidget {
+  final FeedInstituteItem item;
+  final double width;
+
+  const _QuietInstituteCard({required this.item, required this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final preset = presetFor(item.themePreset);
+    return ChunkyBox(
+      width: width,
+      fill: c.surface,
+      edge: c.lip,
+      borderColor: c.border,
+      clip: false,
+      onTap: () => _openInstitute(item),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(18),
+                ),
+                child: CoverImage(
+                  url: item.coverUrl,
+                  fallback: preset.primarySoft,
+                  height: 80,
+                ),
+              ),
+              PositionedDirectional(
+                start: 12,
+                bottom: -20,
+                child: InstituteLogo(
+                  logoUrl: item.logoUrl,
+                  name: item.name ?? '',
+                  preset: preset,
+                  size: 40,
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 26, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomText(
+                  item.name ?? '',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  maxLines: 1,
+                ),
+                if (item.topic?.name != null) ...[
+                  const SizedBox(height: 4),
+                  CustomText(
+                    item.topic!.name!,
+                    fontSize: 12,
+                    color: c.inkMuted,
+                    maxLines: 1,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -202,12 +332,13 @@ class _CourseCarousel extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = section.items.whereType<FeedCourseItem>().toList();
     if (items.isEmpty) return const SizedBox.shrink();
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(section.title),
         SizedBox(
-          height: 190,
+          height: 236,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -215,53 +346,75 @@ class _CourseCarousel extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final item = items[index];
-              return OnClick(
-                onTap: () {
-                  if (item.id != null) {
-                    CustomNavigator.pushNamed(
-                      DetailCoursePage.routeName,
-                      arguments: item.id,
-                    );
-                  }
-                },
-                child: Container(
-                  width: 220,
-                  decoration: BoxDecoration(
-                    color: context.colors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.colors.border),
-                  ),
-                  clipBehavior: Clip.antiAlias,
+              return _PopIn(
+                index: index,
+                child: ChunkyBox(
+                  width: 172,
+                  fill: c.surface,
+                  edge: c.lip,
+                  borderColor: c.border,
+                  onTap: () {
+                    if (item.id != null) {
+                      CustomNavigator.pushNamed(
+                        DetailCoursePage.routeName,
+                        arguments: item.id,
+                      );
+                    }
+                  },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(
-                        height: 100,
-                        child: item.coverUrl != null && item.coverUrl!.isNotEmpty
-                            ? Image.network(item.coverUrl!, fit: BoxFit.cover)
-                            : ColoredBox(color: context.colors.primary.withValues(alpha: 0.4)),
+                      Stack(
+                        children: [
+                          CoverImage(
+                            url: item.coverUrl,
+                            fallback: c.primaryTint,
+                            height: 112,
+                          ),
+                          if (item.topic?.name != null)
+                            PositionedDirectional(
+                              top: 8,
+                              start: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: c.surface,
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                                child: CustomText(
+                                  item.topic!.name!,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: c.primary,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             CustomText(
                               item.title ?? '',
-                              fontWeight: FontWeight.w600,
-                              maxLines: 1,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              maxLines: 2,
                             ),
                             if (item.instituteName != null &&
-                                item.instituteName!.isNotEmpty)
+                                item.instituteName!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
                               CustomText(
                                 item.instituteName!,
                                 fontSize: 12,
-                                color: context.colors.inkMuted,
+                                color: c.inkMuted,
                                 maxLines: 1,
                               ),
-                            if (item.topic?.name != null) ...[
-                              const SizedBox(height: 4),
-                              _TopicTag(item.topic?.name),
                             ],
                           ],
                         ),
@@ -286,45 +439,77 @@ class _ActivityList extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = section.items.whereType<FeedActivityItem>().toList();
     if (items.isEmpty) return const SizedBox.shrink();
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(section.title),
-        ...items.map(
-          (item) => Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: OnClick(
-              onTap: () => _openActivity(item),
-              child: Container(
+        for (var i = 0; i < items.length; i++)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: _PopIn(
+              index: i,
+              child: ChunkyBox(
+                fill: c.surface,
+                edge: c.lip,
+                borderColor: c.border,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: context.colors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: context.colors.border),
-                ),
+                onTap: () => _openActivity(items[i]),
                 child: Row(
                   children: [
                     ClipOval(
                       child: Container(
-                        width: 40,
-                        height: 40,
-                        color: context.colors.borderF9,
-                        child: item.instituteLogoUrl != null &&
-                                item.instituteLogoUrl!.isNotEmpty
-                            ? Image.network(item.instituteLogoUrl!, fit: BoxFit.cover)
-                            : Icon(Icons.school, color: context.colors.inkMuted),
+                        width: 44,
+                        height: 44,
+                        color: c.primaryTint,
+                        child: items[i].instituteLogoUrl != null &&
+                                items[i].instituteLogoUrl!.isNotEmpty
+                            ? Image.network(
+                                items[i].instituteLogoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Icon(
+                                  Icons.school_rounded,
+                                  size: 22,
+                                  color: c.primary,
+                                ),
+                              )
+                            : Icon(
+                                Icons.school_rounded,
+                                size: 22,
+                                color: c.primary,
+                              ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: CustomText(item.title ?? '', fontWeight: FontWeight.w500),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CustomText(
+                            items[i].title ?? '',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            maxLines: 2,
+                          ),
+                          if (items[i].instituteName != null &&
+                              items[i].instituteName!.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            CustomText(
+                              items[i].instituteName!,
+                              fontSize: 12,
+                              color: c.inkMuted,
+                              maxLines: 1,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
+                    Icon(Icons.chevron_left_rounded, color: c.locked),
                   ],
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -340,7 +525,10 @@ class _ActivityList extends StatelessWidget {
     }, (detail) {
       final subscribed = detail.coursesModel?.isSubscribed == true;
       if (!subscribed) {
-        CustomNavigator.pushNamed(DetailCoursePage.routeName, arguments: courseId);
+        CustomNavigator.pushNamed(
+          DetailCoursePage.routeName,
+          arguments: courseId,
+        );
         return;
       }
       CustomNavigator.pushNamed(

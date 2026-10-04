@@ -108,8 +108,8 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
               children: [
                 CustomText(
                   data.title ?? '',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 24,
                 ),
                 8.h,
                 CustomText(
@@ -133,6 +133,7 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
                       child: CustomText(
                         data.courseTitle!,
                         fontSize: 12,
+                        fontWeight: FontWeight.w800,
                         color: context.colors.primary,
                       ),
                     ),
@@ -147,6 +148,8 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
                         margin: Margins.zero,
                         padding: HtmlPaddings.zero,
                         fontSize: FontSize(16),
+                        fontFamily: 'Masir',
+                        lineHeight: const LineHeight(1.7),
                         color: context.colors.ink,
                         textAlign: TextAlign.right,
                         direction: TextDirection.rtl,
@@ -170,7 +173,7 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
                   child: CustomText(
                     'همه‌ی اطلاعیه‌ها',
                     color: context.colors.primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],

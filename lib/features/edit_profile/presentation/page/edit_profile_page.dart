@@ -9,6 +9,7 @@ import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:mohammad/widgets/custom_text_field.dart';
+import 'package:mohammad/widgets/paper_card.dart';
 
 import '../../../../core/services/hive_service.dart';
 import '../../../auth/domain/entities/submit_username.dart';
@@ -138,20 +139,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildProfileSection() {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.colors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.ink.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+    return PaperCard(
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -160,7 +149,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             children: [
               Icon(Icons.person_outline, color: context.colors.primary, size: 22),
               8.w,
-              CustomText("پروفایل", fontSize: 17, fontWeight: FontWeight.bold),
+              CustomText("پروفایل", fontSize: 18, fontWeight: FontWeight.w800),
             ],
           ),
           Divider(height: 30, color: context.colors.border),
@@ -256,20 +245,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildSecuritySection() {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.colors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.ink.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+    return PaperCard(
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -278,7 +255,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             children: [
               Icon(Icons.lock_outline, color: context.colors.primary, size: 22),
               8.w,
-              CustomText("امنیت", fontSize: 17, fontWeight: FontWeight.bold),
+              CustomText("امنیت", fontSize: 18, fontWeight: FontWeight.w800),
             ],
           ),
           Divider(height: 30, color: context.colors.border),

@@ -9,6 +9,7 @@ import '/features/institute/data/models/request_institute_id_model.dart';
 import '/features/teacher/presentation/bloc/institute_teachers/institute_teachers_bloc.dart';
 import '/features/teacher/presentation/widgets/teacher_avatar.dart';
 import '/features/teacher/presentation/widgets/teacher_sheet.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_error.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/empty_widget.dart';
@@ -58,48 +59,55 @@ class _InstituteTeachersPageState extends State<InstituteTeachersPage> {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.86,
+                childAspectRatio: 0.8,
               ),
               itemCount: data.length,
               itemBuilder: (context, index) {
                 final teacher = data[index];
-                return OnClick(
+                return ChunkyBox(
+                  fill: context.colors.surface,
+                  edge: context.colors.lip,
+                  borderColor: context.colors.border,
+                  padding: const EdgeInsets.all(14),
                   onTap: () => showInstituteTeacherSheet(
                     context: context,
                     teacher: teacher,
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: context.colors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: context.colors.border),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TeacherAvatar(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: context.colors.primary,
+                            width: 3,
+                          ),
+                        ),
+                        child: TeacherAvatar(
                           name: teacher.name ?? '',
                           photoUrl: teacher.photoUrl,
                           size: 72,
                         ),
-                        12.h,
-                        CustomText(
-                          teacher.name ?? '',
-                          fontWeight: FontWeight.w700,
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                        ),
-                        6.h,
-                        CustomText(
-                          teacher.headline ?? '',
-                          fontSize: 12,
-                          color: context.colors.inkMuted,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                        ),
-                      ],
-                    ),
+                      ),
+                      12.h,
+                      CustomText(
+                        teacher.name ?? '',
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                      ),
+                      4.h,
+                      CustomText(
+                        teacher.headline ?? '',
+                        fontSize: 12,
+                        color: context.colors.inkMuted,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                      ),
+                    ],
                   ),
                 );
               },

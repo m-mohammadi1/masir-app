@@ -2,6 +2,7 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/speed_widget.dart';
+import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 
 import '../bloc/audio/audio_state.dart';
@@ -42,7 +43,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
 
   int currentTime = 0;
 
-  Color get _trackActive => context.colors.primary.withValues(alpha: .45);
+  Color get _trackActive => context.colors.primary;
   Color get _trackInactive => context.colors.primaryTint;
   Color get _thumbColor => context.colors.primary;
 
@@ -65,18 +66,20 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
               children: [
                 CustomText(
                   elapsedLabel,
-                  fontSize: 10,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
                   color: context.colors.inkMuted,
                 ),
                 const Spacer(),
-                CustomText(totalLabel, fontSize: 10, color: context.colors.inkMuted),
+                CustomText(totalLabel, fontSize: 12, fontWeight: FontWeight.w700, color: context.colors.inkMuted),
               ],
             ),
           ),
           SliderTheme(
             data: SliderThemeData(
-              trackHeight: 4,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              trackHeight: 8,
+              trackShape: const RoundedRectSliderTrackShape(),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
               overlayShape: SliderComponentShape.noOverlay,
               activeTrackColor: _trackActive,
               inactiveTrackColor: _trackInactive,
@@ -146,37 +149,12 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            OnClick(
+            _SkipButton(
+              icon: Icons.replay_rounded,
+              label: '۱۵',
               onTap: viewModel.previousSecond,
-              child: Container(
-                width: 37,
-                height: 32,
-                alignment: AlignmentDirectional.center,
-                child: Stack(
-                  alignment: AlignmentDirectional.bottomStart,
-                  children: [
-                    // SvgPicture.asset(
-                    //   "assets/quiz/previous_second.svg",
-                    //   // color: widget.color,
-                    //   width: 37,
-                    //   height: 32,
-                    // ),
-                    Container(height: 12.6, width: 12, color: context.colors.surface),
-                    Align(
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: Padding(
-                        padding: const EdgeInsetsDirectional.only(end: 5),
-                        child: CustomText(
-                          "15s",
-                          fontSize: 12,
-                          color: context.colors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
+            16.w,
             // OnClick(
             //   onTap: () {
             //     if (widget.index >= 1) {
@@ -203,25 +181,23 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
             BlocBuilder(
               bloc: viewModel,
               buildWhen: (previous, current) => current is AudioPlayState,
-              builder: (context, state) => OnClick(
+              builder: (context, state) => ChunkyBox(
+                fill: context.colors.primary,
+                edge: context.colors.primaryEdge,
+                radius: 40,
+                width: 80,
+                height: 84,
+                alignment: Alignment.center,
                 onTap: viewModel.onPressed,
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: context.colors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: AlignmentDirectional.center,
-                  child: AnimatedIcon(
-                    icon: AnimatedIcons.pause_play,
-                    progress: viewModel.animationController,
-                    color: context.colors.white,
-                    size: 50,
-                  ),
+                child: AnimatedIcon(
+                  icon: AnimatedIcons.pause_play,
+                  progress: viewModel.animationController,
+                  color: context.colors.onPrimary,
+                  size: 40,
                 ),
               ),
             ),
+            16.w,
             // OnClick(
             //   onTap: () {
             //     if (widget.index < widget.list.length - 1) {
@@ -245,36 +221,10 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
             //     ),
             //   ),
             // ),
-            OnClick(
+            _SkipButton(
+              icon: Icons.refresh_rounded,
+              label: '۱۵',
               onTap: viewModel.nextSecond,
-              child: Container(
-                width: 37,
-                height: 32,
-                alignment: AlignmentDirectional.center,
-                child: Stack(
-                  alignment: AlignmentDirectional.bottomEnd,
-                  children: [
-                    // SvgPicture.asset(
-                    //   "assets/quiz/next_second.svg",
-                    //   color: context.colors.primary,
-                    //   width: 37,
-                    //   height: 32,
-                    // ),
-                    Container(height: 12.6, width: 12, color: context.colors.surface),
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Padding(
-                        padding: const EdgeInsetsDirectional.only(start: 7),
-                        child: CustomText(
-                          "15s",
-                          fontSize: 10,
-                          color: context.colors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
@@ -286,6 +236,42 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
           },
         ),
       ],
+    );
+  }
+}
+
+class _SkipButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SkipButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return OnClick(
+      onTap: onTap,
+      child: SizedBox(
+        width: 52,
+        height: 52,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(icon, size: 44, color: c.primary),
+            CustomText(
+              label,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: c.primary,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -23,31 +23,36 @@ class CustomCheckBox extends StatelessWidget {
           onTap: () => onChange(!value),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            width: 20,
-            height: 20,
+            width: 24,
+            height: 24,
             decoration: BoxDecoration(
               color: value ? context.colors.primary : context.colors.surface,
-              border: Border.all(
-                color: value ? context.colors.primary : context.colors.border,
-                width: 1.3,
+              border: Border(
+                top: BorderSide(
+                  color: value ? context.colors.primary : context.colors.border,
+                  width: 2,
+                ),
+                left: BorderSide(
+                  color: value ? context.colors.primary : context.colors.border,
+                  width: 2,
+                ),
+                right: BorderSide(
+                  color: value ? context.colors.primary : context.colors.border,
+                  width: 2,
+                ),
+                bottom: BorderSide(
+                  color: value ? context.colors.primaryEdge : context.colors.lip,
+                  width: 4,
+                ),
               ),
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: value
-                  ? [
-                      BoxShadow(
-                        color: context.colors.primary.withValues(alpha: 0.25),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
+              borderRadius: BorderRadius.circular(8),
             ),
             child: value
-                ? Icon(Icons.done, color: context.colors.white, size: 16)
+                ? Icon(Icons.done_rounded, color: context.colors.onPrimary, size: 16)
                 : SizedBox(),
           ),
         ),
-        if (hint != null) ...[4.w, CustomText(hint!, fontSize: 12)],
+        if (hint != null) ...[8.w, CustomText(hint!, fontSize: 13)],
       ],
     );
   }

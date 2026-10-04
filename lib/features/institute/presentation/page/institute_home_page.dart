@@ -17,12 +17,16 @@ import '/features/institute/presentation/bloc/institute_detail/institute_detail_
 import '/features/institute/presentation/bloc/join_institute/join_institute_bloc.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
 import '/features/institute/presentation/widgets/announcement_preview_card.dart';
+import '/features/institute/presentation/widgets/course_card.dart';
 import '/features/main/data/models/request_courses_model.dart';
 import '/features/main/presentation/bloc/courses/courses_bloc.dart';
 import '/features/main/presentation/page/outline_page.dart';
-import '/features/teacher/presentation/widgets/course_teacher_row.dart';
+import '/widgets/brand_media.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
+import '/widgets/pill_chip.dart';
+import '/widgets/progress_pill.dart';
 import '/widgets/skeleton.dart';
 
 class InstituteHomePage extends StatefulWidget {
@@ -76,6 +80,8 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
   }
 }
 
+String _digits(int n) => toPersianDigits(n.toString());
+
 class _HomeBody extends StatelessWidget {
   final InstituteDetailModel detail;
   final CoursesBloc coursesBloc;
@@ -84,48 +90,54 @@ class _HomeBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final isMember = detail.membership.isMember;
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        if (detail.coverUrl != null && detail.coverUrl!.isNotEmpty)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: AspectRatio(
-              aspectRatio: 3 / 1,
-              child: Image.network(detail.coverUrl!, fit: BoxFit.cover),
-            ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: AspectRatio(
+            aspectRatio: 2.4,
+            child: CoverImage(url: detail.coverUrl, fallback: c.primary),
           ),
-        12.h,
+        ),
+        16.h,
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: CustomText(
                 detail.name ?? '',
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                fontSize: 24,
               ),
             ),
-            if (detail.topic?.name != null)
-              CustomText(
-                detail.topic!.name!,
-                fontSize: 12,
-                color: context.colors.inkMuted,
-              ),
+            if (detail.topic?.name != null) PillChip(detail.topic!.name!),
           ],
         ),
         if (isMember && detail.membership.memberSince != null) ...[
           4.h,
           CustomText(
             formatMemberSince(detail.membership.memberSince),
-            fontSize: 12,
-            color: context.colors.inkMuted,
+            fontSize: 13,
+            color: c.inkMuted,
           ),
         ],
+        12.h,
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            PillChip('${_digits(detail.courseCount)} دوره', icon: Icons.menu_book_rounded),
+            PillChip('${_digits(detail.teacherCount)} استاد', icon: Icons.groups_rounded),
+            PillChip('${_digits(detail.studentCount)} دانش‌آموز', icon: Icons.emoji_people_rounded),
+          ],
+        ),
         if (!isMember) ...[
-          16.h,
+          20.h,
           CustomButton(
-            title: 'عضو شوید',
+            title: 'عضو شو',
             loading: context.watch<JoinInstituteBloc>().state.maybeWhen(
               loading: () => true,
               orElse: () => false,
@@ -138,9 +150,17 @@ class _HomeBody extends StatelessWidget {
               );
             },
           ),
+          8.h,
+          Center(
+            child: CustomText(
+              'رایگان و فوری. هر وقت خواستی می‌توانی شروع کنی.',
+              fontSize: 12,
+              color: c.inkMuted,
+            ),
+          ),
         ],
         if (detail.intro != null && detail.intro!.isNotEmpty) ...[
-          16.h,
+          20.h,
           Html(
             data: detail.intro!,
             style: {
@@ -148,69 +168,50 @@ class _HomeBody extends StatelessWidget {
                 margin: Margins.zero,
                 padding: HtmlPaddings.zero,
                 fontSize: FontSize(16),
-                color: context.colors.ink,
+                fontFamily: 'Masir',
+                lineHeight: const LineHeight(1.7),
+                color: c.ink,
                 textAlign: TextAlign.right,
                 direction: TextDirection.rtl,
               ),
             },
           ),
         ],
-        16.h,
+        20.h,
         ..._homeMiddle(context, detail),
-        16.h,
-        CustomText('دوره‌ها', fontWeight: FontWeight.w600, fontSize: 16),
-        8.h,
+        24.h,
+        const CustomText('دوره‌ها', fontWeight: FontWeight.w800, fontSize: 18),
+        12.h,
         BlocBuilder<CoursesBloc, CoursesState>(
           bloc: coursesBloc,
           builder: (context, state) {
             return state.maybeWhen(
-              loading: (_) => const SkeletonList(count: 3, itemHeight: 72),
+              loading: (_) => const SkeletonList(count: 3, itemHeight: 96),
               success: (_, data) {
                 if (data.isEmpty) {
                   return CustomText(
-                    'دوره‌ای منتشر نشده',
-                    color: context.colors.inkMuted,
+                    'هنوز دوره‌ای منتشر نشده. به‌زودی!',
+                    color: c.inkMuted,
                   );
                 }
                 return Column(
                   children: [
-                    for (final course in data)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Opacity(
-                          opacity: isMember ? 1 : 0.55,
-                          child: ListTile(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: context.colors.border),
-                            ),
-                            title: CustomText(course.title ?? ''),
-                            subtitle: course.teachers.isEmpty
-                                ? null
-                                : Padding(
-                                    padding: const EdgeInsets.only(top: 6),
-                                    child: CourseTeacherRow(
-                                      teachers: course.teachers,
-                                    ),
-                                  ),
-                            trailing: isMember
-                                ? const Icon(Icons.chevron_left)
-                                : Icon(
-                                    Icons.lock_outline,
-                                    color: context.colors.inkMuted,
-                                  ),
-                            onTap: isMember
-                                ? () => CustomNavigator.pushNamed(
-                                    OutlinePage.routeName,
-                                    arguments: {
-                                      'id': course.id ?? '',
-                                      'title': course.title ?? '',
-                                    },
-                                  )
-                                : null,
-                          ),
-                        ),
+                    for (final course in data) ...[
+                      CourseCard(
+                        course: course,
+                        locked: !isMember,
+                        onTap: isMember
+                            ? () => CustomNavigator.pushNamed(
+                                OutlinePage.routeName,
+                                arguments: {
+                                  'id': course.id ?? '',
+                                  'title': course.title ?? '',
+                                },
+                              )
+                            : null,
                       ),
+                      12.h,
+                    ],
                   ],
                 );
               },
@@ -218,52 +219,34 @@ class _HomeBody extends StatelessWidget {
             );
           },
         ),
-        16.h,
-        Row(
-          children: [
-            CustomText(
-              '${detail.courseCount} دوره',
-              fontSize: 12,
-              color: context.colors.inkMuted,
-            ),
-            16.w,
-            CustomText(
-              '${detail.teacherCount} استاد',
-              fontSize: 12,
-              color: context.colors.inkMuted,
-            ),
-            16.w,
-            CustomText(
-              '${detail.studentCount} دانش‌آموز',
-              fontSize: 12,
-              color: context.colors.inkMuted,
-            ),
-          ],
-        ),
         if (detail.links.isNotEmpty) ...[
-          16.h,
-          Wrap(
-            spacing: 12,
+          12.h,
+          Row(
             children: [
               for (final link in detail.links)
                 if (link.url != null)
-                  IconButton(
-                    onPressed: () => launchUrl(Uri.parse(link.url!)),
-                    icon: Icon(_iconFor(link.kind), color: context.colors.primary),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 12),
+                    child: ChunkyBox(
+                      width: 48,
+                      height: 48,
+                      radius: 16,
+                      fill: c.surface,
+                      edge: c.lip,
+                      borderColor: c.border,
+                      alignment: Alignment.center,
+                      onTap: () => launchUrl(Uri.parse(link.url!)),
+                      child: Icon(_iconFor(link.kind), color: c.primary),
+                    ),
                   ),
             ],
           ),
         ],
-        24.h,
-        const SizedBox(height: 8),
       ],
     );
   }
 
-  List<Widget> _homeMiddle(
-    BuildContext context,
-    InstituteDetailModel detail,
-  ) {
+  List<Widget> _homeMiddle(BuildContext context, InstituteDetailModel detail) {
     final announcementsState = context.watch<AnnouncementsBloc>().state;
     final announcements = announcementsState.maybeWhen(
       success: (_, items, _, _) => items,
@@ -298,11 +281,11 @@ class _HomeBody extends StatelessWidget {
   IconData _iconFor(String? kind) {
     switch (kind) {
       case 'instagram':
-        return Icons.camera_alt_outlined;
+        return Icons.camera_alt_rounded;
       case 'telegram':
-        return Icons.send;
+        return Icons.send_rounded;
       default:
-        return Icons.language;
+        return Icons.language_rounded;
     }
   }
 }
@@ -323,21 +306,21 @@ class _AnnouncementsHomeSlot extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CustomText('اطلاعیه‌ها', fontWeight: FontWeight.w600, fontSize: 16),
-        8.h,
+        const CustomText('اطلاعیه‌ها', fontWeight: FontWeight.w800, fontSize: 18),
+        12.h,
         for (final item in preview) ...[
           AnnouncementPreviewCard(
             item: item,
             onTap: () => context.go('/i/$instituteId/announcements/${item.id}'),
           ),
-          8.h,
+          12.h,
         ],
         OnClick(
           onTap: () => context.go('/i/$instituteId/announcements'),
           child: CustomText(
             'همه‌ی اطلاعیه‌ها',
             color: context.colors.primary,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ],
@@ -352,8 +335,13 @@ class _ContinueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final action = card.nextAction!;
-    return OnClick(
+    return ChunkyBox(
+      fill: c.primary,
+      edge: c.primaryEdge,
+      radius: 24,
+      padding: const EdgeInsets.all(16),
       onTap: () {
         if (action.courseId != null) {
           CustomNavigator.pushNamed(
@@ -365,30 +353,46 @@ class _ContinueCard extends StatelessWidget {
           );
         }
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.colors.primaryTint,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.colors.primary.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CustomText('ادامه یادگیری', fontWeight: FontWeight.w600),
-            4.h,
-            CustomText(
-              action.unitTitle ?? action.courseTitle ?? '',
-              color: context.colors.inkMuted,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomText(
+                  'ادامه یادگیری',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: c.onPrimary.withValues(alpha: 0.85),
+                ),
+                4.h,
+                CustomText(
+                  action.unitTitle ?? action.courseTitle ?? '',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: c.onPrimary,
+                  maxLines: 2,
+                ),
+                12.h,
+                ProgressPill(
+                  value: action.progressPercent,
+                  color: c.onPrimary,
+                  trackColor: c.onPrimary.withValues(alpha: 0.3),
+                ),
+              ],
             ),
-            8.h,
-            LinearProgressIndicator(
-              value: (action.progressPercent.clamp(0, 100)) / 100,
-              color: context.colors.primary,
-              backgroundColor: context.colors.ink.withValues(alpha: 0.08),
+          ),
+          16.w,
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: c.onPrimary,
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            child: Icon(Icons.play_arrow_rounded, color: c.primary, size: 32),
+          ),
+        ],
       ),
     );
   }

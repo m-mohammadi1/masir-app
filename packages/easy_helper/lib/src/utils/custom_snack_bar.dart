@@ -114,7 +114,7 @@ class CustomToast {
                               message,
                               style: TextStyle(
                                 color: Color(0xFF252525),
-                                fontFamily: "Pinar-Medium",
+                                fontFamily: "Masir",
                                 fontWeight: FontWeight.w500,
                                 fontSize: 12,
                               ),

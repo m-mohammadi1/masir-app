@@ -10,6 +10,7 @@ import '/features/home/page/detail_course_page.dart';
 import '/features/institute/data/models/app_notification_model.dart';
 import '/features/institute/presentation/bloc/notifications/notifications_bloc.dart';
 import '/features/main/presentation/page/outline_page.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/empty_widget.dart';
 import '/widgets/skeleton.dart';
@@ -97,22 +98,31 @@ class _InstituteInboxPageState extends State<InstituteInboxPage> {
                 separatorBuilder: (_, _) => 8.h,
                 itemBuilder: (context, index) {
                   final item = filtered[index];
-                  return OnClick(
+                  return ChunkyBox(
+                    fill: item.isUnread
+                        ? context.colors.primaryTint
+                        : context.colors.surface,
+                    edge: context.colors.lip,
+                    borderColor: item.isUnread
+                        ? context.colors.primary.withValues(alpha: 0.4)
+                        : context.colors.border,
+                    padding: const EdgeInsets.all(14),
                     onTap: () => _open(item),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: context.colors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: context.colors.border),
-                      ),
-                      child: Row(
+                    child: Row(
                         children: [
-                          Icon(
-                            item.type == 'announcement.published'
-                                ? Icons.campaign_outlined
-                                : Icons.menu_book_outlined,
-                            color: context.colors.primary,
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: context.colors.primaryTint,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              item.type == 'announcement.published'
+                                  ? Icons.campaign_rounded
+                                  : Icons.menu_book_rounded,
+                              color: context.colors.primary,
+                            ),
                           ),
                           12.w,
                           Expanded(
@@ -125,8 +135,8 @@ class _InstituteInboxPageState extends State<InstituteInboxPage> {
                                           ?.toString() ??
                                       'اطلاع‌رسانی',
                                   fontWeight: item.isUnread
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
                                   maxLines: 2,
                                 ),
                                 4.h,
@@ -148,7 +158,6 @@ class _InstituteInboxPageState extends State<InstituteInboxPage> {
                               ),
                             ),
                         ],
-                      ),
                     ),
                   );
                 },

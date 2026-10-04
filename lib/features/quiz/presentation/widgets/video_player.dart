@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:video_player/video_player.dart';
 import '/core/theme/theme_context.dart';
@@ -74,7 +75,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(20),
       child: ColoredBox(
         color: Colors.black,
         child: AspectRatio(aspectRatio: 16 / 9, child: _buildBody()),
@@ -122,14 +123,20 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
             Center(child: CircularProgressIndicator(color: _accent)),
           if (_showControls) ...[
             Container(color: Colors.black26),
-            IconButton(
-              onPressed: _togglePlay,
-              iconSize: 56,
-              color: Colors.white,
-              icon: Icon(
+            ChunkyBox(
+              fill: _accent,
+              edge: context.colors.primaryEdge,
+              radius: 36,
+              width: 72,
+              height: 76,
+              alignment: Alignment.center,
+              onTap: _togglePlay,
+              child: Icon(
                 value.isPlaying
-                    ? Icons.pause_circle_filled
-                    : Icons.play_circle_filled,
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                size: 44,
+                color: context.colors.onPrimary,
               ),
             ),
             Positioned(
@@ -144,9 +151,9 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                     children: [
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
+                          trackHeight: 6,
                           thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6,
+                            enabledThumbRadius: 9,
                           ),
                           overlayShape: const RoundSliderOverlayShape(
                             overlayRadius: 12,
@@ -170,13 +177,15 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                         children: [
                           CustomText(
                             _format(value.position),
-                            fontSize: 11,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
                           const Spacer(),
                           CustomText(
                             _format(value.duration),
-                            fontSize: 11,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
                         ],

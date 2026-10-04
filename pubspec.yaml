@@ -43,6 +43,7 @@ dependencies:
   flutter_html: ^3.0.0
   audioplayers: ^6.5.0
   video_player: ^2.13.0
+  confetti: ^0.8.0
 
 
 
@@ -90,6 +91,18 @@ flutter:
       fonts:
         - asset: assets/fonts/Pinar/Pinar-FD-Regular.ttf
           weight: 400
+    - family: Masir
+      fonts:
+        - asset: assets/fonts/IRANSansX/IRANSansXFaNum-RegularD4.ttf
+          weight: 400
+        - asset: assets/fonts/IRANSansX/IRANSansXFaNum-MediumD4.ttf
+          weight: 500
+        - asset: assets/fonts/IRANSansX/IRANSansXFaNum-DemiBoldD4.ttf
+          weight: 600
+        - asset: assets/fonts/IRANSansX/IRANSansXFaNum-BoldD4.ttf
+          weight: 700
+        - asset: assets/fonts/IRANSansX/IRANSansXFaNum-ExtraBoldD4.ttf
+          weight: 800
     - family: IRANSans
       fonts:
         - asset: assets/fonts/IRANSansX/IRANSansXFaNum-MediumD4.ttf

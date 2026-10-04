@@ -48,7 +48,7 @@ class TeacherAvatar extends StatelessWidget {
         child: CustomText(
           _initials,
           fontSize: size * 0.36,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w800,
           color: context.colors.primary,
         ),
       ),

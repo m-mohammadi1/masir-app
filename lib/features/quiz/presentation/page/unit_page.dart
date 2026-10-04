@@ -20,7 +20,9 @@ import 'package:mohammad/features/home/page/detail_course_page.dart';
 import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_error.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
@@ -109,17 +111,24 @@ class _UnitPageState extends State<UnitPage> {
     return Builder(
       builder: (context) => Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: context.colors.primaryTint,
-          borderRadius: BorderRadius.circular(10),
+          color: context.colors.sunSoft,
+          borderRadius: BorderRadius.circular(12.0),
         ),
-        child: CustomText(
-          'پیش‌نمایش رایگان',
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: context.colors.primary,
-          textAlign: TextAlign.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.card_giftcard_rounded,
+                size: 18, color: context.colors.sunEdge),
+            8.w,
+            CustomText(
+              'پیش‌نمایش رایگان',
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: context.colors.sunEdge,
+            ),
+          ],
         ),
       ),
     );
@@ -129,21 +138,18 @@ class _UnitPageState extends State<UnitPage> {
     if (data.isLastPreview != true) return null;
     final courseId = data.courseId;
     return Builder(
-      builder: (context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.colors.primary.withValues(alpha: 0.3)),
-        ),
+      builder: (context) => ChunkyBox(
+        fill: context.colors.surface,
+        edge: context.colors.sunEdge,
+        borderColor: context.colors.sun,
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             CustomText(
               'پایان بخش رایگان',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+              fontSize: MasirText.titleSize,
+              fontWeight: FontWeight.w800,
               color: context.colors.ink,
               textAlign: TextAlign.center,
             ),

@@ -29,27 +29,23 @@ class ExitModal extends StatelessWidget {
           Container(
             height: 48,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               color: context.colors.primaryTint,
-              border: Border.all(
-                color: context.colors.primary.withValues(alpha: 0.25),
-                width: 1.1,
-              ),
             ),
             child: Center(
               child: CustomText(
                 "تاییدیه",
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w800,
                 color: context.colors.primary,
               ),
             ),
           ),
           16.h,
-          CustomText(text, fontSize: 16, fontWeight: FontWeight.w500),
+          CustomText(text, fontSize: 18, fontWeight: FontWeight.w800),
           8.h,
           CustomText(
             description ?? "با بستن مرحله، تغییرات شما ذخیره نخواهد شد.",
-            color: context.colors.text92,
+            color: context.colors.inkMuted,
           ),
           16.h,
           Row(
@@ -57,11 +53,9 @@ class ExitModal extends StatelessWidget {
               Expanded(
                 child: CustomOutlineButton(
                   title: "انصراف",
-                  borderColor: context.colors.error,
                   onTap: () {
                     CustomNavigator.pop();
                   },
-                  textStyle: TextStyle(color: context.colors.error),
                 ),
               ),
               10.w,

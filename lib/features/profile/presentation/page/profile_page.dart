@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/services/hive_service.dart';
 import '../../../../widgets/custom_text.dart';
+import '../../../about_us/presentation/page/about_us_page.dart';
 import '../../../auth/domain/entities/submit_username.dart';
 import '../../../auth/presentation/page/auth_screen.dart';
 import '../../../edit_profile/presentation/page/edit_profile_page.dart';
@@ -10,6 +11,7 @@ import '../../../main/presentation/page/institutes_page.dart';
 import '../../../../widgets/exit_modal.dart';
 import '../../../../widgets/base_modal.dart';
 import '/core/theme/theme_context.dart';
+import '/widgets/chunky_box.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -22,250 +24,221 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = HiveService.user;
-
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            context.appSize.width.w,
-            60.h,
-            CustomText("پروفایل", fontWeight: FontWeight.bold, fontSize: 20),
-            Expanded(
-              child: ListView(
-                children: [
-                  _buildProfileCard(user),
-                  16.h,
-                  _buildCurrentInstituteSection(),
-                  16.h,
-                  _buildLogoutButton(),
-                  40.h,
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileCard(User? user) {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.colors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.ink.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            user?.name ?? "نام تنظیم نشده",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: context.colors.ink,
-            ),
-          ),
-          SizedBox(height: 20),
-          _buildInfoRow(label: "شماره موبایل", value: user?.phone ?? "---"),
-          SizedBox(height: 12),
-          _buildInfoRow(label: "نام کاربری", value: user?.username ?? "---"),
-          SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: () =>
-                  CustomNavigator.pushNamed(EditProfilePage.routeName),
-              icon: Icon(Icons.edit_outlined, size: 18, color: context.colors.ink),
-              label: Text(
-                "ویرایش پروفایل",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: context.colors.ink,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: context.colors.border, width: 1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow({required String label, required String value}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
-        Text(value, style: TextStyle(fontSize: 14, color: context.colors.ink)),
-        Text(label, style: TextStyle(fontSize: 14, color: context.colors.inkMuted)),
-      ],
-    );
-  }
-
-  Widget _buildCurrentInstituteSection() {
-    final hasInstitute = HiveService.hasCurrentInstitute;
-    final logoUrl = HiveService.currentInstituteLogoUrl;
-
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.colors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.ink.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            "مؤسسه فعلی",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: context.colors.ink,
-            ),
-          ),
-          SizedBox(height: 16),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: context.colors.borderF9,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ClipOval(
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    color: context.colors.primaryTint,
-                    child: (logoUrl != null && logoUrl.isNotEmpty)
-                        ? Image.network(
-                            logoUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(
-                              Icons.school,
-                              size: 20,
-                              color: context.colors.primary,
-                            ),
-                          )
-                        : Icon(Icons.school, size: 20, color: context.colors.primary),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      hasInstitute
-                          ? (HiveService.currentInstituteName ?? "")
-                          : "هنوز انتخاب نشده",
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: context.colors.ink,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: OutlinedButton.icon(
-              onPressed: () => CustomNavigator.pushNamed(
-                InstitutesPage.routeName,
-              ).then((_) => setState(() {})),
-              icon: Icon(
-                Icons.swap_horiz_rounded,
-                size: 18,
-                color: context.colors.ink,
-              ),
-              label: Text(
-                "تغییر مؤسسه",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: context.colors.ink,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: context.colors.border, width: 1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton() {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: OutlinedButton.icon(
-          onPressed: () => showCustomModal(
+        56.h,
+        const CustomText('پروفایل', fontWeight: FontWeight.w800, fontSize: 28),
+        20.h,
+        _ProfileHero(user: user),
+        20.h,
+        _buildCurrentInstitute(),
+        20.h,
+        _SettingsRow(
+          icon: Icons.edit_rounded,
+          label: 'ویرایش پروفایل',
+          onTap: () => CustomNavigator.pushNamed(EditProfilePage.routeName),
+        ),
+        12.h,
+        _SettingsRow(
+          icon: Icons.info_rounded,
+          label: 'درباره‌ی مسیر',
+          onTap: () => CustomNavigator.pushNamed(AboutUsPage.routeName),
+        ),
+        12.h,
+        _SettingsRow(
+          icon: Icons.logout_rounded,
+          label: 'خروج از حساب',
+          danger: true,
+          onTap: () => showCustomModal(
             context: context,
             scrollControlDisabledMaxHeightRatio: .4,
             callBack: (_) {},
             child: ExitModal(
-              text: "میخواهید از حساب کاربری خود خارج شوید؟",
+              text: 'می‌خواهی از حساب کاربری‌ات خارج شوی؟',
               exitAction: () {
                 HiveService.logout();
                 CustomNavigator.go(AuthScreen.routeName);
               },
             ),
           ),
-          icon: Icon(Icons.logout_rounded, size: 20, color: context.colors.ink),
-          label: Text(
-            "خروج",
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: context.colors.ink,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCurrentInstitute() {
+    final c = context.colors;
+    final hasInstitute = HiveService.hasCurrentInstitute;
+    final logoUrl = HiveService.currentInstituteLogoUrl;
+    return ChunkyBox(
+      fill: c.surface,
+      edge: c.lip,
+      borderColor: c.border,
+      padding: const EdgeInsets.all(16),
+      onTap: () => CustomNavigator.pushNamed(
+        InstitutesPage.routeName,
+      ).then((_) => setState(() {})),
+      child: Row(
+        children: [
+          ClipOval(
+            child: Container(
+              width: 48,
+              height: 48,
+              color: c.primaryTint,
+              child: (logoUrl != null && logoUrl.isNotEmpty)
+                  ? Image.network(
+                      logoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          Icon(Icons.school_rounded, color: c.primary),
+                    )
+                  : Icon(Icons.school_rounded, color: c.primary),
             ),
           ),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: context.colors.border, width: 1),
-            shape: RoundedRectangleBorder(
+          12.w,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomText(
+                  'آخرین مؤسسه',
+                  fontSize: 12,
+                  color: c.inkMuted,
+                ),
+                2.h,
+                CustomText(
+                  hasInstitute
+                      ? (HiveService.currentInstituteName ?? '')
+                      : 'هنوز انتخاب نشده',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.swap_horiz_rounded, color: c.primary),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileHero extends StatelessWidget {
+  final User? user;
+  const _ProfileHero({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final name = user?.name?.trim();
+    final hasName = name != null && name.isNotEmpty;
+    return ChunkyBox(
+      fill: c.primary,
+      edge: c.primaryEdge,
+      radius: 24,
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.5),
+                width: 4,
+              ),
+            ),
+            child: CustomText(
+              hasName ? name.characters.first : 'م',
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              color: c.primary,
+            ),
+          ),
+          16.w,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomText(
+                  hasName ? name : 'نام تنظیم نشده',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: c.onPrimary,
+                  maxLines: 1,
+                ),
+                6.h,
+                if (user?.phone != null)
+                  CustomText(
+                    user!.phone!,
+                    fontSize: 13,
+                    color: c.onPrimary.withValues(alpha: 0.85),
+                  ),
+                if (user?.username != null)
+                  CustomText(
+                    '@${user!.username}',
+                    fontSize: 13,
+                    color: c.onPrimary.withValues(alpha: 0.85),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  const _SettingsRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final tone = danger ? c.coral : c.primary;
+    return ChunkyBox(
+      fill: c.surface,
+      edge: danger ? c.coralEdge.withValues(alpha: 0.4) : c.lip,
+      borderColor: danger ? c.coral.withValues(alpha: 0.4) : c.border,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: danger ? c.coralSoft : c.primaryTint,
               borderRadius: BorderRadius.circular(12),
             ),
+            child: Icon(icon, size: 22, color: tone),
           ),
-        ),
+          14.w,
+          Expanded(
+            child: CustomText(
+              label,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: danger ? c.coral : c.ink,
+            ),
+          ),
+          Icon(Icons.chevron_left_rounded, color: c.locked),
+        ],
       ),
     );
   }

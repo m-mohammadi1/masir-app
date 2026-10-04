@@ -14,7 +14,7 @@ class CustomDivider extends StatelessWidget {
     this.indent,
     this.endIndent,
     this.borderColor,
-    this.height = 1,
+    this.height = 2,
   });
 
   @override

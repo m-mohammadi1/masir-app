@@ -20,7 +20,7 @@ class SkeletonBox extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: context.colors.inkFaint.withValues(alpha: 0.45),
+          color: context.colors.border,
           borderRadius: BorderRadius.circular(radius),
         ),
       ),
@@ -54,7 +54,7 @@ class SkeletonList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: count,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, _) => SkeletonBox(height: itemHeight, radius: 14),
+      itemBuilder: (_, _) => SkeletonBox(height: itemHeight, radius: 20),
     );
   }
 }
@@ -89,8 +89,8 @@ class _SkeletonShimmerState extends State<_SkeletonShimmer>
 
   @override
   Widget build(BuildContext context) {
-    final base = context.colors.inkFaint.withValues(alpha: 0.35);
-    final highlight = context.colors.surface;
+    final base = context.colors.border;
+    final highlight = context.colors.border100;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 
 class CustomText extends StatelessWidget {
@@ -32,15 +33,41 @@ class CustomText extends StatelessWidget {
       style:
           style ??
           TextStyle(
-            fontFamily: true ? "IRANSans": fontFamily??( (fontWeight?.value ?? 400) >= 600
-                ? "Pinar-Bold"
-                : (fontWeight?.value ?? 400) == 500
-                ? "Pinar-Medium"
-                : "Pinar"),
+            fontFamily: fontFamily ?? kMasirFont,
             color: color ?? context.colors.text,
             fontSize: fontSize,
-            fontWeight: fontWeight,
+            fontWeight: fontWeight ?? FontWeight.w400,
           ),
+    );
+  }
+}
+
+/// Semantic variants of [CustomText] using the playful type scale.
+class MasirTitle extends StatelessWidget {
+  final String text;
+  final Color? color;
+  final TextAlign? textAlign;
+  final int? maxLines;
+  final double size;
+
+  const MasirTitle(
+    this.text, {
+    super.key,
+    this.color,
+    this.textAlign,
+    this.maxLines,
+    this.size = MasirText.titleSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomText(
+      text,
+      fontSize: size,
+      fontWeight: FontWeight.w800,
+      color: color,
+      textAlign: textAlign,
+      maxLines: maxLines,
     );
   }
 }
@@ -59,15 +86,9 @@ TextStyle customTextStyle(
   Color? color,
 }) {
   return TextStyle(
-    fontFamily: true
-        ? "IRANSans"
-        : (fontWeight?.value ?? 400) >= 600
-        ? "Pinar-Bold"
-        : (fontWeight?.value ?? 400) == 500
-        ? "Pinar-Medium"
-        : "Pinar",
+    fontFamily: fontFamily ?? kMasirFont,
     color: color ?? context.colors.text,
     fontSize: fontSize,
-    fontWeight: fontWeight,
+    fontWeight: fontWeight ?? FontWeight.w400,
   );
 }

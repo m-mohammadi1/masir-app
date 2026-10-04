@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
 import '/core/theme/institute_presets.dart';
+import '/core/theme/masir_style.dart';
+import '/widgets/brand_media.dart';
 import '/core/theme/theme_context.dart';
 import '/features/institute/data/models/request_institute_id_model.dart';
 import '/features/institute/domain/usecases/enter_institute.dart';
@@ -140,7 +142,7 @@ class _InstituteShellState extends State<InstituteShell> {
             ),
             child: Builder(
               builder: (context) {
-                return Scaffold(
+                final scaffold = Scaffold(
                   backgroundColor: context.colors.background,
                   body: Column(
                     children: [
@@ -171,6 +173,19 @@ class _InstituteShellState extends State<InstituteShell> {
                     ],
                   ),
                 );
+                final loaded = state.whenOrNull(success: (_, data) => data);
+                return Stack(
+                  children: [
+                    scaffold,
+                    if (loaded != null)
+                      _BrandWash(
+                        key: const ValueKey('brand-wash'),
+                        preset: presetFor(loaded.themePreset),
+                        logoUrl: loaded.logoUrl,
+                        name: loaded.name ?? '',
+                      ),
+                  ],
+                );
               },
             ),
           );
@@ -192,67 +207,128 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return state.when(
       loading: (_) => const Padding(
         padding: EdgeInsets.fromLTRB(16, 48, 16, 8),
-        child: SkeletonBox(height: 72, radius: 16),
+        child: SkeletonBox(height: 64, radius: 24),
       ),
       error: (_, _) => const SizedBox(height: 24),
       success: (_, data) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 48, 16, 8),
+        final preset = presetFor(data.themePreset);
+        final on = c.onPrimary;
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 48, 16, 14),
+          decoration: BoxDecoration(
+            color: c.primary,
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(MasirRadius.sheet),
+            ),
+            border: Border(bottom: BorderSide(color: c.primaryEdge, width: 4)),
+          ),
           child: Row(
             children: [
-              OnClick(
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => CustomNavigator.go(MainPage.routeName),
-                child: Icon(Icons.close, color: context.colors.ink),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: on.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close_rounded, color: on),
+                ),
               ),
               12.w,
               Hero(
                 tag: 'institute-logo-$instituteId',
-                child: ClipOval(
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    color: context.colors.primary,
-                    child: data.logoUrl != null && data.logoUrl!.isNotEmpty
-                        ? Image.network(data.logoUrl!, fit: BoxFit.cover)
-                        : Icon(Icons.school, color: context.colors.onPrimary),
-                  ),
+                child: InstituteLogo(
+                  logoUrl: data.logoUrl,
+                  name: data.name ?? '',
+                  preset: preset,
+                  size: 44,
                 ),
               ),
-              8.w,
+              10.w,
               Expanded(
                 child: CustomText(
                   data.name ?? '',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  color: on,
+                  maxLines: 1,
                 ),
               ),
-              OnClick(
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => context.go('/i/$instituteId/inbox'),
-                child: Icon(
-                  Icons.notifications_none,
-                  color: context.colors.ink,
-                ),
-              ),
-              8.w,
-              OnClick(
-                onTap: () => CustomNavigator.go(MainPage.routeName),
-                child: CircleAvatar(
-                  radius: 14,
-                  backgroundColor: context.colors.primaryTint,
-                  child: Icon(
-                    Icons.person,
-                    size: 16,
-                    color: context.colors.primary,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: on.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
                   ),
+                  child: Icon(Icons.notifications_rounded, color: on),
                 ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+/// The threshold: the club's colour floods the screen with its logo, then
+/// lifts away to reveal the branded world. Plays once per entry.
+class _BrandWash extends StatelessWidget {
+  final InstitutePreset preset;
+  final String? logoUrl;
+  final String name;
+
+  const _BrandWash({
+    super.key,
+    required this.preset,
+    required this.logoUrl,
+    required this.name,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return const SizedBox.shrink();
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 900),
+          builder: (context, t, _) {
+            if (t >= 1) return const SizedBox.shrink();
+            // Hold fully covered for the first 35%, then fade out.
+            final opacity = t < 0.35 ? 1.0 : 1 - ((t - 0.35) / 0.65);
+            final logoScale = 0.8 + 0.4 * Curves.easeOutBack.transform(t.clamp(0, 1));
+            return Opacity(
+              opacity: opacity.clamp(0.0, 1.0),
+              child: ColoredBox(
+                color: preset.primary,
+                child: Center(
+                  child: Transform.scale(
+                    scale: logoScale,
+                    child: InstituteLogo(
+                      logoUrl: logoUrl,
+                      name: name,
+                      preset: preset,
+                      size: 96,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

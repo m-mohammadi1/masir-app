@@ -1,42 +1,57 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import '/core/theme/masir_style.dart';
+import '/core/theme/theme_context.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
 
+/// One page of the intro: a big chunky illustration tile, a headline and a
+/// short line of copy. [icon] stands in for artwork.
 class IntroWidget extends StatelessWidget {
-  final String title, description, image;
-  final int index;
+  final String title, description;
+  final IconData icon;
+  final Color tint;
+  final Color edge;
+  final Color accent;
 
   const IntroWidget({
     super.key,
     required this.title,
     required this.description,
-    required this.image,
-    required this.index,
+    required this.icon,
+    required this.tint,
+    required this.edge,
+    required this.accent,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.topCenter,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 63),
-          child: CustomImage(assets: "assets/svg/intro/$image.svg"),
+        ChunkyBox(
+          fill: tint,
+          edge: edge,
+          borderColor: accent,
+          radius: 56,
+          width: 200,
+          height: 208,
+          alignment: Alignment.center,
+          child: Icon(icon, size: 96, color: accent),
         ),
-
-        Container(
-          margin: EdgeInsets.only(top: context.appSize.height * .52),
-          child: Column(
-            children: [
-              CustomText(title, fontSize: 24, fontWeight: FontWeight.w700),
-              8.h,
-              CustomText(
-                description,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-            ],
-          ),
+        40.h,
+        CustomText(
+          title,
+          fontSize: MasirText.displaySize,
+          fontWeight: FontWeight.w800,
+          textAlign: TextAlign.center,
+        ),
+        12.h,
+        CustomText(
+          description,
+          fontSize: MasirText.bodySize,
+          color: context.colors.inkMuted,
+          textAlign: TextAlign.center,
         ),
       ],
     );

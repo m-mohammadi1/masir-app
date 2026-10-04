@@ -1,10 +1,10 @@
-import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '/core/theme/theme_context.dart';
 import '/features/discovery/data/models/main_feed_model.dart';
 import '/features/discovery/presentation/bloc/topics/topics_bloc.dart';
+import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
 
 class TopicChipRow extends StatelessWidget {
@@ -26,7 +26,7 @@ class TopicChipRow extends StatelessWidget {
       builder: (context, state) {
         return state.maybeWhen(
           success: (_, items) => SizedBox(
-            height: 40,
+            height: 48,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -69,22 +69,20 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OnClick(
+    final c = context.colors;
+    return ChunkyBox(
+      radius: 16,
+      fill: selected ? c.primary : c.surface,
+      edge: selected ? c.primaryEdge : c.lip,
+      borderColor: selected ? null : c.border,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.center,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? context.colors.primary : context.colors.surface,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected ? context.colors.primary : context.colors.border,
-          ),
-        ),
-        child: CustomText(
-          label,
-          fontSize: 13,
-          color: selected ? context.colors.onPrimary : context.colors.ink,
-        ),
+      child: CustomText(
+        label,
+        fontSize: 13,
+        fontWeight: FontWeight.w800,
+        color: selected ? c.onPrimary : c.ink,
       ),
     );
   }

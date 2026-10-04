@@ -2,8 +2,9 @@ import '/widgets/custom_text.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/core/theme/theme_context.dart';
+import '/widgets/chunky_box.dart';
 
-
+/// Neutral chunky button: white face, hairline border, soft lip.
 class CustomOutlineButton extends StatelessWidget {
   static Container? initCustomButton;
   final double? height, width, buttonSizeRadius;
@@ -24,7 +25,7 @@ class CustomOutlineButton extends StatelessWidget {
     this.title,
     this.loading = false,
     this.textStyle,
-    this.height = 48,
+    this.height = 52,
     this.width,
     this.onTap,
     this.backgroundColor,
@@ -39,69 +40,47 @@ class CustomOutlineButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    late final Size size = MediaQuery.sizeOf(context);
-    return loading
-        ? SizedBox(
-            height: height,
-            width: width ?? size.width,
-            child: backgroundColor == null
-                ? Center(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: topPadding),
-                      child: const CustomLoading(),
-                    ),
-                  )
-                : Center(
-                    child: SizedBox(
-                      height: 30,
-                      width: 30,
-                      child: CircularProgressIndicator(
-                        color: borderColor,
-                        strokeWidth: 2.5,
-                      ),
-                    ),
-                  ),
-          )
-        : Padding(
-            padding: padding ?? EdgeInsets.zero,
-            child: OnClick(
-              onTap: !enable || loading ? null : onTap,
-              child: Container(
-                height: height,
-                width: width,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(buttonSizeRadius ?? 14),
-                  border: Border.all(
-                    color: borderColor ?? context.colors.border,
-                    width: 1.1,
-                  ),
-                  color: backgroundColor ?? context.colors.surface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.colors.ink.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+    final size = MediaQuery.sizeOf(context);
+    if (loading) {
+      return SizedBox(
+        height: height,
+        width: width ?? size.width,
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.only(top: topPadding),
+            child: const CustomLoading(),
+          ),
+        ),
+      );
+    }
+    final c = context.colors;
+    return Padding(
+      padding: padding ?? EdgeInsets.zero,
+      child: ChunkyBox(
+        width: width,
+        height: height,
+        radius: buttonSizeRadius ?? 16,
+        fill: backgroundColor ?? c.surface,
+        edge: c.lip,
+        borderColor: borderColor ?? c.border,
+        alignment: Alignment.center,
+        onTap: !enable ? null : onTap,
+        child:
+            child ??
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) ...[icon!, const SizedBox(width: 8)],
+                CustomText(
+                  title ?? "",
+                  fontSize: textStyle?.fontSize ?? 15,
+                  color: textStyle?.color,
+                  fontWeight: textStyle?.fontWeight ?? FontWeight.w800,
                 ),
-                alignment: Alignment.center,
-                child:
-                    child ??
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (icon != null) ...[icon!, const SizedBox(width: 8)],
-                        CustomText(
-                          title ?? "",
-                          fontSize: textStyle?.fontSize,
-                          color: textStyle?.color,
-                          fontWeight: textStyle?.fontWeight,
-                        ),
-                      ],
-                    ),
-              ),
+              ],
             ),
-          );
+      ),
+    );
   }
 }

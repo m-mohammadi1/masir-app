@@ -1,8 +1,11 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
 
+/// Chunky answer tile. Unselected = surface + lip; selected = primary tint with
+/// a primary border and edge.
 class OptionWidget extends StatelessWidget {
   final String title;
   final bool selected;
@@ -19,28 +22,22 @@ class OptionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OnClick(
-      onTap: readOnly ? null : onTap,
-      child: Opacity(
-        opacity: readOnly ? 0.5 : 1,
-        child: Container(
-          height: 48,
-          width: context.appSize.width,
-          decoration: BoxDecoration(
-            color: selected ? context.colors.primary : null,
-            borderRadius: BorderRadius.circular(8),
-            border: selected
-                ? null
-                : Border.all(color: context.colors.primary, width: 1.5),
-          ),
-          child: Center(
-            child: CustomText(
-              title,
-              fontWeight: FontWeight.bold,
-              color: selected ? context.colors.white : context.colors.primary,
-              fontSize: 18,
-            ),
-          ),
+    final c = context.colors;
+    return Opacity(
+      opacity: readOnly ? 0.6 : 1,
+      child: ChunkyBox(
+        fill: selected ? c.primaryTint : c.surface,
+        edge: selected ? c.primaryEdge : c.lip,
+        borderColor: selected ? c.primary : c.border,
+        height: 56,
+        width: context.appSize.width,
+        alignment: Alignment.center,
+        onTap: readOnly ? null : onTap,
+        child: CustomText(
+          title,
+          fontWeight: FontWeight.w800,
+          color: selected ? c.primary : c.ink,
+          fontSize: 17,
         ),
       ),
     );

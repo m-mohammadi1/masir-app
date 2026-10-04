@@ -48,7 +48,7 @@ class CustomTextField extends StatelessWidget {
     this.leftWidget,
     this.line = 1,
     this.maxLength,
-    this.textFieldRadius = 14,
+    this.textFieldRadius = 16,
     this.style,
     this.labelStyle,
     this.errorMessage,
@@ -79,7 +79,7 @@ class CustomTextField extends StatelessWidget {
             children: [
               CustomText(
                 labelText!,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 style: labelStyle,
               ),
 
@@ -105,16 +105,6 @@ class CustomTextField extends StatelessWidget {
               highlightColor: Colors.transparent,
             ),
             child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(textFieldRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: context.colors.ink.withValues(alpha: 0.04),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
               child: TextField(
                 textInputAction: action,
                 inputFormatters: inputFormatters,
@@ -130,14 +120,14 @@ class CustomTextField extends StatelessWidget {
 
                   filled: true,
                   // focusColor: Colors.transparent,
-                  contentPadding: contentPadding ?? const EdgeInsets.all(14),
+                  contentPadding: contentPadding ?? const EdgeInsets.all(16),
                   counterText: "",
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       color: !errorMessage.isNullOrEmpty
                           ? context.colors.error
                           : borderColor ?? context.colors.primary,
-                      width: 1.2,
+                      width: 2,
                     ),
                     borderRadius: BorderRadius.circular(textFieldRadius),
                   ),
@@ -146,7 +136,7 @@ class CustomTextField extends StatelessWidget {
                       color: !errorMessage.isNullOrEmpty
                           ? context.colors.error
                           : borderColor ?? context.colors.border,
-                      width: 1.2,
+                      width: 2,
                     ),
                     borderRadius: BorderRadius.circular(textFieldRadius),
                   ),
@@ -155,7 +145,7 @@ class CustomTextField extends StatelessWidget {
                       color: !errorMessage.isNullOrEmpty
                           ? context.colors.error
                           : borderColor ?? context.colors.border,
-                      width: 1.2,
+                      width: 2,
                     ),
                     borderRadius: BorderRadius.circular(textFieldRadius),
                   ),
@@ -168,8 +158,8 @@ class CustomTextField extends StatelessWidget {
                       hintStyle ??
                       customTextStyle(
                         context,
-                        color: context.colors.text92,
-                        fontSize: 12,
+                        color: context.colors.inkMuted.withValues(alpha: 0.7),
+                        fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
                 ),
@@ -178,7 +168,7 @@ class CustomTextField extends StatelessWidget {
                     customTextStyle(
                       context,
                       color: context.colors.text,
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w400,
                     ),
                 controller: controller,

@@ -17,7 +17,7 @@ class BaseScreen extends StatefulWidget {
     this.floatActionButton,
     this.backgroundColor,
     this.padding,
-    this.usePaperGrain = true,
+    this.usePaperGrain = false,
   });
 
   @override

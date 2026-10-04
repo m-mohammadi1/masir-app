@@ -4,7 +4,10 @@ import 'package:mohammad/features/main/data/models/request_quiz_submit_model.dar
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/page/quiz_layout_helper.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
-import 'package:mohammad/widgets/custom_app_bar.dart';
+import 'package:mohammad/widgets/chunky_box.dart';
+import 'package:mohammad/widgets/pill_chip.dart';
+import '/features/quiz/presentation/widgets/unit_top_bar.dart';
+import '/features/main/presentation/page/outline/roadmap/paper_theme.dart' show persianDigits;
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
@@ -92,6 +95,17 @@ class QuizUnitContentState extends State<QuizUnitContent> {
     return _questions.isNotEmpty;
   }
 
+  int get _answeredCount {
+    var n = 0;
+    for (final question in _questions) {
+      final id = question.id ?? '';
+      if (_trueFalseAnswers[id] != null || _multiChoiceAnswers.containsKey(id)) {
+        n++;
+      }
+    }
+    return n;
+  }
+
   void _handleSubmit() {
     if (!_allAnswered) {
       CustomToast.toast(context, 'لطفاً به همه سوالات پاسخ دهید');
@@ -107,15 +121,32 @@ class QuizUnitContentState extends State<QuizUnitContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CustomAppBar(
+        UnitTopBar(
           title: title,
-          icon: unitTeacherHeaderIcon(widget.data.teachers),
+          onClose: widget.onBack,
+          progress: widget.isCompleted || _questions.isEmpty
+              ? (widget.isCompleted ? 100 : 0)
+              : _answeredCount / _questions.length * 100,
+          trailing: unitTeacherHeaderIcon(widget.data.teachers),
         ),
-        16.h,
+        14.h,
         Row(
           children: [
-            _QuizTypeBadge(label: widget.data.type ?? 'quiz'),
-            if (widget.isCompleted) ...[8.w, const _CompletedBadge()],
+            PillChip(unitTypeLabel(widget.data.type ?? 'quiz')),
+            if (widget.isCompleted) ...[
+              8.w,
+              const PillChip(
+                'تکمیل شده',
+                icon: Icons.check_circle_rounded,
+                tone: PillTone.success,
+              ),
+            ] else if (_questions.isNotEmpty) ...[
+              8.w,
+              PillChip(
+                '${persianDigits(_answeredCount)} از ${persianDigits(_questions.length)}',
+                tone: PillTone.neutral,
+              ),
+            ],
           ],
         ),
         if (widget.banner != null) ...[12.h, widget.banner!],
@@ -150,8 +181,7 @@ class QuizUnitContentState extends State<QuizUnitContent> {
             },
           ),
         ),
-        16.h,
-        if (widget.footer != null) ...[widget.footer!, 12.h],
+        if (widget.footer != null) ...[12.h, widget.footer!],
         UnitActionButtons(
           showPrimary: !widget.isCompleted,
           primaryTitle: 'ارسال پاسخ',
@@ -159,60 +189,7 @@ class QuizUnitContentState extends State<QuizUnitContent> {
           onPrimary: _handleSubmit,
           onBack: widget.onBack,
         ),
-        20.h,
       ],
-    );
-  }
-}
-
-class _QuizTypeBadge extends StatelessWidget {
-  final String label;
-
-  const _QuizTypeBadge({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: context.colors.primaryTint,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: CustomText(
-        label,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: context.colors.primary,
-      ),
-    );
-  }
-}
-
-class _CompletedBadge extends StatelessWidget {
-  const _CompletedBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: context.colors.green100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: context.colors.success.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.check_circle_outline, size: 16, color: context.colors.success),
-          6.w,
-          CustomText(
-            'تکمیل شده',
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: context.colors.success,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -240,27 +217,19 @@ class _QuizQuestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final layoutType = quizLayoutTypeFromQuestion(question.type);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.colors.border),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.ink.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    final c = context.colors;
+    return ChunkyBox(
+      fill: c.surface,
+      edge: c.lip,
+      borderColor: c.border,
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           CustomText(
-            '$index. ${question.text ?? ''}',
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
+            '${persianDigits(index)}. ${question.text ?? ''}',
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
             color: context.colors.ink,
           ),
           16.h,
@@ -347,32 +316,33 @@ class _MultiChoiceOptions extends StatelessWidget {
           ),
           child: OnClick(
             onTap: readOnly ? null : () => onChanged(optionNumber),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: context.colors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected ? context.colors.primary : context.colors.border,
-                  width: isSelected ? 1.5 : 1,
-                ),
-              ),
+            child: ChunkyBox(
+              fill: isSelected ? context.colors.primaryTint : context.colors.surface,
+              edge: isSelected ? context.colors.primaryEdge : context.colors.lip,
+              borderColor:
+                  isSelected ? context.colors.primary : context.colors.border,
+              radius: 16,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   Expanded(
                     child: CustomText(
                       options[index],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: context.colors.ink,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected
+                          ? context.colors.primary
+                          : context.colors.ink,
                     ),
                   ),
                   12.w,
-                  Container(
-                    width: 22,
-                    height: 22,
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 24,
+                    height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      color: isSelected ? context.colors.primary : null,
                       border: Border.all(
                         color: isSelected
                             ? context.colors.primary
@@ -381,15 +351,10 @@ class _MultiChoiceOptions extends StatelessWidget {
                       ),
                     ),
                     child: isSelected
-                        ? Center(
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: context.colors.primary,
-                              ),
-                            ),
+                        ? Icon(
+                            Icons.check_rounded,
+                            size: 16,
+                            color: context.colors.onPrimary,
                           )
                         : null,
                   ),
@@ -418,28 +383,21 @@ class _QuizOutlineButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OnClick(
-      onTap: readOnly ? null : onTap,
-      child: Opacity(
-        opacity: readOnly ? 0.6 : 1,
-        child: Container(
-          height: 44,
-          decoration: BoxDecoration(
-            color: selected ? context.colors.primaryTint : context.colors.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: selected ? context.colors.primary : context.colors.border,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Center(
-            child: CustomText(
-              title,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: selected ? context.colors.primary : context.colors.ink,
-            ),
-          ),
+    final c = context.colors;
+    return Opacity(
+      opacity: readOnly ? 0.6 : 1,
+      child: ChunkyBox(
+        fill: selected ? c.primaryTint : c.surface,
+        edge: selected ? c.primaryEdge : c.lip,
+        borderColor: selected ? c.primary : c.border,
+        height: 56,
+        alignment: Alignment.center,
+        onTap: readOnly ? null : onTap,
+        child: CustomText(
+          title,
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+          color: selected ? c.primary : c.ink,
         ),
       ),
     );

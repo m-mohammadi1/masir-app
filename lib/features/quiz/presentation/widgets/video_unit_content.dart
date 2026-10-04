@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_content_framework.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/video_player.dart';
+import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
@@ -41,14 +42,11 @@ class VideoUnitContent extends StatelessWidget {
       isSubmitting: isSubmitting,
       onComplete: onComplete,
       onBack: onBack,
-      content: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.colors.border),
-        ),
+      content: ChunkyBox(
+        fill: context.colors.surface,
+        edge: context.colors.lip,
+        borderColor: context.colors.border,
+        padding: const EdgeInsets.all(12),
         child: _mediaUrl.isNotEmpty
             ? CustomVideoPlayer(url: _mediaUrl)
             : CustomText(
