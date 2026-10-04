@@ -1,3 +1,4 @@
+import '/core/copy/masir_copy.dart';
 import 'package:flutter/material.dart';
 import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
@@ -42,7 +43,7 @@ class CustomError extends StatelessWidget {
             ),
             if (retry != null) ...[
               const SizedBox(height: MasirSpace.xl),
-              CustomButton(title: 'تلاش مجدد', onTap: retry, width: 200),
+              CustomButton(title: MasirCopy.retry, onTap: retry, width: 260),
             ],
           ],
         ),

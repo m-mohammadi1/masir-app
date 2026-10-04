@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
-import 'package:mohammad/features/quiz/presentation/widgets/option_widget.dart';
+import 'package:mohammad/widgets/unit_kit/answer_tile.dart';
 
 class TrueFalseQuizLayout extends StatefulWidget {
   final UnitsQuestionModel question;
@@ -27,17 +27,19 @@ class _TrueFalseQuizLayoutState extends State<TrueFalseQuizLayout> {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OptionWidget(
-          title: 'درست',
-          selected: correct == true,
+        AnswerTile(
+          label: 'درست',
+          badgeIcon: Icons.check_rounded,
+          state: correct == true ? AnswerState.selected : AnswerState.idle,
           onTap: () => setState(() => correct = true),
         ),
         8.h,
-        OptionWidget(
-          title: 'غلط',
-          selected: correct == false,
+        AnswerTile(
+          label: 'نادرست',
+          badgeIcon: Icons.close_rounded,
+          state: correct == false ? AnswerState.selected : AnswerState.idle,
           onTap: () => setState(() => correct = false),
         ),
       ],

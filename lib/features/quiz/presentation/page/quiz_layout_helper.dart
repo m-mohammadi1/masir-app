@@ -1,3 +1,4 @@
+import 'package:mohammad/widgets/unit_kit/unit_type_style.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/page/audio_quiz_layout.dart';
 import 'package:mohammad/features/quiz/presentation/page/home_work_quiz_layout.dart';
@@ -6,13 +7,7 @@ import 'package:mohammad/features/quiz/presentation/page/true_false_quiz_layout.
 import 'package:mohammad/features/quiz/presentation/page/video_quiz_layout.dart';
 import 'package:flutter/material.dart';
 
-enum QuizLayoutType {
-  trueFalse,
-  multiChoice,
-  audio,
-  video,
-  homeWork,
-}
+enum QuizLayoutType { trueFalse, multiChoice, audio, video, homeWork }
 
 QuizLayoutType quizLayoutTypeFromQuestion(String? type) {
   switch (type) {
@@ -48,37 +43,15 @@ QuizLayoutType quizLayoutTypeFromUnit(String? type) {
   }
 }
 
-String unitTypeLabel(String? type) {
-  switch (type) {
-    case 'html':
-      return 'درس';
-    case 'practice':
-      return 'تمرین';
-    case 'quiz':
-      return 'آزمون';
-    case 'audio':
-      return 'صوتی';
-    case 'video':
-      return 'ویدئو';
-    default:
-      return type ?? '';
-  }
-}
+String unitTypeLabel(String? type) => UnitTypeStyle.labelOf(type);
 
 List<UnitsQuestionModel> resolveQuizQuestions(UnitsModel data) {
-  final questions =
-      (data.payload?.questions ?? []).cast<UnitsQuestionModel>();
+  final questions = (data.payload?.questions ?? []).cast<UnitsQuestionModel>();
   if (questions.isNotEmpty) {
     return questions;
   }
 
-  return [
-    UnitsQuestionModel(
-      id: data.id,
-      type: data.type,
-      text: data.title,
-    ),
-  ];
+  return [UnitsQuestionModel(id: data.id, type: data.type, text: data.title)];
 }
 
 String? resolveAttachmentUrl(UnitsQuestionModel question) {

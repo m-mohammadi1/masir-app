@@ -81,8 +81,8 @@ class _InstitutesPageState extends State<InstitutesPage> {
                   success: (_, data) {
                     if (data.isEmpty) {
                       return const StateView.empty(
-                        text: 'مؤسسه‌ای پیدا نشد',
-                        description: 'فعلاً مؤسسه‌ای برای نمایش نیست.',
+                        text: 'مؤسسه‌ای پیدا نکردیم',
+                        description: 'فعلاً مؤسسه‌ای اینجا نیست، به‌زودی پر می‌شه.',
                         icon: Icons.school_rounded,
                       );
                     }

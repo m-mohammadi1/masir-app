@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import 'package:video_player/video_player.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 
 class CustomVideoPlayer extends StatefulWidget {
@@ -75,7 +76,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(MasirRadius.card),
       child: ColoredBox(
         color: Colors.black,
         child: AspectRatio(aspectRatio: 16 / 9, child: _buildBody()),
@@ -85,11 +86,18 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
 
   Widget _buildBody() {
     if (_hasError) {
-      return const Center(
-        child: CustomText(
-          'خطا در پخش ویدئو',
-          fontSize: 14,
-          color: Colors.white,
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Colors.white70,
+              size: MasirIconSize.xl,
+            ),
+            const SizedBox(height: MasirSpace.sm),
+            const CustomText.body('ویدیو پخش نشد، دوباره امتحان کن', color: Colors.white),
+          ],
         ),
       );
     }
@@ -104,6 +112,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     final max = durationMs > 0 ? durationMs : 1.0;
     final sliderValue = position.clamp(0.0, max).toDouble();
     final aspect = value.aspectRatio == 0 ? 16 / 9 : value.aspectRatio;
+    final ended = durationMs > 0 && position >= durationMs - 300;
 
     return GestureDetector(
       onTap: () => setState(() => _showControls = !_showControls),
@@ -121,83 +130,103 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
           ),
           if (value.isBuffering)
             Center(child: CircularProgressIndicator(color: _accent)),
-          if (_showControls) ...[
-            Container(color: Colors.black26),
-            ChunkyBox(
-              fill: _accent,
-              edge: context.colors.primaryEdge,
-              radius: 36,
-              width: 72,
-              height: 76,
-              alignment: Alignment.center,
-              onTap: _togglePlay,
-              child: Icon(
-                value.isPlaying
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
-                size: 44,
-                color: context.colors.onPrimary,
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Directionality(
-                textDirection: TextDirection.ltr,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                  child: Column(
-                    children: [
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 6,
-                          thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 9,
-                          ),
-                          overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 12,
-                          ),
-                          activeTrackColor: _accent,
-                          inactiveTrackColor: Colors.white38,
-                          thumbColor: Colors.white,
-                        ),
-                        child: Slider(
-                          min: 0,
-                          max: max,
-                          value: sliderValue,
-                          onChanged: (v) {
-                            _controller.seekTo(
-                              Duration(milliseconds: v.round()),
-                            );
-                          },
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          CustomText(
-                            _format(value.position),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                          const Spacer(),
-                          CustomText(
-                            _format(value.duration),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ],
-                      ),
-                    ],
+          // Controls fade in and out instead of popping.
+          IgnorePointer(
+            ignoring: !_showControls,
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1 : 0,
+              duration: const Duration(milliseconds: 220),
+              child: Stack(
+                alignment: Alignment.center,
+                fit: StackFit.expand,
+                children: [
+                  const ColoredBox(color: Colors.black26),
+                  ChunkyBox(
+                    fill: _accent,
+                    edge: context.colors.primaryEdge,
+                    radius: MasirRadius.pill,
+                    width: 76,
+                    height: 80,
+                    alignment: Alignment.center,
+                    onTap: ended ? _replay : _togglePlay,
+                    child: Icon(
+                      ended
+                          ? Icons.replay_rounded
+                          : value.isPlaying
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      size: 44,
+                      color: context.colors.onPrimary,
+                    ),
                   ),
-                ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          MasirSpace.md,
+                          0,
+                          MasirSpace.md,
+                          MasirSpace.sm,
+                        ),
+                        child: Column(
+                          children: [
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                trackHeight: 10,
+                                trackShape: const RoundedRectSliderTrackShape(),
+                                thumbShape: const RoundSliderThumbShape(
+                                  enabledThumbRadius: 10,
+                                ),
+                                overlayShape: SliderComponentShape.noOverlay,
+                                activeTrackColor: _accent,
+                                inactiveTrackColor: Colors.white38,
+                                thumbColor: Colors.white,
+                              ),
+                              child: Slider(
+                                min: 0,
+                                max: max,
+                                value: sliderValue,
+                                onChanged: (v) {
+                                  _controller.seekTo(
+                                    Duration(milliseconds: v.round()),
+                                  );
+                                },
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                CustomText.micro(
+                                  _format(value.position),
+                                  color: Colors.white,
+                                ),
+                                const Spacer(),
+                                CustomText.micro(
+                                  _format(value.duration),
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
+  }
+
+  void _replay() {
+    _controller
+      ..seekTo(Duration.zero)
+      ..play();
   }
 }

@@ -39,8 +39,8 @@ class InstituteAnnouncementsPage extends StatelessWidget {
                 title: 'اطلاعیه‌ها',
                 onBack: () => _back(context),
                 body: const StateView.empty(
-                  text: 'اطلاعیه‌ای نیست',
-                  description: 'هنوز اطلاعیه‌ای در این مؤسسه منتشر نشده.',
+                  text: 'هنوز اطلاعیه‌ای نیومده',
+                  description: 'مؤسسه سرش شلوغه! هر خبری شد اینجا می‌بینی.',
                   icon: Icons.campaign_rounded,
                 ),
               );

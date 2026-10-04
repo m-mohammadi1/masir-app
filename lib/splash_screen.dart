@@ -1,6 +1,4 @@
 import 'package:mohammad/core/services/hive_service.dart';
-import 'package:mohammad/core/services/service_locator.dart';
-import 'package:mohammad/features/institute/domain/usecases/get_wallet.dart';
 
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
@@ -25,30 +23,15 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 1), _goNext);
+    // Just long enough to show the brand; everything else loads on ویترین.
+    Future.delayed(const Duration(milliseconds: 400), _goNext);
   }
 
-  Future<void> _goNext() async {
-    if (!HiveService.isLogged) {
-      CustomNavigator.go(AuthScreen.routeName);
-      return;
-    }
-
-    try {
-      final result = await inject<GetWalletUseCase>()();
-      result.fold((_) => CustomNavigator.go(MainPage.routeName), (cards) {
-        if (cards.length == 1) {
-          final id = cards.first.instituteId;
-          if (id != null && id.isNotEmpty) {
-            CustomNavigator.go('/i/$id/home');
-            return;
-          }
-        }
-        CustomNavigator.go(MainPage.routeName);
-      });
-    } catch (_) {
-      CustomNavigator.go(MainPage.routeName);
-    }
+  void _goNext() {
+    if (!mounted) return;
+    CustomNavigator.go(
+      HiveService.isLogged ? MainPage.routeName : AuthScreen.routeName,
+    );
   }
 
   @override

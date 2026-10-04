@@ -97,8 +97,8 @@ class _InstituteInboxPageState extends State<InstituteInboxPage> {
                 title: 'اطلاع‌رسانی‌ها',
                 onBack: _back,
                 body: const StateView.empty(
-                  text: 'اطلاع‌رسانی‌ای نیست',
-                  description: 'هنوز پیامی از این مؤسسه نرسیده.',
+                  text: 'صندوقت خالیه',
+                  description: 'هر وقت خبری شد، همین‌جا می‌بینیش.',
                   icon: Icons.notifications_rounded,
                 ),
               );

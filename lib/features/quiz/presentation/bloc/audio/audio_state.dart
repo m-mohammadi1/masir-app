@@ -8,7 +8,7 @@ class AudioPlayState extends AudioBaseState {}
 
 class AudioErrorState extends AudioBaseState {
   final String message;
-  AudioErrorState([this.message = 'خطا در پخش صوت']);
+  AudioErrorState([this.message = 'صدا پخش نشد، دوباره بزن']);
 }
 
 class AudioCurrentTimeState extends AudioBaseState {

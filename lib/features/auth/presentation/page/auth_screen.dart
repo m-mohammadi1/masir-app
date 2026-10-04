@@ -188,7 +188,7 @@ class _AuthScreenState extends State<AuthScreen> {
           },
           builder: (context, state) {
             return CustomButton(
-              title: "ورود",
+              title: "بزن بریم",
               enable: _isLoginValid,
               loading: state.isLoading,
               onTap: _onLogin,
@@ -197,14 +197,14 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         16.h,
         _AuthLink(
-          text: "فراموشی رمز عبور",
+          text: "رمزت یادت رفته؟",
           onTap: () {
-            CustomToast.toast(context, "به زودی");
+            CustomToast.toast(context, "به‌زودی میاد!", type: Type.info);
           },
         ),
         12.h,
         _AuthLink(
-          text: "حساب ندارید؟ ثبت ‌نام",
+          text: "حساب نداری؟ ثبت‌نام کن",
           onTap: () => _switchMode(_AuthMode.register),
         ),
       ],
@@ -278,7 +278,7 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         16.h,
         _AuthLink(
-          text: "حساب دارید؟ ورود",
+          text: "حساب داری؟ وارد شو",
           onTap: () => _switchMode(_AuthMode.login),
         ),
       ],

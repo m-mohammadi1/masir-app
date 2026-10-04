@@ -1,3 +1,4 @@
+import '/widgets/masir_motion.dart';
 import 'dart:math' as math;
 
 import 'package:easy_helper/easy_helper.dart';
@@ -291,7 +292,7 @@ class MasirPage extends StatelessWidget {
           bleed ? 0 : MasirSpace.gutter,
           bottomPadding,
         ),
-        children: children!,
+        children: masirStaggered(children!),
       ),
     );
   }
@@ -364,7 +365,9 @@ class MasirPage extends StatelessWidget {
               bleed ? 0 : MasirSpace.gutter,
               bottomPadding,
             ),
-            sliver: SliverList(delegate: SliverChildListDelegate(children!)),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(masirStaggered(children!)),
+            ),
           ),
         ],
       ),

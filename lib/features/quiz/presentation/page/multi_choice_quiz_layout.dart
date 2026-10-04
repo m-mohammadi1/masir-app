@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
-import 'package:mohammad/features/quiz/presentation/widgets/option_widget.dart';
+import 'package:mohammad/widgets/unit_kit/answer_tile.dart';
 
 class MultiChoiceQuizLayout extends StatefulWidget {
   final UnitsQuestionModel question;
@@ -28,14 +28,17 @@ class _MultiChoiceQuizLayoutState extends State<MultiChoiceQuizLayout> {
     final options = widget.question.options ?? [];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: List.generate(options.length, (index) {
-        final optionIndex = index + 1;
+        final optionIndex = index; // 0-based, as the API grades it
         return Padding(
           padding: EdgeInsets.only(bottom: index == options.length - 1 ? 0 : 8),
-          child: OptionWidget(
-            title: options[index],
-            selected: correct == optionIndex,
+          child: AnswerTile(
+            label: options[index],
+            badge: index < kOptionLetters.length ? kOptionLetters[index] : null,
+            state: correct == optionIndex
+                ? AnswerState.selected
+                : AnswerState.idle,
             onTap: () => setState(() => correct = optionIndex),
           ),
         );

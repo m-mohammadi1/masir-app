@@ -12,12 +12,16 @@ class ExitModal extends StatelessWidget {
   final String? deleteText;
   final Function? exitAction;
 
+  /// Confirm button colour; red unless the action is harmless.
+  final Color? confirmColor;
+
   const ExitModal({
     super.key,
     required this.text,
     this.exitAction,
     this.description,
     this.deleteText,
+    this.confirmColor,
   });
 
   @override
@@ -35,7 +39,7 @@ class ExitModal extends StatelessWidget {
             ),
             child: Center(
               child: CustomText.bodyStrong(
-                "تاییدیه",
+                "یه لحظه!",
                 color: context.colors.primary,
               ),
             ),
@@ -44,7 +48,7 @@ class ExitModal extends StatelessWidget {
           CustomText.headline(text),
           8.h,
           CustomText(
-            description ?? "اگه الان خارج بشی، تغییراتت ذخیره نمی‌شه.",
+            description ?? "اگه الان بری، تغییراتت ذخیره نمی‌شه.",
             color: context.colors.inkMuted,
           ),
           16.h,
@@ -52,7 +56,7 @@ class ExitModal extends StatelessWidget {
             children: [
               Expanded(
                 child: CustomOutlineButton(
-                  title: "انصراف",
+                  title: "نه، بمونم",
                   onTap: () {
                     CustomNavigator.pop();
                   },
@@ -61,7 +65,7 @@ class ExitModal extends StatelessWidget {
               8.w,
               Expanded(
                 child: CustomButton(
-                  title: deleteText ?? "خروج",
+                  title: deleteText ?? "آره، برو",
                   onTap: () {
                     if (exitAction != null) {
                       exitAction!();
@@ -70,7 +74,7 @@ class ExitModal extends StatelessWidget {
                       CustomNavigator.pop();
                     }
                   },
-                  backgroundColor: context.colors.error,
+                  backgroundColor: confirmColor ?? context.colors.error,
                 ),
               ),
             ],

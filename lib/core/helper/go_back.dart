@@ -9,10 +9,10 @@ import '/features/main/presentation/page/main_page.dart';
 /// links, notifications, after login) have no history, so instead of doing
 /// nothing or popping to a blank screen they go to [fallback]; by default the
 /// institute home when inside an institute, or the main page otherwise.
-void goBack(BuildContext context, {String? fallback}) {
+void goBack(BuildContext context, {String? fallback, Object? result}) {
   final router = GoRouter.of(context);
   if (router.canPop()) {
-    router.pop();
+    router.pop(result);
     return;
   }
   router.go(fallback ?? _defaultFallback(context));

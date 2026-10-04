@@ -1,18 +1,22 @@
+import '/widgets/pressable.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/request_quiz_submit_model.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/page/quiz_layout_helper.dart';
-import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/chunky_box.dart';
-import 'package:mohammad/widgets/pill_chip.dart';
-import '/core/helper/jalali_format.dart';
-import '/widgets/masir_page.dart';
+import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import 'package:mohammad/widgets/pill_chip.dart';
+import 'package:mohammad/widgets/unit_kit/answer_tile.dart';
+import 'package:mohammad/widgets/unit_kit/unit_shell.dart';
+import '/core/helper/jalali_format.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
-import '/core/theme/masir_style.dart';
 
+/// A quiz as a stepper: one question per page. The student moves on with
+/// "بعدی" and sends the answers from the last question.
 class QuizUnitContent extends StatefulWidget {
   final UnitsModel data;
   final bool isCompleted;
@@ -41,10 +45,33 @@ class QuizUnitContentState extends State<QuizUnitContent> {
   final Map<String, bool?> _trueFalseAnswers = {};
   final Map<String, int> _multiChoiceAnswers = {};
 
+  int _page = 0;
+  bool _forward = true;
+
   List<UnitsQuestionModel> get _questions =>
       (widget.data.payload?.questions ?? []).cast<UnitsQuestionModel>();
 
   int? get _passThreshold => widget.data.payload?.passThreshold;
+
+  bool get _onLastQuestion => _page == _questions.length - 1;
+
+  bool _isAnswered(UnitsQuestionModel question) {
+    final id = question.id ?? '';
+    return switch (quizLayoutTypeFromQuestion(question.type)) {
+      QuizLayoutType.trueFalse => _trueFalseAnswers[id] != null,
+      QuizLayoutType.multiChoice => _multiChoiceAnswers.containsKey(id),
+      _ => true,
+    };
+  }
+
+  void _goTo(int page) {
+    final target = page.clamp(0, _questions.length - 1);
+    if (target == _page) return;
+    setState(() {
+      _forward = target > _page;
+      _page = target;
+    });
+  }
 
   void _setTrueFalseAnswer(String questionId, bool value) {
     if (widget.isCompleted) return;
@@ -60,6 +87,8 @@ class QuizUnitContentState extends State<QuizUnitContent> {
     setState(() {
       _trueFalseAnswers.clear();
       _multiChoiceAnswers.clear();
+      _page = 0;
+      _forward = true;
     });
   }
 
@@ -79,169 +108,210 @@ class QuizUnitContentState extends State<QuizUnitContent> {
     }).toList();
   }
 
-  bool get _allAnswered {
-    for (final question in _questions) {
-      final questionId = question.id ?? '';
-      final layoutType = quizLayoutTypeFromQuestion(question.type);
+  bool get _allAnswered =>
+      _questions.isNotEmpty && _questions.every(_isAnswered);
 
-      if (layoutType == QuizLayoutType.trueFalse &&
-          _trueFalseAnswers[questionId] == null) {
-        return false;
-      }
-      if (layoutType == QuizLayoutType.multiChoice &&
-          !_multiChoiceAnswers.containsKey(questionId)) {
-        return false;
-      }
-    }
-    return _questions.isNotEmpty;
-  }
-
-  int get _answeredCount {
-    var n = 0;
-    for (final question in _questions) {
-      final id = question.id ?? '';
-      if (_trueFalseAnswers[id] != null ||
-          _multiChoiceAnswers.containsKey(id)) {
-        n++;
-      }
-    }
-    return n;
-  }
+  int get _answeredCount => _questions.where(_isAnswered).length;
 
   void _handleSubmit() {
     if (!_allAnswered) {
-      CustomToast.toast(context, 'به همه سوال‌ها جواب بده');
+      CustomToast.toast(context, 'همه‌ی سؤال‌ها رو جواب بده');
       return;
     }
     widget.onSubmit?.call(buildAnswers());
   }
 
+  void _next() {
+    if (_onLastQuestion) return;
+    if (!widget.isCompleted && !_isAnswered(_questions[_page])) return;
+    _goTo(_page + 1);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final title = widget.data.title ?? '';
+    final questions = _questions;
+    final progress = widget.isCompleted
+        ? 100
+        : questions.isEmpty
+        ? 0
+        : _answeredCount / questions.length * 100;
 
-    return MasirPage.focus(
-      title: title,
-      onClose: widget.onBack,
-      progress: widget.isCompleted || _questions.isEmpty
-          ? (widget.isCompleted ? 100 : 0)
-          : _answeredCount / _questions.length * 100,
-      trailing: unitTeacherHeaderIcon(widget.data.teachers),
+    return UnitShell(
+      type: widget.data.type ?? 'quiz',
+      title: widget.data.title ?? '',
+      isCompleted: widget.isCompleted,
+      meta: questions.isEmpty ? null : '${faDigits(questions.length)} سؤال',
+      headerIcon: unitTeacherHeaderIcon(widget.data.teachers),
+      banner: widget.banner,
+      footer: widget.footer,
+      onBack: widget.onBack,
+      progress: progress,
+      actions: _buildActions(),
+      children: [
+        if (questions.isEmpty)
+          CustomText.body(
+            'این آزمون هنوز سؤالی نداره.',
+            color: context.colors.inkMuted,
+          )
+        else
+          AnimatedSwitcher(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 280),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) {
+              final rtl = Directionality.of(context) == TextDirection.rtl;
+              // The page entering is the one keyed with the current index.
+              final entering = child.key == ValueKey<int>(_page);
+              final sign = (rtl ? -1.0 : 1.0) * (_forward ? 1.0 : -1.0);
+              final begin = Offset(sign * (entering ? 0.12 : -0.12), 0);
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: begin,
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            layoutBuilder: (current, previous) => Stack(
+              alignment: AlignmentDirectional.topCenter,
+              children: [
+                ...previous.map(
+                  (w) => Positioned(top: 0, left: 0, right: 0, child: w),
+                ),
+                ?current,
+              ],
+            ),
+            child: KeyedSubtree(
+              key: ValueKey<int>(_page),
+              child: _buildQuestion(_page),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActions() {
+    final c = context.colors;
+    final questions = _questions;
+
+    Widget primary;
+    if (questions.isEmpty || (widget.isCompleted && _onLastQuestion)) {
+      primary = CustomButton(
+        title: 'بازگشت به مسیر',
+        onTap: widget.onBack,
+        height: 54,
+      );
+    } else if (_onLastQuestion) {
+      primary = CustomButton(
+        title: 'ارسال پاسخ',
+        loading: widget.isSubmitting,
+        onTap: _handleSubmit,
+        enable: _isAnswered(questions[_page]),
+        variant: ButtonVariant.success,
+        height: 54,
+      );
+    } else {
+      final answered = widget.isCompleted || _isAnswered(questions[_page]);
+      primary = CustomButton(
+        title: 'بعدی',
+        onTap: answered ? _next : null,
+        enable: answered,
+        height: 54,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        primary,
+        const SizedBox(height: MasirSpace.xs),
+        Row(
+          children: [
+            if (_page > 0 && questions.isNotEmpty)
+              Expanded(
+                child: Pressable(
+                  onTap: () => _goTo(_page - 1),
+                  child: SizedBox(
+                    height: 40,
+                    child: Center(
+                      child: CustomText.bodyStrong('قبلی', color: c.primary),
+                    ),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: Pressable(
+                onTap: widget.onBack,
+                child: SizedBox(
+                  height: 40,
+                  child: Center(
+                    child: CustomText.bodyStrong(
+                      'بازگشت به مسیر',
+                      color: c.inkMuted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuestion(int index) {
+    final question = _questions[index];
+    final id = question.id ?? '';
+    final c = context.colors;
+    final layoutType = quizLayoutTypeFromQuestion(question.type);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            PillChip(unitTypeLabel(widget.data.type ?? 'quiz')),
-            if (widget.isCompleted) ...[
-              const SizedBox(width: MasirSpace.sm),
-              const PillChip(
-                'تکمیل شده',
-                icon: Icons.check_circle_rounded,
-                tone: PillTone.success,
-              ),
-            ] else if (_questions.isNotEmpty) ...[
-              const SizedBox(width: MasirSpace.sm),
+            CustomText.bodyStrong(
+              'سؤال ${faDigits(index + 1)} از ${faDigits(_questions.length)}',
+              color: c.primary,
+            ),
+            const Spacer(),
+            if (_passThreshold != null)
               PillChip(
-                '${faDigits(_answeredCount)} از ${faDigits(_questions.length)}',
+                'حد نصاب ${faDigits(_passThreshold)}٪',
                 tone: PillTone.neutral,
               ),
-            ],
           ],
         ),
-        if (widget.banner != null) ...[
-          const SizedBox(height: MasirSpace.md),
-          widget.banner!,
-        ],
-        if (_passThreshold != null) ...[
-          const SizedBox(height: MasirSpace.md),
-          CustomText.body(
-            'حد نصاب: ${faDigits(_passThreshold)}٪',
-            color: context.colors.inkMuted,
-          ),
-        ],
+        const SizedBox(height: MasirSpace.md),
+        ChunkyBox(
+          fill: c.surface,
+          edge: c.lip,
+          borderColor: c.border,
+          radius: MasirRadius.card,
+          padding: const EdgeInsets.all(MasirSpace.lg),
+          child: CustomText.headline(question.text ?? '', color: c.ink),
+        ),
         const SizedBox(height: MasirSpace.lg),
-        for (var index = 0; index < _questions.length; index++) ...[
-          if (index > 0) const SizedBox(height: MasirSpace.md),
-          _QuizQuestionCard(
-            index: index + 1,
-            question: _questions[index],
+        switch (layoutType) {
+          QuizLayoutType.trueFalse => _TrueFalseOptions(
             readOnly: widget.isCompleted,
-            trueFalseValue: _trueFalseAnswers[_questions[index].id ?? ''],
-            multiChoiceValue: _multiChoiceAnswers[_questions[index].id ?? ''],
-            onTrueFalseChanged: (value) =>
-                _setTrueFalseAnswer(_questions[index].id ?? '', value),
-            onMultiChoiceChanged: (value) =>
-                _setMultiChoiceAnswer(_questions[index].id ?? '', value),
+            selectedValue: _trueFalseAnswers[id],
+            onChanged: (v) => _setTrueFalseAnswer(id, v),
           ),
-        ],
-        if (widget.footer != null) ...[
-          const SizedBox(height: MasirSpace.lg),
-          widget.footer!,
-        ],
+          QuizLayoutType.multiChoice => _MultiChoiceOptions(
+            readOnly: widget.isCompleted,
+            options: question.options ?? [],
+            selectedIndex: _multiChoiceAnswers[id],
+            onChanged: (i) => _setMultiChoiceAnswer(id, i),
+          ),
+          _ => const SizedBox.shrink(),
+        },
       ],
-      stickyBottom: UnitActionButtons(
-        showPrimary: !widget.isCompleted,
-        primaryTitle: 'ارسال پاسخ',
-        isSubmitting: widget.isSubmitting,
-        onPrimary: _handleSubmit,
-        onBack: widget.onBack,
-      ),
-    );
-  }
-}
-
-class _QuizQuestionCard extends StatelessWidget {
-  final int index;
-  final UnitsQuestionModel question;
-  final bool readOnly;
-  final bool? trueFalseValue;
-  final int? multiChoiceValue;
-  final ValueChanged<bool> onTrueFalseChanged;
-  final ValueChanged<int> onMultiChoiceChanged;
-
-  const _QuizQuestionCard({
-    required this.index,
-    required this.question,
-    required this.readOnly,
-    required this.trueFalseValue,
-    required this.multiChoiceValue,
-    required this.onTrueFalseChanged,
-    required this.onMultiChoiceChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final layoutType = quizLayoutTypeFromQuestion(question.type);
-
-    final c = context.colors;
-    return ChunkyBox(
-      fill: c.surface,
-      edge: c.lip,
-      borderColor: c.border,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          CustomText.headline(
-            '${faDigits(index)}. ${question.text ?? ''}',
-            color: context.colors.ink,
-          ),
-          16.h,
-          switch (layoutType) {
-            QuizLayoutType.trueFalse => _TrueFalseOptions(
-              readOnly: readOnly,
-              selectedValue: trueFalseValue,
-              onChanged: onTrueFalseChanged,
-            ),
-            QuizLayoutType.multiChoice => _MultiChoiceOptions(
-              readOnly: readOnly,
-              options: question.options ?? [],
-              selectedIndex: multiChoiceValue,
-              onChanged: onMultiChoiceChanged,
-            ),
-            _ => const SizedBox.shrink(),
-          },
-        ],
-      ),
     );
   }
 }
@@ -257,24 +327,31 @@ class _TrueFalseOptions extends StatelessWidget {
     required this.onChanged,
   });
 
+  AnswerState _stateFor(bool value) {
+    if (readOnly) return AnswerState.disabled;
+    return selectedValue == value ? AnswerState.selected : AnswerState.idle;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: _QuizOutlineButton(
-            title: 'درست',
-            selected: selectedValue == true,
-            readOnly: readOnly,
+          child: AnswerTile(
+            label: 'درست',
+            badgeIcon: Icons.check_rounded,
+            vertical: true,
+            state: _stateFor(true),
             onTap: () => onChanged(true),
           ),
         ),
-        12.w,
+        const SizedBox(width: MasirSpace.md),
         Expanded(
-          child: _QuizOutlineButton(
-            title: 'نادرست',
-            selected: selectedValue == false,
-            readOnly: readOnly,
+          child: AnswerTile(
+            label: 'نادرست',
+            badgeIcon: Icons.close_rounded,
+            vertical: true,
+            state: _stateFor(false),
             onTap: () => onChanged(false),
           ),
         ),
@@ -300,97 +377,27 @@ class _MultiChoiceOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: List.generate(options.length, (index) {
-        // API expects 1-based answers (1..n), not list indices (0..n-1).
-        final optionNumber = index + 1;
-        final isSelected = selectedIndex == optionNumber;
+        // The API grades four-choice answers by 0-based option index (0..3),
+        // exactly the position in the options list.
+        final state = readOnly
+            ? AnswerState.disabled
+            : selectedIndex == index
+            ? AnswerState.selected
+            : AnswerState.idle;
         return Padding(
           padding: EdgeInsets.only(
-            bottom: index == options.length - 1 ? 0 : 10,
+            bottom: index == options.length - 1 ? 0 : MasirSpace.sm + 2,
           ),
-          child: OnClick(
-            onTap: readOnly ? null : () => onChanged(optionNumber),
-            child: ChunkyBox(
-              fill: isSelected
-                  ? context.colors.primaryTint
-                  : context.colors.surface,
-              edge: isSelected
-                  ? context.colors.primaryEdge
-                  : context.colors.lip,
-              borderColor: isSelected
-                  ? context.colors.primary
-                  : context.colors.border,
-              radius: MasirRadius.row,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: CustomText.bodyStrong(
-                      options[index],
-                      color: isSelected
-                          ? context.colors.primary
-                          : context.colors.ink,
-                    ),
-                  ),
-                  12.w,
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected ? context.colors.primary : null,
-                      border: Border.all(
-                        color: isSelected
-                            ? context.colors.primary
-                            : context.colors.inkFaint,
-                        width: 2,
-                      ),
-                    ),
-                    child: isSelected
-                        ? Icon(
-                            Icons.check_rounded,
-                            size: 16,
-                            color: context.colors.onPrimary,
-                          )
-                        : null,
-                  ),
-                ],
-              ),
-            ),
+          child: AnswerTile(
+            label: options[index],
+            badge: index < kOptionLetters.length
+                ? kOptionLetters[index]
+                : faDigits(index + 1),
+            state: state,
+            onTap: () => onChanged(index),
           ),
         );
       }),
-    );
-  }
-}
-
-class _QuizOutlineButton extends StatelessWidget {
-  final String title;
-  final bool selected;
-  final bool readOnly;
-  final VoidCallback onTap;
-
-  const _QuizOutlineButton({
-    required this.title,
-    required this.selected,
-    required this.readOnly,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Opacity(
-      opacity: readOnly ? 0.6 : 1,
-      child: ChunkyBox(
-        fill: selected ? c.primaryTint : c.surface,
-        edge: selected ? c.primaryEdge : c.lip,
-        borderColor: selected ? c.primary : c.border,
-        height: 56,
-        alignment: Alignment.center,
-        onTap: readOnly ? null : onTap,
-        child: CustomText.headline(title, color: selected ? c.primary : c.ink),
-      ),
     );
   }
 }

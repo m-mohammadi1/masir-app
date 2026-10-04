@@ -1,3 +1,4 @@
+import '/core/feedback/masir_feedback.dart';
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -149,7 +150,6 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
             course: course,
             isLoading: isLoading,
             isSubscribed: isSubscribed,
-            previewCount: previewCount,
           ),
           children: [
             Stack(
@@ -246,7 +246,7 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                     const SizedBox(width: MasirSpace.sm),
                     Expanded(
                       child: CustomText.bodyStrong(
-                        '${faDigits(previewCount)} واحد اول رایگان است',
+                        '${faDigits(previewCount)} واحد اول رایگانه',
                         color: c.sunEdge,
                       ),
                     ),
@@ -332,13 +332,11 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
     required CoursesModel? course,
     required bool isLoading,
     required bool isSubscribed,
-    required int previewCount,
   }) {
     final isFree = course?.price == null || course?.price == 0;
     return BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(
       bloc: mySubsBloc,
       builder: (context, subState) {
-        final c = context.colors;
         return BlocConsumer<SubscribeCourseBloc, SubscribeCourseState>(
           bloc: subscribeCourseBloc,
           listener: (context, sub) {
@@ -347,10 +345,15 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
                 CustomToast.toast(context, message);
               },
               success: (isLoading, value) {
+                MasirFeedback.success();
                 mySubsBloc.values.add(
                   MySubscriptionsModel(courseId: widget.id),
                 );
-                CustomToast.toast(context, 'عضو دوره شدی! بزن بریم');
+                CustomToast.toast(
+                  context,
+                  'عضو دوره شدی! بزن بریم',
+                  type: Type.success,
+                );
                 setState(() {});
               },
             );
@@ -359,80 +362,87 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
             final subscribed =
                 isSubscribed ||
                 mySubsBloc.values.any((e) => e.courseId == widget.id);
-            final title = subscribed ? 'شروع یادگیری' : 'شروع رایگان';
-            final busy = isLoading || subState.isLoading || sub.isLoading;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (!subscribed) ...[
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CustomText.caption('قیمت', color: c.inkMuted),
-                          CustomText.headline(
-                            isFree
-                                ? 'رایگان'
-                                : formatPrice(
-                                    course?.price ?? 0,
-                                    unit: 'تومان',
-                                  ),
-                            color: c.primary,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: MasirSpace.lg),
-                    ],
-                    Expanded(
-                      child: CustomButton(
-                        title: title,
-                        loading: busy,
-                        enable: !isLoading && !subState.isLoading,
-                        onTap: () {
-                          if (subscribed) {
-                            _openOutline(dataModel);
-                            return;
-                          }
-                          // Payment is not wired yet, so every course can be
-                          // joined for free for now.
-                          subscribeCourseBloc.add(
-                            SubscribeCourseEvent.subscribeCourse(
-                              params: RequestSubscribeCourseModel(
-                                id: widget.id,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                if (!subscribed && previewCount > 0) ...[
-                  const SizedBox(height: MasirSpace.sm),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _openOutline(dataModel),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: MasirSpace.xs,
-                      ),
-                      child: CustomText.bodyStrong(
-                        'اول پیش‌نمایش رایگان رو ببین',
-                        color: c.primary,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
+            return CourseCta(
+              subscribed: subscribed,
+              busy: isLoading || subState.isLoading || sub.isLoading,
+              priceLabel: isFree
+                  ? 'رایگان'
+                  : formatPrice(course?.price ?? 0, unit: 'تومان'),
+              onRegister: () {
+                // Payment is not wired yet, so every course can be joined
+                // for free for now.
+                subscribeCourseBloc.add(
+                  SubscribeCourseEvent.subscribeCourse(
+                    params: RequestSubscribeCourseModel(id: widget.id),
                   ),
-                ],
-              ],
+                );
+              },
+              onRoadmap: () => _openOutline(dataModel),
             );
           },
         );
       },
+    );
+  }
+}
+
+/// Bottom bar of the course details page. Two states only: a student who is
+/// not subscribed sees the price and a sign-up button above the roadmap button;
+/// a subscribed student sees just the roadmap button.
+class CourseCta extends StatelessWidget {
+  final bool subscribed;
+  final bool busy;
+  final String priceLabel;
+  final VoidCallback onRegister;
+  final VoidCallback onRoadmap;
+
+  const CourseCta({
+    super.key,
+    required this.subscribed,
+    required this.busy,
+    required this.priceLabel,
+    required this.onRegister,
+    required this.onRoadmap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!subscribed) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CustomText.caption('قیمت', color: c.inkMuted),
+                  CustomText.headline(priceLabel, color: c.primary),
+                ],
+              ),
+              const SizedBox(width: MasirSpace.lg),
+              Expanded(
+                child: CustomButton(
+                  title: 'ثبت‌نام',
+                  loading: busy,
+                  enable: !busy,
+                  onTap: onRegister,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: MasirSpace.sm),
+        ],
+        CustomButton(
+          title: 'مسیر یادگیری',
+          variant: subscribed ? ButtonVariant.primary : ButtonVariant.secondary,
+          onTap: onRoadmap,
+        ),
+      ],
     );
   }
 }

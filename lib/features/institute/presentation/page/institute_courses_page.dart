@@ -9,7 +9,7 @@ import '/features/institute/presentation/widgets/course_card.dart';
 import '/features/main/data/models/request_courses_model.dart';
 import '/features/main/presentation/bloc/courses/courses_bloc.dart';
 import '/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
-import '/features/main/presentation/page/outline_page.dart';
+import '/features/home/page/detail_course_page.dart';
 import '/core/helper/route_args.dart';
 import '/core/theme/institute_themed.dart';
 import '/core/theme/masir_style.dart';
@@ -42,13 +42,13 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
     subscriptionsBloc.add(MySubscriptionsEvent.mySubscriptions());
   }
 
-  void _open(String? id, String? title) {
+  void _open(String? id) {
     CustomNavigator.pushNamed(
-      OutlinePage.routeName,
-      arguments: withThemePreset({
-        'id': id ?? '',
-        'title': title ?? '',
-      }, InstituteThemed.presetOf(context)),
+      DetailCoursePage.routeName,
+      arguments: courseDetailArgs(
+        id ?? '',
+        themePreset: InstituteThemed.presetOf(context),
+      ),
     );
   }
 
@@ -97,8 +97,9 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
                   return const MasirPage.tab(
                     title: 'دوره‌ها',
                     body: StateView.empty(
-                      text: 'دوره‌ای پیدا نشد',
-                      description: 'این مؤسسه هنوز دوره‌ای منتشر نکرده.',
+                      text: 'هنوز دوره‌ای نیست',
+                      description:
+                          'این مؤسسه داره دوره‌هاش رو آماده می‌کنه، به‌زودی!',
                       icon: Icons.menu_book_rounded,
                     ),
                   );
@@ -118,7 +119,7 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
                         CourseCard(
                           course: course,
                           progress: progressById[course.id],
-                          onTap: () => _open(course.id, course.title),
+                          onTap: () => _open(course.id),
                         ),
                         const SizedBox(height: MasirSpace.md),
                       ],
@@ -127,14 +128,14 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
                     const SectionHeader('دوره‌های دیگر'),
                     if (others.isEmpty)
                       CustomText.body(
-                        'همه‌ی دوره‌ها را شروع کرده‌ای. آفرین!',
+                        'همه‌ی دوره‌ها رو شروع کردی. دمت گرم!',
                         color: context.colors.inkMuted,
                       )
                     else
                       for (final course in others) ...[
                         CourseCard(
                           course: course,
-                          onTap: () => _open(course.id, course.title),
+                          onTap: () => _open(course.id),
                         ),
                         const SizedBox(height: MasirSpace.md),
                       ],

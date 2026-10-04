@@ -1,4 +1,6 @@
-import 'package:easy_helper/easy_helper.dart';
+import '/widgets/pressable.dart';
+import 'dart:math' as math;
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/speed_widget.dart';
@@ -44,10 +46,10 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
 
   int currentTime = 0;
 
-  Color get _trackActive => context.colors.primary;
-  Color get _trackInactive => context.colors.primaryTint;
-  Color get _thumbColor => context.colors.primary;
+  Color get _accent => context.colors.primary400;
 
+  /// Wave with elapsed / total time under it. Dragging or tapping the wave
+  /// seeks.
   Widget _buildProgressSection({
     required double currentTime,
     required double fullTime,
@@ -56,40 +58,25 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
     required ValueChanged<double>? onSeek,
   }) {
     final safeMax = fullTime > 0 ? fullTime : 1.0;
+    final fraction = (currentTime / safeMax).clamp(0.0, 1.0);
 
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              children: [
-                CustomText.caption(
-                  elapsedLabel,
-                  color: context.colors.inkMuted,
-                ),
-                const Spacer(),
-                CustomText.caption(totalLabel, color: context.colors.inkMuted),
-              ],
-            ),
+          _Wave(
+            fraction: fraction,
+            active: _accent,
+            idle: _accent.withValues(alpha: 0.25),
+            onSeek: onSeek == null ? null : (f) => onSeek(f * safeMax),
           ),
-          SliderTheme(
-            data: SliderThemeData(
-              trackHeight: 8,
-              trackShape: const RoundedRectSliderTrackShape(),
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-              overlayShape: SliderComponentShape.noOverlay,
-              activeTrackColor: _trackActive,
-              inactiveTrackColor: _trackInactive,
-              thumbColor: _thumbColor,
-            ),
-            child: Slider(
-              value: currentTime.clamp(0, safeMax),
-              min: 0,
-              max: safeMax,
-              onChanged: onSeek,
-            ),
+          const SizedBox(height: MasirSpace.sm),
+          Row(
+            children: [
+              CustomText.micro(elapsedLabel, color: context.colors.inkMuted),
+              const Spacer(),
+              CustomText.micro(totalLabel, color: context.colors.inkMuted),
+            ],
           ),
         ],
       ),
@@ -104,15 +91,22 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
           bloc: viewModel,
           builder: (context, state) {
             if (state is AudioErrorState) {
-              return CustomText.caption(
-                state.message,
-                color: context.colors.primary,
+              return Padding(
+                padding: const EdgeInsets.only(bottom: MasirSpace.md),
+                child: CustomText.caption(
+                  state.message,
+                  color: context.colors.coral,
+                ),
               );
             }
             if (state is AudioLoadingState) {
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: CircularProgressIndicator(color: context.colors.primary),
+                padding: const EdgeInsets.only(bottom: MasirSpace.md),
+                child: LinearProgressIndicator(
+                  color: _accent,
+                  backgroundColor: _accent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(MasirRadius.pill),
+                ),
               );
             }
             return const SizedBox.shrink();
@@ -142,7 +136,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
             );
           },
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: MasirSpace.xl),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -150,85 +144,41 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
             _SkipButton(
               icon: Icons.replay_rounded,
               label: '۱۵',
+              color: _accent,
               onTap: viewModel.previousSecond,
             ),
-            16.w,
-            // OnClick(
-            //   onTap: () {
-            //     if (widget.index >= 1) {
-            //       widget.index -= 1;
-            //       viewModel.previousAudio();
-            //       widget.onChanged(widget.index);
-            //     }
-            //   },
-            //   child: Container(
-            //     width: 32,
-            //     height: 32,
-            //     margin: const EdgeInsets.symmetric(horizontal: 11),
-            //     decoration: BoxDecoration(
-            //       border: Border.all(color: widget.color, width: 2),
-            //       shape: BoxShape.circle,
-            //     ),
-            //     alignment: AlignmentDirectional.center,
-            //     child: SvgPicture.asset(
-            //       "assets/quiz/previous_audio.svg",
-            //       color: widget.color,
-            //     ),
-            //   ),
-            // ),
+            const SizedBox(width: MasirSpace.xl),
             BlocBuilder(
               bloc: viewModel,
               buildWhen: (previous, current) => current is AudioPlayState,
               builder: (context, state) => ChunkyBox(
-                fill: context.colors.primary,
+                fill: _accent,
                 edge: context.colors.primaryEdge,
-                radius: MasirRadius.hero,
-                width: 80,
-                height: 84,
+                radius: MasirRadius.pill,
+                width: 84,
+                height: 88,
                 alignment: Alignment.center,
                 onTap: viewModel.onPressed,
                 child: AnimatedIcon(
                   icon: AnimatedIcons.pause_play,
                   progress: viewModel.animationController,
                   color: context.colors.onPrimary,
-                  size: 40,
+                  size: 44,
                 ),
               ),
             ),
-            16.w,
-            // OnClick(
-            //   onTap: () {
-            //     if (widget.index < widget.list.length - 1) {
-            //       widget.index += 1;
-            //       viewModel.nextAudio();
-            //       widget.onChanged(widget.index);
-            //     }
-            //   },
-            //   child: Container(
-            //     width: 32,
-            //     height: 32,
-            //     margin: const EdgeInsets.symmetric(horizontal: 11),
-            //     decoration: BoxDecoration(
-            //       border: Border.all(color: widget.color, width: 2),
-            //       shape: BoxShape.circle,
-            //     ),
-            //     alignment: AlignmentDirectional.center,
-            //     child: SvgPicture.asset(
-            //       "assets/quiz/next_audio.svg",
-            //       color: widget.color,
-            //     ),
-            //   ),
-            // ),
+            const SizedBox(width: MasirSpace.xl),
             _SkipButton(
               icon: Icons.refresh_rounded,
               label: '۱۵',
+              color: _accent,
               onTap: viewModel.nextSecond,
             ),
           ],
         ),
-        16.h,
+        const SizedBox(height: MasirSpace.xl),
         SpeedWidget(
-          color: context.colors.primary,
+          color: _accent,
           onChanged: (value) {
             viewModel.updateSpeed(value);
           },
@@ -238,21 +188,86 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
   }
 }
 
+/// Decorative bar wave doubling as the seek bar.
+class _Wave extends StatelessWidget {
+  static const int _bars = 40;
+  static const double _height = 64;
+
+  final double fraction;
+  final Color active;
+  final Color idle;
+  final ValueChanged<double>? onSeek;
+
+  const _Wave({
+    required this.fraction,
+    required this.active,
+    required this.idle,
+    required this.onSeek,
+  });
+
+  /// Deterministic pseudo-random bar heights (0.25..1) so the wave looks
+  /// natural but never changes between frames.
+  static double _barHeight(int i) {
+    final v = math.sin(i * 1.7) * 0.5 + math.sin(i * 0.6 + 1) * 0.5;
+    return 0.3 + 0.7 * ((v + 1) / 2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        void seek(double dx) {
+          if (onSeek == null || width <= 0) return;
+          onSeek!((dx / width).clamp(0.0, 1.0));
+        }
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (d) => seek(d.localPosition.dx),
+          onHorizontalDragUpdate: (d) => seek(d.localPosition.dx),
+          child: SizedBox(
+            height: _height,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                for (var i = 0; i < _bars; i++) ...[
+                  if (i > 0) const Spacer(),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 4,
+                    height: _height * _barHeight(i),
+                    decoration: BoxDecoration(
+                      color: (i + 0.5) / _bars <= fraction ? active : idle,
+                      borderRadius: BorderRadius.circular(MasirRadius.pill),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _SkipButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color color;
   final VoidCallback onTap;
 
   const _SkipButton({
     required this.icon,
     required this.label,
+    required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
-    return OnClick(
+    return Pressable(
       onTap: onTap,
       child: SizedBox(
         width: 52,
@@ -260,8 +275,8 @@ class _SkipButton extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Icon(icon, size: 44, color: c.primary),
-            CustomText.micro(label, color: c.primary),
+            Icon(icon, size: 44, color: color),
+            CustomText.micro(label, color: color),
           ],
         ),
       ),

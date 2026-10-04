@@ -59,7 +59,7 @@ class _RegisterPageState extends State<RegisterPage> {
             builder: (context, state) {
               return CustomButton(
                 loading: state.isLoading,
-                title: "تایید",
+                title: "بزن بریم",
                 onTap: () {
                   bloc.add(
                     SubmitUsernameEvent.submitUsername(

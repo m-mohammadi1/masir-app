@@ -17,7 +17,7 @@ class ContactUsBottomSheet extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        TitleModal(txt: "ارتباط با ما"),
+        TitleModal(txt: "باهامون حرف بزن"),
         12.h,
 
         Container(
@@ -93,7 +93,7 @@ class ContactUsBottomSheet extends StatelessWidget {
                   children: [
                     CustomText.body("تماس مستقیم"),
                     4.h,
-                    CustomText.caption("صحبت برای مشاوره و دریافت اطلاعات"),
+                    CustomText.caption("بپرس، راهنماییت می‌کنیم"),
                   ],
                 ),
               ],

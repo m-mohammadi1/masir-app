@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
-import 'package:mohammad/features/quiz/presentation/widgets/option_widget.dart';
+import 'package:mohammad/widgets/unit_kit/answer_tile.dart';
 
 class HomeWorkQuizLayout extends StatefulWidget {
   final UnitsQuestionModel question;
@@ -31,18 +31,20 @@ class _HomeWorkQuizLayoutState extends State<HomeWorkQuizLayout> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OptionWidget(
-          title: 'خواندم',
-          selected: correct == true,
+        AnswerTile(
+          label: 'خوندم',
+          badgeIcon: Icons.check_rounded,
+          state: correct == true ? AnswerState.selected : AnswerState.idle,
           onTap: () {
             setState(() => correct = true);
             widget.onAnswerChanged?.call(true);
           },
         ),
         8.h,
-        OptionWidget(
-          title: 'فراموش کردم',
-          selected: correct == false,
+        AnswerTile(
+          label: 'فراموش کردم',
+          badgeIcon: Icons.help_outline_rounded,
+          state: correct == false ? AnswerState.selected : AnswerState.idle,
           onTap: () {
             setState(() => correct = false);
             widget.onAnswerChanged?.call(false);

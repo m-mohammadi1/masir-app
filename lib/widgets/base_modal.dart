@@ -1,6 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/core/theme/theme_context.dart';
+import '/widgets/masir_motion.dart';
 import '/core/theme/masir_style.dart';
 
 Future showCustomModal({
@@ -13,6 +14,7 @@ Future showCustomModal({
 }) async {
   showModalBottomSheet(
     context: context,
+    sheetAnimationStyle: MasirMotion.sheet,
     isDismissible: isDismissible,
     isScrollControlled: isScrollControlled ?? false,
 

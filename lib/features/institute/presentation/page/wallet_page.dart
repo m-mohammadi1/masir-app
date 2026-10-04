@@ -55,7 +55,7 @@ class _WalletPageState extends State<WalletPage> {
               if (data.isEmpty) {
                 return StateView.empty(
                   text: 'هنوز عضو جایی نیستی',
-                  description: 'یک مؤسسه پیدا کن و با یک لمس عضو شو.',
+                  description: 'یه مؤسسه پیدا کن و با یه لمس عضو شو.',
                   icon: Icons.school_rounded,
                   actionLabel: 'پیدا کردن مؤسسه',
                   onAction: () =>
@@ -101,10 +101,10 @@ class _CardList extends StatelessWidget {
       return StateView.empty(
         text: segment == 'learning'
             ? 'هنوز درسی شروع نکرده‌ای'
-            : 'همه‌ی مؤسساتت را شروع کرده‌ای',
+            : 'همه‌ی مؤسساتت رو شروع کردی',
         description: segment == 'learning'
-            ? 'از بخش «عضو شده» یک دوره انتخاب کن و شروع کن.'
-            : 'آفرین! مؤسسه‌ی تازه‌ای هم پیدا کن.',
+            ? 'از بخش «عضو شده» یه دوره انتخاب کن و بریم سراغش.'
+            : 'دمت گرم! یه مؤسسه‌ی تازه هم پیدا کن.',
         icon: segment == 'learning'
             ? Icons.rocket_launch_rounded
             : Icons.celebration_rounded,

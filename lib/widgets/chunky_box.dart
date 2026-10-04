@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '/core/feedback/masir_feedback.dart';
 import '/core/theme/masir_style.dart';
 
 /// The signature tactile surface of the playful design system.
@@ -22,6 +23,9 @@ class ChunkyBox extends StatefulWidget {
   final AlignmentGeometry? alignment;
   final bool clip;
 
+  /// Light haptic on tap. Turn off when the caller gives its own feedback.
+  final bool haptic;
+
   const ChunkyBox({
     super.key,
     required this.child,
@@ -35,6 +39,7 @@ class ChunkyBox extends StatefulWidget {
     this.height,
     this.alignment,
     this.clip = true,
+    this.haptic = true,
   });
 
   @override
@@ -89,12 +94,25 @@ class _ChunkyBoxState extends State<ChunkyBox> {
 
     if (widget.onTap == null) return box;
 
+    // A tiny squash on press that springs back on release.
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      box = AnimatedScale(
+        scale: _pressed ? 0.97 : 1,
+        duration: Duration(milliseconds: _pressed ? 70 : 200),
+        curve: _pressed ? Curves.easeOut : Curves.easeOutBack,
+        child: box,
+      );
+    }
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => _set(true),
       onTapUp: (_) => _set(false),
       onTapCancel: () => _set(false),
-      onTap: widget.onTap,
+      onTap: () {
+        if (widget.haptic) MasirFeedback.tap();
+        widget.onTap!();
+      },
       child: box,
     );
   }

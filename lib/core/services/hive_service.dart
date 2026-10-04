@@ -17,6 +17,7 @@ class HiveService {
   static const String _userKey = 'user_key';
   static const String _lnKey = 'ln_Key';
   static const String _themeKey = 'theme_key';
+  static const String _hapticsKey = 'haptics_key';
   static const String _fcmKey = 'fcm_token_key';
   static const String _tokenKey = 'token_key';
   static const String _refreshTokenKey = 'refresh_token_key';
@@ -26,11 +27,24 @@ class HiveService {
   static const String _instituteNameKey = 'current_institute_name_key';
   static const String _instituteSlugKey = 'current_institute_slug_key';
   static const String _instituteLogoKey = 'current_institute_logo_key';
+  static const String _institutePresetKey = 'current_institute_preset_key';
 
   static Future<void> init() async {
     await Hive.initFlutter();
+    await _open();
+  }
 
-    Hive.registerAdapter<User?>(UserAdapter());
+  /// Opens the boxes in a plain directory, without Flutter plugins.
+  @visibleForTesting
+  static Future<void> initForTest(String path) async {
+    Hive.init(path);
+    await _open();
+  }
+
+  static Future<void> _open() async {
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter<User?>(UserAdapter());
+    }
 
     _safeBox = await Hive.openBox("safeDB");
     _myDB = await Hive.openBox('myDB');
@@ -83,6 +97,12 @@ class HiveService {
     return _safeBox.watch(key: _themeKey).map((event) => event.value ?? false);
   }
 
+  /// Haptic feedback on taps and wins (on by default).
+  static bool get hapticsEnabled =>
+      _safeBox.get(_hapticsKey, defaultValue: true) ?? true;
+
+  static set hapticsEnabled(bool value) => _safeBox.put(_hapticsKey, value);
+
   /// CURRENT INSTITUTE
   ///
   /// The institute the student is currently "inside" — defaults to the
@@ -95,6 +115,11 @@ class HiveService {
 
   static String? get currentInstituteLogoUrl => _myDB.get(_instituteLogoKey);
 
+  static String? get currentInstitutePreset {
+    final value = _myDB.get(_institutePresetKey) as String?;
+    return (value == null || value.isEmpty) ? null : value;
+  }
+
   static bool get hasCurrentInstitute =>
       currentInstituteId != null && currentInstituteId!.isNotEmpty;
 
@@ -103,11 +128,13 @@ class HiveService {
     String? name,
     String? slug,
     String? logoUrl,
+    String? themePreset,
   }) async {
     await _myDB.put(_instituteIdKey, id);
     await _myDB.put(_instituteNameKey, name ?? '');
     await _myDB.put(_instituteSlugKey, slug ?? '');
     await _myDB.put(_instituteLogoKey, logoUrl ?? '');
+    await _myDB.put(_institutePresetKey, themePreset ?? '');
   }
 
   static Future<void> logout() async {

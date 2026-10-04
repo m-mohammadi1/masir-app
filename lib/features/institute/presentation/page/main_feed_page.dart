@@ -1,3 +1,4 @@
+import '/core/copy/masir_copy.dart';
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,7 +9,7 @@ import '/core/theme/theme_context.dart';
 import '/features/discovery/presentation/bloc/main_feed/main_feed_bloc.dart';
 import '/features/discovery/presentation/widgets/section_renderer.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
-import '/features/institute/presentation/widgets/continue_hero.dart';
+import '/features/institute/presentation/widgets/current_institute_card.dart';
 import '/features/institute/presentation/widgets/membership_card_strip.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/masir_page.dart';
@@ -48,22 +49,23 @@ class _MainFeedPageState extends State<MainFeedPage> {
   Widget build(BuildContext context) {
     final name = _name;
     return MasirPage.tab(
-      title: 'امروز چی یاد می‌گیری؟',
-      subtitle: name == null ? 'سلام!' : 'سلام $name',
+      title: 'ویترین',
+      subtitle: MasirCopy.greeting(name),
       trailing: _Avatar(name: name),
       onRefresh: _refresh,
       bleed: true,
       children: [
-        ContinueHero(bloc: walletBloc),
+        CurrentInstituteCard(bloc: walletBloc),
+        const SizedBox(height: MasirSpace.section),
         MembershipCardStrip(
           bloc: walletBloc,
+          currentInstituteId: HiveService.currentInstituteId,
           onTap: (card) {
             if (card.instituteId != null) {
               CustomNavigator.pushNamed('/i/${card.instituteId}/home');
             }
           },
         ),
-        const SizedBox(height: MasirSpace.section),
         BlocBuilder<MainFeedBloc, MainFeedState>(
           bloc: feedBloc,
           builder: (context, state) {
@@ -89,7 +91,7 @@ class _MainFeedPageState extends State<MainFeedPage> {
                     child: StateView.empty(
                       text: 'هنوز چیزی اینجا نیست',
                       description:
-                          'وقتی مؤسسه‌ها و دوره‌های خوب آماده شوند، اینجا می‌آیند.',
+                          'تا مؤسسه‌ها و دوره‌های خوب آماده بشن، اینجا خالیه. زود برمی‌گردیم!',
                       icon: Icons.auto_stories_rounded,
                     ),
                   );

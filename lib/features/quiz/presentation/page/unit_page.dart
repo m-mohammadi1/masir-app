@@ -1,7 +1,13 @@
+import '/core/feedback/masir_feedback.dart';
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import '/core/copy/masir_copy.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
+import 'package:mohammad/features/main/data/models/request_outline_course_model.dart';
+import 'package:mohammad/features/main/domain/entities/outline_course.dart';
+import 'package:mohammad/features/main/domain/usecases/outline_course_usecase.dart';
 import 'package:mohammad/features/main/data/models/quiz_submit_model.dart';
 import 'package:mohammad/features/main/data/models/request_quiz_submit_model.dart';
 import 'package:mohammad/features/main/data/models/request_units_model.dart';
@@ -14,7 +20,10 @@ import 'package:mohammad/features/quiz/presentation/widgets/html_unit_content.da
 import 'package:mohammad/features/quiz/presentation/widgets/practice_unit_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/quiz_result_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/quiz_unit_content.dart';
-import 'package:mohammad/features/quiz/presentation/widgets/unit_content_framework.dart';
+import 'package:mohammad/widgets/unit_kit/unit_shell.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '/widgets/list_row.dart';
+import '/widgets/icon_tile.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/video_unit_content.dart';
 import 'package:mohammad/core/helper/route_args.dart';
 import 'package:mohammad/features/home/page/detail_course_page.dart';
@@ -49,8 +58,6 @@ class UnitPage extends StatefulWidget {
     this.themePreset,
   });
 
-  bool get isCompleted => status == 'completed';
-
   @override
   State<UnitPage> createState() => _UnitPageState();
 }
@@ -61,11 +68,30 @@ class _UnitPageState extends State<UnitPage> {
   final GlobalKey<QuizUnitContentState> _quizContentKey =
       GlobalKey<QuizUnitContentState>();
 
+  // The unit on screen. It starts as the one the roadmap opened and changes
+  // in place when the student moves on to the next unit of the path.
+  late String _unitId = widget.unitId;
+  late String _unitType = widget.unitType;
+  late String _unitTitle = widget.unitTitle;
+  late String _status = widget.status;
+
+  bool get _isCompleted => _status == 'completed';
+
   UnitsModel? _unitData;
   QuizSubmitResponseModel? _quizResult;
   Map<String, dynamic> _userAnswers = {};
   bool? _homeworkAnswer;
   bool _isSubmitting = false;
+
+  /// Id of the last unit completed during this visit (a simple unit submitted,
+  /// or a quiz passed). Handed back to the roadmap when the page closes.
+  String? _lastCompletedId;
+
+  /// Resolving / switching to the next unit.
+  bool _advancing = false;
+
+  /// Title of the unit we just moved on to, for the "well done" banner.
+  String? _bannerNext;
 
   @override
   void initState() {
@@ -74,9 +100,7 @@ class _UnitPageState extends State<UnitPage> {
   }
 
   void _fetchUnit() {
-    _unitsBloc.add(
-      UnitsEvent.units(params: RequestUnitsModel(id: widget.unitId)),
-    );
+    _unitsBloc.add(UnitsEvent.units(params: RequestUnitsModel(id: _unitId)));
   }
 
   void _onUnitsSuccess(UnitsModel data) {
@@ -85,31 +109,31 @@ class _UnitPageState extends State<UnitPage> {
   }
 
   bool get _isQuizUnit {
-    final type = _unitData?.type ?? widget.unitType;
+    final type = _unitData?.type ?? _unitType;
     return type == 'quiz';
   }
 
   bool get _isHtmlUnit {
-    final type = _unitData?.type ?? widget.unitType;
+    final type = _unitData?.type ?? _unitType;
     return type == 'html';
   }
 
   bool get _isPracticeUnit {
-    final type = _unitData?.type ?? widget.unitType;
+    final type = _unitData?.type ?? _unitType;
     return type == 'practice';
   }
 
   bool get _isAudioUnit {
-    final type = _unitData?.type ?? widget.unitType;
+    final type = _unitData?.type ?? _unitType;
     return type == 'audio';
   }
 
   bool get _isVideoUnit {
-    final type = _unitData?.type ?? widget.unitType;
+    final type = _unitData?.type ?? _unitType;
     return type == 'video';
   }
 
-  void _handleBack() => goBack(context);
+  void _handleBack() => goBack(context, result: _lastCompletedId);
 
   Widget? _previewBanner(UnitsModel data) {
     if (data.isPreview != true) return null;
@@ -165,7 +189,7 @@ class _UnitPageState extends State<UnitPage> {
             ),
             12.h,
             CustomButton(
-              title: 'شروع رایگان',
+              title: 'ثبت‌نام',
               onTap: () {
                 if (courseId == null || courseId.isEmpty) return;
                 CustomNavigator.pushNamed(
@@ -190,7 +214,7 @@ class _UnitPageState extends State<UnitPage> {
     };
     _quizSubmitBloc.add(
       QuizSubmitEvent.quizSubmit(
-        params: RequestQuizSubmitModel(id: widget.unitId, answers: answers),
+        params: RequestQuizSubmitModel(id: _unitId, answers: answers),
       ),
     );
   }
@@ -212,7 +236,7 @@ class _UnitPageState extends State<UnitPage> {
     }
 
     if (_homeworkAnswer == null) {
-      CustomToast.toast(context, 'یک گزینه رو انتخاب کن');
+      CustomToast.toast(context, 'یه گزینه رو انتخاب کن');
       return;
     }
 
@@ -236,11 +260,74 @@ class _UnitPageState extends State<UnitPage> {
     setState(() => _isSubmitting = false);
 
     if (_isQuizUnit) {
+      if (data.passed == true) {
+        _lastCompletedId = _unitId;
+        MasirFeedback.celebrate();
+      } else {
+        MasirFeedback.tap();
+      }
       setState(() => _quizResult = data);
       return;
     }
 
-    _handleBack();
+    _lastCompletedId = _unitId;
+    MasirFeedback.success();
+    _advance();
+  }
+
+  /// Moves straight on to the next unit of the same path, without passing
+  /// through the roadmap. Falls back to closing the page (which hands the
+  /// completed unit back to the roadmap) at the end of a path, when the next
+  /// unit is locked, or if the path can't be resolved.
+  Future<void> _advance() async {
+    if (_advancing) return;
+    final courseId = _unitData?.courseId;
+    if (courseId == null || courseId.isEmpty) {
+      _handleBack();
+      return;
+    }
+    setState(() {
+      _advancing = true;
+      _isSubmitting = true;
+    });
+
+    final result = await inject<OutlineCourseUseCase>()(
+      params: RequestOutlineCourseModel(id: courseId),
+    );
+    if (!mounted) return;
+
+    final next = result.fold<OutlineUnitEntity?>((_) => null, (outline) {
+      for (final module in outline.modules ?? <OutlineModuleEntity>[]) {
+        for (final path in module.paths ?? <OutlinePathEntity>[]) {
+          final units = path.units ?? <OutlineUnitEntity>[];
+          final index = units.indexWhere((u) => u.id == _unitId);
+          if (index < 0) continue;
+          if (index + 1 >= units.length) return null;
+          return units[index + 1];
+        }
+      }
+      return null;
+    });
+
+    if (next == null || (next.locked ?? false) || (next.id ?? '').isEmpty) {
+      _handleBack();
+      return;
+    }
+
+    setState(() {
+      _unitId = next.id!;
+      _unitType = next.type ?? '';
+      _unitTitle = next.title ?? '';
+      _status = next.status ?? '';
+      _unitData = null;
+      _quizResult = null;
+      _userAnswers = {};
+      _homeworkAnswer = null;
+      _isSubmitting = false;
+      _advancing = false;
+      _bannerNext = _unitTitle;
+    });
+    _fetchUnit();
   }
 
   @override
@@ -274,33 +361,87 @@ class _UnitPageState extends State<UnitPage> {
               },
             ),
           ],
-          child: BlocBuilder<UnitsBloc, UnitsState>(
-            bloc: _unitsBloc,
-            builder: (context, state) {
-              return state.when(
-                loading: (isLoading) {
-                  if (isLoading || _unitData == null) return _loadingPage();
-                  return _buildContent();
-                },
-                error: (_, message) => MasirPage.focus(
-                  title: widget.unitTitle,
-                  onClose: _handleBack,
-                  body: StateView.error(message: message, retry: _fetchUnit),
-                ),
-                success: (_, data) {
-                  if (_unitData == null) return _loadingPage();
-                  return _buildContent();
-                },
-              );
-            },
+          child: _withTransition(
+            BlocBuilder<UnitsBloc, UnitsState>(
+              bloc: _unitsBloc,
+              builder: (context, state) {
+                return state.when(
+                  loading: (isLoading) {
+                    if (isLoading || _unitData == null) return _loadingPage();
+                    return _buildContent();
+                  },
+                  error: (_, message) => MasirPage.focus(
+                    title: _unitTitle,
+                    onClose: _handleBack,
+                    body: StateView.error(message: message, retry: _fetchUnit),
+                  ),
+                  success: (_, data) {
+                    if (_unitData == null) return _loadingPage();
+                    return _buildContent();
+                  },
+                );
+              },
+            ),
           ),
         ),
       ),
     );
   }
 
+  /// Fades between units when the student moves on, and shows the short
+  /// "well done" banner over the incoming unit.
+  Widget _withTransition(Widget child) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 460),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            // The next unit glides in from the leading side while the one just
+            // finished slides away the other way (the page is right-to-left,
+            // so "next" arrives from the left).
+            transitionBuilder: (child, animation) {
+              final incoming = child.key == ValueKey(_unitId);
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset(incoming ? -0.35 : 0.35, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: ScaleTransition(
+                    scale: Tween<double>(
+                      begin: 0.96,
+                      end: 1,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: KeyedSubtree(key: ValueKey(_unitId), child: child),
+          ),
+        ),
+        if (_bannerNext != null)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _NextUnitBanner(
+              key: ValueKey('banner-$_unitId'),
+              nextTitle: _bannerNext!,
+              onDone: () {
+                if (mounted) setState(() => _bannerNext = null);
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _loadingPage() => MasirPage.focus(
-    title: widget.unitTitle,
+    title: _unitTitle,
     onClose: _handleBack,
     body: const StateView.loading(variant: SkeletonVariant.detail),
   );
@@ -315,6 +456,7 @@ class _UnitPageState extends State<UnitPage> {
         userAnswers: _userAnswers,
         onRetry: _onQuizRetry,
         onBack: _handleBack,
+        onContinue: _advance,
         banner: _previewBanner(data),
         footer: _previewFooter(data),
       );
@@ -324,9 +466,9 @@ class _UnitPageState extends State<UnitPage> {
       return QuizUnitContent(
         key: _quizContentKey,
         data: data,
-        isCompleted: widget.isCompleted,
+        isCompleted: _isCompleted,
         isSubmitting: _isSubmitting,
-        onSubmit: widget.isCompleted ? null : _submitQuiz,
+        onSubmit: _isCompleted ? null : _submitQuiz,
         onBack: _handleBack,
         banner: _previewBanner(data),
         footer: _previewFooter(data),
@@ -336,9 +478,9 @@ class _UnitPageState extends State<UnitPage> {
     if (_isHtmlUnit) {
       return HtmlUnitContent(
         data: data,
-        isCompleted: widget.isCompleted,
+        isCompleted: _isCompleted,
         isSubmitting: _isSubmitting,
-        onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
+        onComplete: _isCompleted ? null : () => _submitSimpleUnit(),
         onBack: _handleBack,
         banner: _previewBanner(data),
         footer: _previewFooter(data),
@@ -348,9 +490,9 @@ class _UnitPageState extends State<UnitPage> {
     if (_isPracticeUnit) {
       return PracticeUnitContent(
         data: data,
-        isCompleted: widget.isCompleted,
+        isCompleted: _isCompleted,
         isSubmitting: _isSubmitting,
-        onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
+        onComplete: _isCompleted ? null : () => _submitSimpleUnit(),
         onBack: _handleBack,
         banner: _previewBanner(data),
         footer: _previewFooter(data),
@@ -360,9 +502,9 @@ class _UnitPageState extends State<UnitPage> {
     if (_isAudioUnit) {
       return AudioUnitContent(
         data: data,
-        isCompleted: widget.isCompleted,
+        isCompleted: _isCompleted,
         isSubmitting: _isSubmitting,
-        onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
+        onComplete: _isCompleted ? null : () => _submitSimpleUnit(),
         onBack: _handleBack,
         banner: _previewBanner(data),
         footer: _previewFooter(data),
@@ -372,9 +514,9 @@ class _UnitPageState extends State<UnitPage> {
     if (_isVideoUnit) {
       return VideoUnitContent(
         data: data,
-        isCompleted: widget.isCompleted,
+        isCompleted: _isCompleted,
         isSubmitting: _isSubmitting,
-        onComplete: widget.isCompleted ? null : () => _submitSimpleUnit(),
+        onComplete: _isCompleted ? null : () => _submitSimpleUnit(),
         onBack: _handleBack,
         banner: _previewBanner(data),
         footer: _previewFooter(data),
@@ -389,39 +531,223 @@ class _UnitPageState extends State<UnitPage> {
     final question = questions.isNotEmpty ? questions.first : null;
 
     if (question == null) {
-      return const Center(child: CustomText('سوالی برای نمایش وجود ندارد'));
+      return const Center(child: CustomText('این بخش هنوز خالیه'));
     }
 
-    final title = data.title?.isNotEmpty == true
-        ? data.title!
-        : widget.unitTitle;
+    final title = data.title?.isNotEmpty == true ? data.title! : _unitTitle;
     final instructionText = resolveInstructionText(data, question);
     final attachmentUrl = resolveAttachmentUrl(question);
-    final typeLabel = unitTypeLabel(data.type ?? widget.unitType);
+    final unitType = data.type ?? _unitType;
+    final c = context.colors;
 
-    return UnitContentFramework(
+    return UnitShell(
+      type: unitType,
       title: title,
-      typeLabel: typeLabel,
-      isCompleted: widget.isCompleted,
-      instructionText: instructionText,
-      attachmentUrl: attachmentUrl,
-      isSubmitting: _isSubmitting,
+      isCompleted: _isCompleted,
       headerIcon: unitTeacherHeaderIcon(data.teachers),
       banner: _previewBanner(data),
       footer: _previewFooter(data),
-      content: widget.isCompleted
-          ? null
-          : buildQuizLayout(
-              unitType: data.type ?? widget.unitType,
-              question: question,
-              readOnly: false,
-              onHomeworkAnswerChanged: (value) {
-                setState(() => _homeworkAnswer = value);
-              },
-            ),
-      onComplete: widget.isCompleted ? null : _submitHomework,
+      isSubmitting: _isSubmitting,
+      onComplete: _isCompleted ? null : _submitHomework,
       onBack: _handleBack,
-      primaryButtonTitle: 'تکمیل شد',
+      primaryTitle: 'تکمیل شد',
+      children: [
+        if (instructionText.isNotEmpty)
+          ChunkyBox(
+            fill: c.surface,
+            edge: c.lip,
+            borderColor: c.border,
+            radius: MasirRadius.card,
+            padding: const EdgeInsets.all(MasirSpace.lg),
+            child: CustomText.headline(instructionText, color: c.ink),
+          ),
+        if (attachmentUrl != null && attachmentUrl.isNotEmpty) ...[
+          const SizedBox(height: MasirSpace.md),
+          ListRow(
+            leading: const IconTile(
+              Icons.attach_file_rounded,
+              tone: IconTileTone.brand,
+            ),
+            title: 'باز کردن فایل پیوست',
+            onTap: () async {
+              final uri = Uri.tryParse(attachmentUrl);
+              if (uri != null && await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+          ),
+        ],
+        if (!_isCompleted) ...[
+          const SizedBox(height: MasirSpace.lg),
+          buildQuizLayout(
+            unitType: unitType,
+            question: question,
+            readOnly: false,
+            onHomeworkAnswerChanged: (value) {
+              setState(() => _homeworkAnswer = value);
+            },
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Big, friendly confirmation shown over the next unit right after the
+/// student finishes one: what they just did, and what comes now.
+class _NextUnitBanner extends StatefulWidget {
+  final String nextTitle;
+  final VoidCallback onDone;
+
+  const _NextUnitBanner({
+    super.key,
+    required this.nextTitle,
+    required this.onDone,
+  });
+
+  @override
+  State<_NextUnitBanner> createState() => _NextUnitBannerState();
+}
+
+class _NextUnitBannerState extends State<_NextUnitBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2600),
+  );
+  final ConfettiController _confetti = ConfettiController(
+    duration: const Duration(milliseconds: 700),
+  );
+  final String _cheer = MasirCopy.cheer();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_confettiPlayed) {
+      _confettiPlayed = true;
+      if (!MediaQuery.disableAnimationsOf(context)) _confetti.play();
+    }
+  }
+
+  bool _confettiPlayed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.forward().whenComplete(() {
+      if (mounted) widget.onDone();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _confetti.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final top = MediaQuery.paddingOf(context).top + MasirSpace.md;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        // Slide in during the first 15%, hold, then lift away over the last 20%.
+        final t = _controller.value;
+        final shown = t < 0.15
+            ? Curves.easeOutBack.transform(t / 0.15)
+            : t > 0.8
+            ? 1 - Curves.easeInCubic.transform((t - 0.8) / 0.2)
+            : 1.0;
+        return Opacity(
+          opacity: shown.clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(0, -(1 - shown) * 80),
+            child: child,
+          ),
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          MasirSpace.gutter,
+          top,
+          MasirSpace.gutter,
+          0,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: ChunkyBox(
+            fill: c.green,
+            edge: c.greenEdge,
+            radius: MasirRadius.hero,
+            padding: const EdgeInsets.symmetric(
+              horizontal: MasirSpace.xl,
+              vertical: MasirSpace.lg,
+            ),
+            onTap: widget.onDone,
+            child: Row(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(
+                        begin: MediaQuery.disableAnimationsOf(context) ? 1 : 0,
+                        end: 1,
+                      ),
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.elasticOut,
+                      builder: (context, scale, child) =>
+                          Transform.scale(scale: scale, child: child),
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: c.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: 34,
+                          color: c.green,
+                        ),
+                      ),
+                    ),
+                    ConfettiWidget(
+                      confettiController: _confetti,
+                      blastDirectionality: BlastDirectionality.explosive,
+                      emissionFrequency: 0.2,
+                      numberOfParticles: 10,
+                      maxBlastForce: 14,
+                      minBlastForce: 6,
+                      gravity: 0.3,
+                      colors: [c.white, c.sun, c.coral, c.primary],
+                    ),
+                  ],
+                ),
+                const SizedBox(width: MasirSpace.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CustomText.title(_cheer, color: c.white),
+                      const SizedBox(height: 2),
+                      CustomText.body(
+                        'درس بعدی: ${widget.nextTitle}',
+                        color: c.white.withValues(alpha: 0.92),
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

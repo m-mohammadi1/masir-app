@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import '/not_found_page.dart';
 import 'package:go_router/go_router.dart';
 import '/core/helper/route_args.dart';
@@ -102,14 +103,41 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: UnitPage.routeName,
-      builder: (context, state) {
+      // Opening a node feels like zooming into it, and closing it zooms back
+      // out to the roadmap.
+      pageBuilder: (context, state) {
         final extra = state.extra as Map<String, String>?;
-        return UnitPage(
-          unitId: extra?['id'] ?? '',
-          unitType: extra?['type'] ?? '',
-          unitTitle: extra?['title'] ?? '',
-          status: extra?['status'] ?? '',
-          themePreset: extra?[kThemePresetArg],
+        return CustomTransitionPage<Object?>(
+          key: state.pageKey,
+          transitionDuration: const Duration(milliseconds: 420),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
+          child: UnitPage(
+            unitId: extra?['id'] ?? '',
+            unitType: extra?['type'] ?? '',
+            unitTitle: extra?['title'] ?? '',
+            status: extra?['status'] ?? '',
+            themePreset: extra?[kThemePresetArg],
+          ),
+          transitionsBuilder: (context, animation, secondary, child) {
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            );
+            return FadeTransition(
+              opacity: curved,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.06),
+                  end: Offset.zero,
+                ).animate(curved),
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.94, end: 1).animate(curved),
+                  child: child,
+                ),
+              ),
+            );
+          },
         );
       },
     ),

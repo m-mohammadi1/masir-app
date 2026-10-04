@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 import '/widgets/custom_text.dart';
+import '/widgets/pressable.dart';
 
 enum PillTone { brand, neutral, success, sun, coral, onDark }
 
@@ -73,10 +74,6 @@ class PillChip extends StatelessWidget {
       ),
     );
     if (onTap == null) return chip;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: chip,
-    );
+    return Pressable(onTap: onTap, child: chip);
   }
 }

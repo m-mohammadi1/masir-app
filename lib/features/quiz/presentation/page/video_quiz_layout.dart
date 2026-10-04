@@ -32,7 +32,7 @@ class VideoQuizLayout extends StatelessWidget {
 
     if (videoUrl.isEmpty) {
       return CustomText.body(
-        'فایل ویدئو در دسترس نیست',
+        'ویدیو هنوز آماده نیست',
         color: context.colors.inkMuted,
       );
     }

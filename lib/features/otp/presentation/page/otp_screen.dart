@@ -1,3 +1,4 @@
+import '/widgets/pressable.dart';
 import '/features/auth/presentation/page/auth_screen.dart';
 import 'dart:async';
 import 'package:easy_helper/easy_helper.dart';
@@ -134,7 +135,7 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
           12.h,
           Center(
-            child: OnClick(
+            child: Pressable(
               onTap: () {
                 CustomNavigator.pop();
               },
@@ -157,7 +158,7 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
           24.h,
           CustomText.caption(
-            "برای ورودهای بعدی یک رمز عبور انتخاب کن",
+            "یه رمز برای دفعه‌های بعد انتخاب کن",
             color: context.colors.inkMuted,
           ),
           8.h,
@@ -233,7 +234,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 builder: (context, state) {
                   return _remainingTime == 0
                       ? CustomButton(
-                          title: "ارسال مجدد",
+                          title: "دوباره بفرست",
                           width: 100,
                           height: 40,
                           onTap: () {
@@ -245,11 +246,11 @@ class _OtpScreenState extends State<OtpScreen> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             CustomText.caption(
-                              "هنوز کد رو دریافت نکردید؟ ارسال مجدد در ",
+                              "کد نیومد؟ ",
                               color: context.colors.inkMuted,
                             ),
                             CustomText.caption(
-                              "$_formattedTime ${"ثانیه"}",
+                              "تا $_formattedTime دیگه دوباره می‌فرستیم",
                               color: context.colors.primary,
                             ),
                           ],
@@ -264,7 +265,7 @@ class _OtpScreenState extends State<OtpScreen> {
             bloc: bloc,
             builder: (context, state) {
               return CustomButton(
-                title: "تایید",
+                title: "بزن بریم",
                 loading: state.isLoading,
                 onTap: () {
                   bloc.add(

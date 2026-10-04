@@ -1,3 +1,4 @@
+import '/core/copy/masir_copy.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -23,6 +24,8 @@ Future<void> background(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GEasyHelper.errorNetwork = MasirCopy.networkError;
+  GEasyHelper.vpnError = MasirCopy.vpnError;
 
   await HiveService.init();
   await setup();
@@ -134,18 +137,18 @@ class _MyAppState extends State<MyApp> {
                 child: CustomText.body(
                   textAlign: TextAlign.center,
                   color: Colors.white,
-                  "خطای اتصال به سرور\nاینترنتت رو بررسی کن.",
+                  "به سرور وصل نشدیم!\nاینترنتت رو یه نگاه بنداز.",
                 ),
               ),
             ],
           );
           GEasyHelper.retryWidget = CustomButton(
-            title: "تلاش مجدد",
+            title: MasirCopy.retry,
             width: MediaQuery.sizeOf(context).width,
             height: 48,
           );
           GEasyHelper.backWidget = CustomButton(
-            title: "برشگت",
+            title: MasirCopy.back,
             width: MediaQuery.sizeOf(context).width,
             height: 48,
           );

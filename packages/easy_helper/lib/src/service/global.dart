@@ -8,8 +8,8 @@ class GEasyHelper {
 
   /// Middleware Server
   static String errorNetwork =
-      "لطفا اتصال دستگاه خود به اینترنت را بررسی نمایید و مجددا تلاش فرمایید";
-  static String vpnError = "لطفا فیلترشکن خود را قطع نمایید";
+      "اینترنتت قطعه یا ضعیفه، یه نگاه بنداز و دوباره امتحان کن";
+  static String vpnError = "انگار فیلترشکنت روشنه، خاموشش کن و دوباره بیا";
   static String serverError = "Server is fail";
   static List<Function> retries = [];
   static bool timeOut = false;

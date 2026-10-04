@@ -22,13 +22,14 @@ class _FakeOutlineUseCase implements OutlineCourseUseCase {
   get repository => throw UnimplementedError();
 
   static int calls = 0;
+  static OutlineCourseEntity fixture = _fixture;
 
   @override
   Future<Either<Failure, OutlineCourseEntity>> call({
     RequestOutlineCourseModel? params,
   }) async {
     calls++;
-    return const Right(_fixture);
+    return Right(fixture);
   }
 }
 
@@ -113,6 +114,7 @@ void main() {
           SubscribeCourseBloc(subscribeCourseUseCase: _FakeSubscribeUseCase()),
     );
     _FakeOutlineUseCase.calls = 0;
+    _FakeOutlineUseCase.fixture = _fixture;
     _FakeSubscribeUseCase.subscribed.clear();
   });
 
@@ -171,7 +173,7 @@ void main() {
     }
   }
 
-  testWidgets('"شروع رایگان" joins the course and reloads the roadmap', (
+  testWidgets('"ثبت‌نام" joins the course and reloads the roadmap', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390 * 3, 844 * 3);
@@ -191,9 +193,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(_FakeOutlineUseCase.calls, 1);
-    expect(find.text('شروع رایگان'), findsOneWidget);
+    expect(find.text('ثبت‌نام'), findsOneWidget);
 
-    await tester.tap(find.text('شروع رایگان'));
+    await tester.tap(find.text('ثبت‌نام'));
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -201,9 +203,151 @@ void main() {
     expect(_FakeSubscribeUseCase.subscribed, ['course-1']);
     expect(_FakeOutlineUseCase.calls, 2);
     // Once joined, the free-start prompt never shows again.
-    expect(find.text('شروع رایگان'), findsNothing);
+    expect(find.text('ثبت‌نام'), findsNothing);
 
     // Let the toast's auto-dismiss timer finish.
     await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('shows progress counts and a continue bar for the current unit', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    _FakeOutlineUseCase.fixture = const OutlineCourseModel(
+      id: 'course-1',
+      title: 'دوره',
+      isSubscribed: true,
+      modules: [
+        OutlineModuleModel(
+          id: 'm1',
+          title: 'فصل اول',
+          paths: [
+            OutlinePathModel(
+              id: 'p1',
+              title: 'مسیر اول',
+              units: [
+                OutlineUnitModel(
+                  id: 'u1',
+                  title: 'درس اول',
+                  type: 'html',
+                  status: 'completed',
+                  locked: false,
+                ),
+                OutlineUnitModel(
+                  id: 'u2',
+                  title: 'ویدیو',
+                  type: 'video',
+                  status: 'not_started',
+                  locked: false,
+                ),
+                OutlineUnitModel(
+                  id: 'u3',
+                  title: 'آزمون',
+                  type: 'quiz',
+                  status: 'not_started',
+                  locked: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: light,
+        locale: const Locale('fa'),
+        builder: (context, c) =>
+            Directionality(textDirection: TextDirection.rtl, child: c!),
+        home: const OutlinePage(title: 'دوره', id: 'course-1'),
+      ),
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.text('۱ از ۳ واحد'), findsOneWidget);
+    expect(find.text('ادامه یادگیری'), findsOneWidget);
+    expect(find.text('ثبت‌نام'), findsNothing);
+  });
+
+  testWidgets('path-completed popup names the path and can be dismissed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: light,
+        locale: const Locale('fa'),
+        builder: (context, c) =>
+            Directionality(textDirection: TextDirection.rtl, child: c!),
+        home: const Scaffold(
+          body: PathCompletedDialog(
+            pathTitle: 'مسیر اول',
+            unitCount: 3,
+            chapterDone: false,
+            courseDone: false,
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('این مسیر کامل شد!'), findsOneWidget);
+    expect(find.text('مسیر اول'), findsOneWidget);
+    expect(find.text('۳ واحد تموم شد'), findsOneWidget);
+    expect(find.text('ادامه مسیر'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a course with no free preview still offers "ثبت‌نام"', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    _FakeOutlineUseCase.fixture = const OutlineCourseModel(
+      id: 'course-1',
+      title: 'دوره',
+      modules: [
+        OutlineModuleModel(
+          id: 'm1',
+          title: 'فصل اول',
+          paths: [
+            OutlinePathModel(
+              id: 'p1',
+              title: 'مسیر اول',
+              units: [
+                OutlineUnitModel(
+                  id: 'u1',
+                  title: 'درس اول',
+                  type: 'html',
+                  status: 'not_started',
+                  locked: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: light,
+        locale: const Locale('fa'),
+        builder: (context, c) =>
+            Directionality(textDirection: TextDirection.rtl, child: c!),
+        home: const OutlinePage(title: 'دوره', id: 'course-1'),
+      ),
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.text('ثبت‌نام'), findsOneWidget);
+    expect(find.text('برای شروع این دوره ثبت‌نام کن'), findsOneWidget);
   });
 }

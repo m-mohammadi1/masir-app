@@ -1,9 +1,8 @@
-import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:mohammad/widgets/custom_text.dart';
-import '/core/theme/theme_context.dart';
+import 'package:mohammad/widgets/pill_chip.dart';
 import '/core/theme/masir_style.dart';
 
+/// Playback speed picker: a row of chips, the chosen one filled.
 class SpeedWidget extends StatefulWidget {
   final Color color;
   final Function(double) onChanged;
@@ -15,55 +14,29 @@ class SpeedWidget extends StatefulWidget {
 }
 
 class _SpeedWidgetState extends State<SpeedWidget> {
-  final List<String> data = ["X0.75", "X1", "X1.25", "X1.5", "X2"];
-  final List<double> speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
+  static const List<double> _speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
+  static const List<String> _labels = ['۰٫۷۵×', '۱×', '۱٫۲۵×', '۱٫۵×', '۲×'];
 
-  String selected = "X1";
+  int _selected = 1;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        height: 36,
-        child: ListView.builder(
-          itemCount: data.length,
-          shrinkWrap: true,
-          reverse: true,
-          scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) => OnClick(
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: MasirSpace.sm,
+      runSpacing: MasirSpace.sm,
+      children: [
+        for (var i = 0; i < _speeds.length; i++)
+          PillChip(
+            _labels[i],
+            color: widget.color,
+            selected: i == _selected,
             onTap: () {
-              setState(() {
-                selected = data[index];
-              });
-              widget.onChanged(speeds[index]);
+              setState(() => _selected = i);
+              widget.onChanged(_speeds[i]);
             },
-            child: Container(
-              width: 54,
-              height: 34,
-              alignment: Alignment.center,
-              margin: EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  width: 2,
-                  color: data[index] == selected
-                      ? widget.color
-                      : context.colors.border,
-                ),
-                borderRadius: BorderRadius.circular(MasirRadius.card),
-                color: data[index] == selected
-                    ? widget.color
-                    : context.colors.surface,
-              ),
-              child: CustomText.micro(
-                data[index],
-                color: data[index] == selected
-                    ? context.colors.onPrimary
-                    : context.colors.inkMuted,
-              ),
-            ),
           ),
-        ),
-      ),
+      ],
     );
   }
 }

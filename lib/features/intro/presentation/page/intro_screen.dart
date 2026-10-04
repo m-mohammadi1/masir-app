@@ -1,3 +1,4 @@
+import '/widgets/pressable.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -74,7 +75,7 @@ class _IntroScreenState extends State<IntroScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               CustomText.title("مسیر", color: c.primary),
-              OnClick(
+              Pressable(
                 onTap: () => CustomNavigator.pushNamed(AuthScreen.routeName),
                 child: CustomText.bodyStrong("رد کردن", color: c.inkMuted),
               ),

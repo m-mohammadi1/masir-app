@@ -12,13 +12,13 @@ class NotFoundPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MasirPage.detail(
-      title: 'مسیر پیدا نشد',
+      title: 'اینجا چیزی نیست',
       onBack: () => CustomNavigator.go(MainPage.routeName),
       body: StateView.empty(
-        text: 'این صفحه پیدا نشد',
-        description: 'شاید آدرس عوض شده یا دیگر وجود ندارد.',
+        text: 'انگار راه رو گم کردیم',
+        description: 'شاید آدرس عوض شده یا این صفحه دیگه نیست.',
         icon: Icons.explore_off_rounded,
-        actionLabel: 'برگشت به خانه',
+        actionLabel: 'برگردیم خونه',
         onAction: () => CustomNavigator.go(MainPage.routeName),
       ),
     );

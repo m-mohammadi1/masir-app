@@ -55,8 +55,8 @@ class _InstituteTeachersPageState extends State<InstituteTeachersPage> {
               return const MasirPage.tab(
                 title: 'استادها',
                 body: StateView.empty(
-                  text: 'استادی پیدا نشد',
-                  description: 'هنوز استادی به این مؤسسه اضافه نشده.',
+                  text: 'هنوز استادی نیست',
+                  description: 'به‌زودی استادها اینجا جمع می‌شن.',
                   icon: Icons.school_rounded,
                 ),
               );

@@ -1,3 +1,4 @@
+import '/core/feedback/masir_feedback.dart';
 import 'dart:math' as math;
 
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
@@ -21,8 +22,11 @@ import '/core/theme/theme_context.dart';
 import '/widgets/chunky_box.dart';
 import '/widgets/icon_tile.dart';
 import '/widgets/masir_card.dart';
+import '/widgets/masir_motion.dart';
 import '/widgets/masir_page.dart';
+import '/widgets/pill_chip.dart';
 import '/widgets/progress_pill.dart';
+import '/widgets/unit_kit/unit_type_style.dart';
 import '/widgets/state_view.dart';
 
 // ---------------------------------------------------------------------------
@@ -73,6 +77,11 @@ const double _kPathNodeHeight = 118;
 const double _kUnitNodeHeight = 118;
 const double _kTrophyNodeHeight = 112;
 const double _kCourseFinishHeight = 150;
+
+/// Empty space kept above every chapter plate except the first, so the
+/// previous module's last waypoint (medallion plus the caption hanging below
+/// it) never slides under the next chapter's title.
+const double _kChapterLeadingGap = 56;
 
 // ---------------------------------------------------------------------------
 // The trail — a thick rounded ribbon with a solid "lip" underneath (the same
@@ -146,6 +155,9 @@ class _TrailRibbon {
 
 class _TrailNode {
   final double height;
+
+  /// Blank space reserved above this node, before its box starts.
+  final double leadingGap;
   final bool centered;
   final bool isLeft;
 
@@ -181,6 +193,7 @@ class _TrailNode {
 
   const _TrailNode({
     required this.height,
+    this.leadingGap = 0,
     this.centered = true,
     this.isLeft = false,
     this.xJitter = 0,
@@ -205,6 +218,7 @@ List<double> _computeCentersY(List<_TrailNode> nodes) {
   final centers = <double>[];
   var y = 0.0;
   for (final node in nodes) {
+    y += node.leadingGap;
     centers.add(y + node.height / 2);
     y += node.height;
   }
@@ -247,6 +261,9 @@ class _OutlinePageState extends State<OutlinePage>
   /// Set as soon as joining succeeds, so the free-start prompts disappear
   /// before the reloaded roadmap arrives.
   bool _justSubscribed = false;
+
+  /// The unit finished during the last visit; its pin plays a one-shot pop.
+  String? _justCompletedId;
 
   @override
   void initState() {
@@ -317,56 +334,6 @@ class _OutlinePageState extends State<OutlinePage>
     super.dispose();
   }
 
-  String _getTypeLabel(String type) {
-    switch (type) {
-      case 'html':
-        return 'درس';
-      case 'practice':
-        return 'تمرین';
-      case 'quiz':
-        return 'آزمون';
-      case 'audio':
-        return 'صوتی';
-      case 'video':
-        return 'ویدیو';
-      default:
-        return type;
-    }
-  }
-
-  IconData _getTypeIcon(String type) {
-    switch (type) {
-      case 'html':
-        return Icons.description_rounded;
-      case 'practice':
-        return Icons.fact_check_rounded;
-      case 'quiz':
-        return Icons.quiz_rounded;
-      case 'audio':
-        return Icons.headphones_rounded;
-      case 'video':
-        return Icons.videocam_rounded;
-      default:
-        return Icons.article_rounded;
-    }
-  }
-
-  bool _shouldShowPreviewBar(List<OutlineModuleEntity> modules) {
-    var hasUnlockedPreview = false;
-    var hasLockedPaid = false;
-    for (final module in modules) {
-      for (final path in module.paths ?? []) {
-        for (final unit in path.units ?? []) {
-          final preview = unit.isPreview == true;
-          final locked = unit.locked ?? false;
-          if (preview && !locked) hasUnlockedPreview = true;
-          if (!preview && locked) hasLockedPaid = true;
-        }
-      }
-    }
-    return hasUnlockedPreview && hasLockedPaid;
-  }
-
   int _previewCount(List<OutlineModuleEntity> modules) {
     var count = 0;
     for (final module in modules) {
@@ -390,6 +357,7 @@ class _OutlinePageState extends State<OutlinePage>
   }
 
   void _onSubscribed() {
+    MasirFeedback.success();
     CustomToast.toast(context, 'عضو دوره شدی! بزن بریم');
     setState(() => _justSubscribed = true);
     _hasScrolledToCurrent = false;
@@ -403,6 +371,7 @@ class _OutlinePageState extends State<OutlinePage>
   void _promptSubscribe() {
     showModalBottomSheet<void>(
       context: context,
+      sheetAnimationStyle: MasirMotion.sheet,
       builder: (sheetContext) {
         // The sheet lives on the root overlay, so carry the institute theme.
         return InstituteThemed(
@@ -424,7 +393,7 @@ class _OutlinePageState extends State<OutlinePage>
                 ),
                 const SizedBox(height: MasirSpace.lg),
                 CustomButton(
-                  title: 'شروع رایگان',
+                  title: 'ثبت‌نام',
                   onTap: () {
                     Navigator.pop(sheetContext);
                     _subscribe();
@@ -438,38 +407,116 @@ class _OutlinePageState extends State<OutlinePage>
     );
   }
 
-  Future<void> _onUnitTap({
-    required String? id,
-    required String? type,
-    required String? title,
-    required String? status,
-    required bool locked,
-  }) async {
+  void _onUnitTap(OutlineUnitEntity unit) {
+    final id = unit.id;
     if (id == null || id.isEmpty) return;
-    if (locked) {
+    if (unit.locked ?? false) {
       _promptSubscribe();
       return;
     }
+    _openUnit(unit);
+  }
 
-    await CustomNavigator.pushNamed(
+  /// Opens a unit. The unit page itself carries the student on to the next
+  /// unit of the path, so we only get control back when they leave: either by
+  /// backing out, or at the end of a path / before a locked unit. The page
+  /// hands back the id of the last unit completed during the visit.
+  Future<void> _openUnit(OutlineUnitEntity unit) async {
+    final result = await CustomNavigator.pushNamed(
       UnitPage.routeName,
       arguments: UnitPageArgs(
-        unitId: id,
-        unitType: type ?? '',
-        unitTitle: title ?? '',
-        status: status ?? '',
+        unitId: unit.id ?? '',
+        unitType: unit.type ?? '',
+        unitTitle: unit.title ?? '',
+        status: unit.status ?? '',
         themePreset: widget.themePreset,
       ).toMap(),
     );
-
     if (!mounted) return;
 
-    // Re-enable auto-scroll to the next current unit after returning.
+    // Re-enable auto-scroll to the current unit once we are back.
     _hasScrolledToCurrent = false;
+    final fresh = await _reload();
+    if (!mounted || result is! String || fresh == null) return;
 
+    setState(() => _justCompletedId = result);
+    final spot = _locate(fresh.modules ?? [], result);
+    if (spot == null) return;
+    final units = spot.path.units ?? [];
+
+    if (spot.index >= units.length - 1) {
+      // Last unit of the path: celebrate once the whole path is really done.
+      if (units.every((u) => u.status == 'completed')) {
+        await _showPathCompleted(spot, fresh);
+      }
+      return;
+    }
+
+    // Stopped before a locked unit: offer to join.
+    final next = units[spot.index + 1];
+    if ((next.locked ?? false) && !(fresh.isSubscribed || _justSubscribed)) {
+      _promptSubscribe();
+    }
+  }
+
+  /// Reloads the roadmap and resolves with the fresh data (null on failure).
+  Future<OutlineCourseEntity?> _reload() async {
+    final settled = bloc.stream
+        .firstWhere(
+          (s) => s.maybeWhen(
+            success: (_, _) => true,
+            error: (_, _) => true,
+            orElse: () => false,
+          ),
+        )
+        .timeout(const Duration(seconds: 12));
     bloc.add(
       OutlineCourseEvent.outlineCourse(
         params: RequestOutlineCourseModel(id: widget.id),
+      ),
+    );
+    try {
+      final state = await settled;
+      return state.maybeWhen(success: (_, data) => data, orElse: () => null);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  ({OutlineModuleEntity module, OutlinePathEntity path, int index})? _locate(
+    List<OutlineModuleEntity> modules,
+    String unitId,
+  ) {
+    for (final module in modules) {
+      for (final path in module.paths ?? <OutlinePathEntity>[]) {
+        final units = path.units ?? <OutlineUnitEntity>[];
+        for (var i = 0; i < units.length; i++) {
+          if (units[i].id == unitId) {
+            return (module: module, path: path, index: i);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  Future<void> _showPathCompleted(
+    ({OutlineModuleEntity module, OutlinePathEntity path, int index}) spot,
+    OutlineCourseEntity course,
+  ) {
+    final modules = course.modules ?? [];
+    MasirFeedback.celebrate();
+    return showMasirDialog<void>(
+      context: context,
+      builder: (_) => InstituteThemed(
+        preset: widget.themePreset,
+        child: PathCompletedDialog(
+          pathTitle: spot.path.title ?? '',
+          unitCount: spot.path.units?.length ?? 0,
+          chapterDone: _isModuleFullyCompleted(spot.module),
+          courseDone:
+              modules.isNotEmpty && modules.every(_isModuleFullyCompleted),
+        ),
       ),
     );
   }
@@ -499,23 +546,32 @@ class _OutlinePageState extends State<OutlinePage>
     return true;
   }
 
-  bool _isPathFullyCompleted(OutlinePathEntity path) {
-    final units = path.units ?? [];
-    if (units.isEmpty) return (path.pathProgressPercent ?? 0) >= 100;
-    return units.every((u) => u.status == 'completed');
-  }
-
-  String? _findCurrentUnitId(List<OutlineModuleEntity> modules) {
+  OutlineUnitEntity? _findCurrentUnit(List<OutlineModuleEntity> modules) {
     for (final module in modules) {
       for (final path in module.paths ?? []) {
         for (final unit in path.units ?? []) {
           final locked = unit.locked ?? false;
           final completed = unit.status == 'completed';
-          if (!locked && !completed) return unit.id;
+          if (!locked && !completed) return unit;
         }
       }
     }
     return null;
+  }
+
+  /// (completed, total) unit counts across the whole course.
+  (int, int) _unitCounts(List<OutlineModuleEntity> modules) {
+    var done = 0;
+    var total = 0;
+    for (final module in modules) {
+      for (final path in module.paths ?? <OutlinePathEntity>[]) {
+        for (final unit in path.units ?? <OutlineUnitEntity>[]) {
+          total++;
+          if (unit.status == 'completed') done++;
+        }
+      }
+    }
+    return (done, total);
   }
 
   /// Flattens every module into one ordered waypoint list: chapter → its
@@ -538,7 +594,20 @@ class _OutlinePageState extends State<OutlinePage>
   }) {
     final nodes = <_TrailNode>[];
     int? currentUnitIndex;
-    bool? previousModuleFullyCompleted;
+
+    // The green trail is the ground already covered: every segment up to and
+    // including the one that *leads into* the current unit is walked, and
+    // everything beyond it is still ahead. With no current unit the course is
+    // either fully done (all green) or not started (all ahead).
+    final courseDone =
+        modules.isNotEmpty && modules.every(_isModuleFullyCompleted);
+    var reachedCurrent = false;
+    bool walkedInto({bool isCurrent = false}) {
+      if (currentUnitId == null) return courseDone;
+      if (reachedCurrent) return false;
+      if (isCurrent) reachedCurrent = true;
+      return true;
+    }
 
     // Fixed seed → same randomness every rebuild for the same course
     // structure (no flicker when the bloc re-emits after a tap), and seeded
@@ -572,7 +641,8 @@ class _OutlinePageState extends State<OutlinePage>
       nodes.add(
         _TrailNode(
           height: _kChapterNodeHeight,
-          incomingSolid: previousModuleFullyCompleted ?? false,
+          leadingGap: moduleIndex == 0 ? 0 : _kChapterLeadingGap,
+          incomingSolid: walkedInto(),
           curveKickA: jitter(16),
           curveKickB: jitter(16),
           anchorId: module.id,
@@ -592,14 +662,6 @@ class _OutlinePageState extends State<OutlinePage>
       for (var pathIndex = 0; pathIndex < paths.length; pathIndex++) {
         final path = paths[pathIndex];
         final units = path.units ?? [];
-        final pathFullyComplete = _isPathFullyCompleted(path);
-        final firstUnitDone =
-            units.isNotEmpty && units.first.status == 'completed';
-
-        final pathIncomingSolid = pathIndex == 0
-            ? (pathFullyComplete || firstUnitDone)
-            : _isPathFullyCompleted(paths[pathIndex - 1]);
-
         final pathIsLeft = structuredSide();
 
         nodes.add(
@@ -611,7 +673,7 @@ class _OutlinePageState extends State<OutlinePage>
             pinRadius: _PathWaypoint._size / 2,
             curveKickA: jitter(22),
             curveKickB: jitter(22),
-            incomingSolid: pathIncomingSolid,
+            incomingSolid: walkedInto(),
             build: (canvasWidth) => _PathWaypoint(
               path: path,
               isLeft: pathIsLeft,
@@ -628,9 +690,7 @@ class _OutlinePageState extends State<OutlinePage>
           final isCurrent = unit.id == currentUnitId;
           final unitType = unit.type ?? '';
 
-          final incomingSolid = unitIndex == 0
-              ? (pathFullyComplete || firstUnitDone)
-              : isCompleted;
+          final incomingSolid = walkedInto(isCurrent: isCurrent);
 
           if (isCurrent) currentUnitIndex = nodes.length;
 
@@ -647,20 +707,15 @@ class _OutlinePageState extends State<OutlinePage>
               build: (canvasWidth) => _RoadUnitNode(
                 pinKey: ValueKey('roadmap-pin-${unit.id}'),
                 title: unit.title ?? '',
-                typeLabel: _getTypeLabel(unitType),
-                icon: _getTypeIcon(unitType),
+                typeLabel: UnitTypeStyle.labelOf(unitType),
+                icon: UnitTypeStyle.iconOf(unitType),
                 isCompleted: isCompleted,
                 isLocked: isLocked,
                 isPreview: !subscribed && unit.isPreview == true,
                 isCurrent: isCurrent,
+                celebrate: isCompleted && unit.id == _justCompletedId,
                 slotWidth: _unitSlotWidth(canvasWidth),
-                onTap: () => _onUnitTap(
-                  id: unit.id,
-                  type: unitType,
-                  title: unit.title,
-                  status: unit.status,
-                  locked: isLocked,
-                ),
+                onTap: () => _onUnitTap(unit),
               ),
             ),
           );
@@ -670,7 +725,7 @@ class _OutlinePageState extends State<OutlinePage>
           nodes.add(
             _TrailNode(
               height: _kTrophyNodeHeight,
-              incomingSolid: true,
+              incomingSolid: walkedInto(),
               curveKickA: jitter(16),
               curveKickB: jitter(16),
               build: (_) => const _TrophyNode(),
@@ -678,8 +733,6 @@ class _OutlinePageState extends State<OutlinePage>
           );
         }
       }
-
-      previousModuleFullyCompleted = isModuleFullyCompleted;
     }
 
     // Whole-course finish line — always the very last waypoint on the
@@ -688,11 +741,11 @@ class _OutlinePageState extends State<OutlinePage>
     // locked-looking (like a locked unit) until every module — and so
     // every unit — is actually completed.
     if (modules.isNotEmpty) {
-      final courseComplete = modules.every(_isModuleFullyCompleted);
+      final courseComplete = courseDone;
       nodes.add(
         _TrailNode(
           height: _kCourseFinishHeight,
-          incomingSolid: courseComplete,
+          incomingSolid: walkedInto(),
           curveKickA: jitter(16),
           curveKickB: jitter(16),
           build: (_) => _CourseFinishNode(isComplete: courseComplete),
@@ -719,6 +772,13 @@ class _OutlinePageState extends State<OutlinePage>
           },
           child: BlocBuilder<OutlineCourseBloc, OutlineCourseState>(
             bloc: bloc,
+            // A reload keeps the roadmap on screen instead of flashing a
+            // skeleton; the fresh data swaps in when it arrives.
+            buildWhen: (prev, curr) => prev.maybeWhen(
+              success: (_, _) =>
+                  curr.maybeWhen(loading: (_) => false, orElse: () => true),
+              orElse: () => true,
+            ),
             builder: (context, state) {
               return state.when(
                 loading: (_) => _shell(
@@ -739,7 +799,9 @@ class _OutlinePageState extends State<OutlinePage>
                 success: (isLoading, data) {
                   final courseProgress = data.courseProgressPercent ?? 0;
                   final modules = data.modules ?? [];
-                  final currentUnitId = _findCurrentUnitId(modules);
+                  final currentUnit = _findCurrentUnit(modules);
+                  final currentUnitId = currentUnit?.id;
+                  final (doneUnits, totalUnits) = _unitCounts(modules);
                   final subscribed = data.isSubscribed || _justSubscribed;
                   final result = _buildTrailNodes(
                     modules,
@@ -755,12 +817,18 @@ class _OutlinePageState extends State<OutlinePage>
 
                   return _shell(
                     bleed: true,
-                    stickyBottom: !subscribed && _shouldShowPreviewBar(modules)
+                    stickyBottom: !subscribed
                         ? _PreviewSubscribeBar(
                             previewCount:
                                 data.previewUnitCount ?? _previewCount(modules),
                             bloc: subscribeBloc,
                             onSubscribe: _subscribe,
+                          )
+                        : currentUnit != null
+                        ? _ContinueBar(
+                            unitTitle: currentUnit.title ?? '',
+                            started: doneUnits > 0,
+                            onTap: () => _onUnitTap(currentUnit),
                           )
                         : null,
                     body: Column(
@@ -770,6 +838,8 @@ class _OutlinePageState extends State<OutlinePage>
                           padding: MasirSpace.pageH,
                           child: _CourseProgressHeader(
                             progress: courseProgress,
+                            done: doneUnits,
+                            total: totalUnits,
                           ),
                         ),
                         const SizedBox(height: MasirSpace.md),
@@ -833,7 +903,9 @@ class _PreviewSubscribeBar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         CustomText.caption(
-          '${faDigits(previewCount)} واحد اول رایگان است',
+          previewCount > 0
+              ? '${faDigits(previewCount)} واحد اول رایگانه'
+              : 'برای شروع این دوره ثبت‌نام کن',
           textAlign: TextAlign.center,
           color: context.colors.inkMuted,
         ),
@@ -841,12 +913,161 @@ class _PreviewSubscribeBar extends StatelessWidget {
         BlocBuilder<SubscribeCourseBloc, SubscribeCourseState>(
           bloc: bloc,
           builder: (context, state) => CustomButton(
-            title: 'شروع رایگان',
+            title: 'ثبت‌نام',
             loading: state.isLoading,
             onTap: onSubscribe,
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Sticky "pick up where you left off" bar: the one obvious next step.
+class _ContinueBar extends StatelessWidget {
+  final String unitTitle;
+  final bool started;
+  final VoidCallback onTap;
+
+  const _ContinueBar({
+    required this.unitTitle,
+    required this.started,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (unitTitle.isNotEmpty) ...[
+          CustomText.caption(
+            unitTitle,
+            textAlign: TextAlign.center,
+            color: context.colors.inkMuted,
+            maxLines: 1,
+          ),
+          const SizedBox(height: MasirSpace.sm),
+        ],
+        CustomButton(
+          title: started ? 'ادامه یادگیری' : 'شروع یادگیری',
+          onTap: onTap,
+        ),
+      ],
+    );
+  }
+}
+
+/// Celebration shown on the roadmap after the last unit of a path is done.
+@visibleForTesting
+class PathCompletedDialog extends StatelessWidget {
+  final String pathTitle;
+  final int unitCount;
+  final bool chapterDone;
+  final bool courseDone;
+
+  const PathCompletedDialog({
+    super.key,
+    required this.pathTitle,
+    required this.unitCount,
+    required this.chapterDone,
+    required this.courseDone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final title = courseDone
+        ? 'دوره رو تموم کردی!'
+        : chapterDone
+        ? 'یک فصل کامل شد!'
+        : 'این مسیر کامل شد!';
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: MasirSpace.lg,
+        vertical: MasirSpace.xxl,
+      ),
+      child: ChunkyBox(
+        fill: c.surface,
+        edge: c.lip,
+        borderColor: c.border,
+        radius: MasirRadius.hero,
+        padding: const EdgeInsets.fromLTRB(
+          MasirSpace.xl,
+          MasirSpace.xxl,
+          MasirSpace.xl,
+          MasirSpace.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 650),
+                curve: Curves.easeOutBack,
+                builder: (context, t, child) => Transform.scale(
+                  scale: 0.4 + 0.6 * t,
+                  child: Opacity(opacity: t.clamp(0.0, 1.0), child: child),
+                ),
+                child: SizedBox(
+                  width: 128,
+                  height: 128 + Chunky.lip,
+                  child: ChunkyBox(
+                    fill: c.sun,
+                    edge: c.sunEdge,
+                    radius: 64,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      courseDone
+                          ? Icons.emoji_events_rounded
+                          : Icons.workspace_premium_rounded,
+                      size: 68,
+                      color: c.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: MasirSpace.xl),
+            CustomText.display(title, textAlign: TextAlign.center),
+            if (pathTitle.isNotEmpty) ...[
+              const SizedBox(height: MasirSpace.xs),
+              CustomText.headline(
+                pathTitle,
+                textAlign: TextAlign.center,
+                color: c.inkMuted,
+              ),
+            ],
+            const SizedBox(height: MasirSpace.lg),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: MasirSpace.sm,
+              runSpacing: MasirSpace.sm,
+              children: [
+                if (unitCount > 0)
+                  PillChip(
+                    '${faDigits(unitCount)} واحد تموم شد',
+                    icon: Icons.check_circle_rounded,
+                    tone: PillTone.success,
+                  ),
+                if (chapterDone && !courseDone)
+                  const PillChip('فصل کامل شد', tone: PillTone.sun),
+              ],
+            ),
+            const SizedBox(height: MasirSpace.xxl),
+            CustomButton(
+              title: courseDone ? 'ایول!' : 'ادامه مسیر',
+              height: 56,
+              onTap: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -857,8 +1078,14 @@ class _PreviewSubscribeBar extends StatelessWidget {
 
 class _CourseProgressHeader extends StatelessWidget {
   final int progress;
+  final int done;
+  final int total;
 
-  const _CourseProgressHeader({required this.progress});
+  const _CourseProgressHeader({
+    required this.progress,
+    required this.done,
+    required this.total,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -873,7 +1100,19 @@ class _CourseProgressHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: CustomText.bodyStrong('مسیر یادگیری')),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomText.bodyStrong('مسیر یادگیری'),
+                    if (total > 0)
+                      CustomText.caption(
+                        '${faDigits(done)} از ${faDigits(total)} واحد',
+                        color: context.colors.inkMuted,
+                      ),
+                  ],
+                ),
+              ),
               CustomText.bodyStrong(
                 '${faDigits(progress)}٪',
                 color: progress >= 100 ? t.success : t.accent,
@@ -1437,13 +1676,13 @@ class _CourseFinishNode extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           CustomText.bodyStrong(
-            'دوره با موفقیت تموم شد!',
+            'دوره تموم شد!',
             color: t.success,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 2),
           CustomText.caption(
-            'همه واحدها رو گذروندی 🎉',
+            'همه‌ی واحدها رو گذروندی',
             color: t.inkMuted,
             textAlign: TextAlign.center,
           ),
@@ -1468,6 +1707,7 @@ class _RoadUnitNode extends StatelessWidget {
   final bool isLocked;
   final bool isPreview;
   final bool isCurrent;
+  final bool celebrate;
   final double slotWidth;
   final VoidCallback onTap;
 
@@ -1480,6 +1720,7 @@ class _RoadUnitNode extends StatelessWidget {
     required this.isLocked,
     required this.isPreview,
     required this.isCurrent,
+    this.celebrate = false,
     required this.slotWidth,
     required this.onTap,
   });
@@ -1524,6 +1765,7 @@ class _RoadUnitNode extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           if (isCurrent) const _PulseRing(size: _kRoadNodeSize),
+          if (celebrate) const _DonePop(size: _kRoadNodeSize),
           Positioned(
             left: 0,
             top: 0,
@@ -1724,6 +1966,69 @@ class _PulseRingState extends State<_PulseRing>
                 border: Border.all(
                   color: color.withValues(alpha: opacity),
                   width: 4,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// A one-shot green ring that blooms out of a pin the student just finished.
+class _DonePop extends StatefulWidget {
+  final double size;
+
+  const _DonePop({required this.size});
+
+  @override
+  State<_DonePop> createState() => _DonePopState();
+}
+
+class _DonePopState extends State<_DonePop>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!MediaQuery.disableAnimationsOf(context)) _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = context.colors.green;
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final t = Curves.easeOutCubic.transform(_controller.value);
+          if (_controller.value == 0 || _controller.value >= 1) {
+            return const SizedBox.shrink();
+          }
+          return Transform.scale(
+            scale: 1.0 + 0.9 * t,
+            child: Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: color.withValues(alpha: 0.6 * (1 - t)),
+                  width: 5,
                 ),
               ),
             ),

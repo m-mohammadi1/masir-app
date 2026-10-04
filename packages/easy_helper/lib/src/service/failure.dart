@@ -34,7 +34,7 @@ class ServerFailure implements Failure {
   ServerFailure fromJson(dynamic json) {
     try {
       if (json == null) {
-        return ServerFailure(message: "خطایی رخ داده است, لطفا بعدا تلاش کنید");
+        return ServerFailure(message: "یه چیزی این وسط خراب شد، چند لحظه دیگه دوباره امتحان کن");
       } else if (json.runtimeType == String) {
         return ServerFailure(message: json.toString());
       } else if (json.containsKey("messages")) {

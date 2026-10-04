@@ -1,3 +1,4 @@
+import '/widgets/pressable.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/widgets/custom_button.dart';
@@ -39,7 +40,7 @@ class UnitActionButtons extends StatelessWidget {
           CustomButton(title: 'بازگشت به مسیر', onTap: onBack, height: 54),
         if (showPrimary) ...[
           4.h,
-          OnClick(
+          Pressable(
             onTap: onBack,
             child: SizedBox(
               height: 40,

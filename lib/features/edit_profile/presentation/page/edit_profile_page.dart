@@ -72,16 +72,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return "رمز عبور جدید رو وارد کن";
     }
     if (newPassword.length < _minPasswordLength) {
-      return "رمز عبور جدید باید حداقل $_minPasswordLength کاراکتر باشد";
+      return "رمز جدید باید حداقل $_minPasswordLength کاراکتر باشه";
     }
     if (confirmPassword.isEmpty) {
       return "تکرار رمز عبور رو وارد کن";
     }
     if (newPassword != confirmPassword) {
-      return "رمز عبور جدید و تکرار آن یکسان نیستند";
+      return "رمز جدید و تکرارش یکی نیست";
     }
     if (currentPassword == newPassword) {
-      return "رمز عبور جدید باید با رمز فعلی متفاوت باشد";
+      return "رمز جدید باید با رمز فعلی فرق داشته باشه";
     }
     return null;
   }
@@ -115,7 +115,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       title: 'ویرایش اطلاعات',
       children: [
         CustomText.caption(
-          'نام و رمزت را اینجا مدیریت کن',
+          'اسم و رمزت رو اینجا درست کن',
           color: context.colors.inkMuted,
         ),
         const SizedBox(height: MasirSpace.xl),
@@ -190,7 +190,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   }
                   CustomToast.toast(
                     context,
-                    "اطلاعات با موفقیت ذخیره شد",
+                    "ذخیره شد!",
                     type: Type.success,
                   );
                 },
@@ -269,7 +269,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   _clearPasswordFields();
                   CustomToast.toast(
                     context,
-                    "رمز عبور با موفقیت تغییر کرد",
+                    "رمزت عوض شد",
                     type: Type.success,
                   );
                 },

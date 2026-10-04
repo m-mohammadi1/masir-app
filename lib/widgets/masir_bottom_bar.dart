@@ -1,3 +1,4 @@
+import '/core/feedback/masir_feedback.dart';
 import 'package:flutter/material.dart';
 
 import '/core/theme/theme_context.dart';
@@ -79,7 +80,10 @@ class _Tab extends StatelessWidget {
     final color = selected ? c.primary : c.inkMuted;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+      onTap: () {
+        if (!selected) MasirFeedback.select();
+        onTap();
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -118,9 +122,9 @@ class _Tab extends StatelessWidget {
 List<MasirBottomBarItem> masirGlobalTabs() => const [
   MasirBottomBarItem(
     index: 2,
-    label: 'خانه',
-    icon: Icons.explore_rounded,
-    selectedIcon: Icons.explore_rounded,
+    label: 'ویترین',
+    icon: Icons.storefront_outlined,
+    selectedIcon: Icons.storefront_rounded,
   ),
   MasirBottomBarItem(
     index: 1,

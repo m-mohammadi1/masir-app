@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mohammad/core/helper/custom_themes.dart';
 import 'package:mohammad/core/theme/institute_presets.dart';
 import 'package:mohammad/core/theme/institute_themed.dart';
-import 'package:mohammad/features/quiz/presentation/widgets/option_widget.dart';
+import 'package:mohammad/widgets/unit_kit/answer_tile.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_top_bar.dart';
 import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/icon_tile.dart';
@@ -42,9 +42,13 @@ void main() {
             children: [
               UnitTopBar(title: 'عنوان درس', onClose: () {}, progress: 40),
               const SizedBox(height: 12),
-              const OptionWidget(title: 'گزینه', selected: true),
+              const AnswerTile(
+                label: 'گزینه',
+                badge: 'الف',
+                state: AnswerState.selected,
+              ),
               const SizedBox(height: 12),
-              const OptionWidget(title: 'گزینه دوم'),
+              const AnswerTile(label: 'گزینه دوم', badge: 'ب'),
               const SizedBox(height: 12),
               const Wrap(
                 children: [

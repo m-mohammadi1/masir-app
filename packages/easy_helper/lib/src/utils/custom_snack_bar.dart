@@ -5,136 +5,125 @@ import 'package:toastification/toastification.dart';
 class CustomToast {
   CustomToast._();
 
-  static Color _checkColor(Type t) {
-    if (t == Type.success) {
-      return Color(0XFF009966);
-    } else if (t == Type.error) {
-      return Color(0xffEB5757);
-    }
-    return Color(0xFF2F80ED);
+  static Color _accent(Type t) {
+    if (t == Type.success) return const Color(0XFF009966);
+    if (t == Type.error) return const Color(0xffEB5757);
+    return const Color(0xFF2F80ED);
+  }
+
+  static Color _soft(Type t, bool dark) {
+    if (dark) return const Color(0xFF232733);
+    if (t == Type.success) return const Color(0xFFE6F7EF);
+    if (t == Type.error) return const Color(0xFFFDECEC);
+    return const Color(0xFFEAF2FE);
+  }
+
+  static IconData _icon(Type t) {
+    if (t == Type.success) return Icons.check_rounded;
+    if (t == Type.error) return Icons.priority_high_rounded;
+    return Icons.info_outline_rounded;
   }
 
   static void toast(
     BuildContext context,
     String message, {
     Type type = Type.error,
-    Duration showOutAnimationDuration = const Duration(milliseconds: 1200),
-    Duration hideOutAnimationDuration = const Duration(milliseconds: 550),
-    Duration displayDuration = const Duration(milliseconds: 3000),
-    double additionalTopPadding = 16.0,
-    double height = 100,
+    Duration displayDuration = const Duration(milliseconds: 3200),
     VoidCallback? onTap,
     OverlayState? overlayState,
   }) async {
     if (message.isEmpty) return;
     if (type == Type.error) debugPrint("Error Toast log is: $message");
 
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final accent = _accent(type);
+
     toastification.showCustom(
       context: context,
-      autoCloseDuration: const Duration(seconds: 5),
-      alignment: Alignment.topRight,
-      dismissDirection: DismissDirection.none,
+      autoCloseDuration: displayDuration,
+      alignment: Alignment.topCenter,
+      dismissDirection: DismissDirection.up,
+      animationDuration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 460),
       animationBuilder: (context, animation, alignment, child) {
-        return FadeTransition(opacity: animation, child: child);
+        if (reduceMotion) return child;
+        final pop = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: const Interval(0, 0.6, curve: Curves.easeOut),
+            reverseCurve: Curves.easeIn,
+          ),
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -0.6),
+              end: Offset.zero,
+            ).animate(pop),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.88, end: 1).animate(pop),
+              child: child,
+            ),
+          ),
+        );
       },
       direction: TextDirection.ltr,
       builder: (context, holder) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: .2),
-                blurRadius: 40,
-                spreadRadius: 15,
-              ),
-            ],
-          ),
+        return Directionality(
+          textDirection: TextDirection.rtl,
           child: GestureDetector(
-            onTapDown: (_) => holder.pause(),
-            onTapUp: (_) => holder.start(),
-            dragStartBehavior: DragStartBehavior.down,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0).copyWith(bottom: 8),
-              child: Column(
+            onTap: () {
+              onTap?.call();
+              toastification.dismissById(holder.id);
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              decoration: BoxDecoration(
+                color: _soft(type, dark),
+                borderRadius: BorderRadius.circular(20),
+                // A thicker bottom edge gives the same chunky lip as buttons.
+                border: Border(
+                  top: BorderSide(color: accent, width: 2),
+                  left: BorderSide(color: accent, width: 2),
+                  right: BorderSide(color: accent, width: 2),
+                  bottom: BorderSide(color: accent, width: 5),
+                ),
+              ),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: _checkColor(type),
-                            width: 1.3,
-                          ),
-                        ),
-                        child: Center(
-                          child:
-                              type == Type.info
-                                  ? Text(
-                                    "!",
-                                    style: TextStyle(
-                                      color: _checkColor(type),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                  : Icon(
-                                    type == Type.success
-                                        ? Icons.done
-                                        : Icons.close,
-                                    color: _checkColor(type),
-                                    size: 16,
-                                  ),
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Text(
-                            //   type == Type.error
-                            //       ? 'اخطار'
-                            //       : type == Type.success
-                            //       ? 'موفق'
-                            //       : "هشدار",
-                            //   style: TextStyle(
-                            //     color: Colors.black,
-                            //     fontWeight: FontWeight.w600,
-                            //     fontSize: 14,
-                            //   ),
-                            // ),
-                            // SizedBox(height: 4),
-                            Text(
-                              message,
-                              style: TextStyle(
-                                color: Color(0xFF252525),
-                                fontFamily: "Masir",
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          toastification.dismissById(holder.id);
-                        },
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accent,
+                    ),
+                    child: Icon(_icon(type), color: Colors.white, size: 18),
                   ),
-                  SizedBox(height: 8),
-                  AnimatedLinearProgress(color: _checkColor(type)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      message,
+                      style: TextStyle(
+                        color: dark
+                            ? const Color(0xFFF2F3F7)
+                            : const Color(0xFF252525),
+                        fontFamily: "Masir",
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

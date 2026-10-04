@@ -17,8 +17,11 @@ import '/features/institute/presentation/bloc/announcements/announcements_bloc.d
 import '/features/institute/presentation/bloc/institute_detail/institute_detail_bloc.dart';
 import '/features/institute/presentation/bloc/join_institute/join_institute_bloc.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
+import '/features/institute/presentation/widgets/institute_switcher_sheet.dart';
 import '/features/main/presentation/page/main_page.dart';
 import '/widgets/custom_error.dart';
+import '/widgets/base_modal.dart';
+import '/widgets/exit_modal.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/masir_bottom_bar.dart';
 import '/widgets/skeleton.dart';
@@ -119,6 +122,7 @@ class _InstituteShellState extends State<InstituteShell> {
                   name: data.name,
                   slug: data.slug,
                   logoUrl: data.logoUrl,
+                  themePreset: data.themePreset,
                 );
               }
               if (data.membership.isMember && !_announcementsLoaded) {
@@ -139,6 +143,7 @@ class _InstituteShellState extends State<InstituteShell> {
               preset: presetKey ?? kDefaultPreset,
               child: Builder(
                 builder: (context) {
+                  final tab = _tabFor(path);
                   final scaffold = Scaffold(
                     backgroundColor: context.colors.background,
                     body: Column(
@@ -163,7 +168,7 @@ class _InstituteShellState extends State<InstituteShell> {
                           ),
                         ),
                         MasirBottomBar(
-                          currentIndex: _tabFor(path),
+                          currentIndex: tab,
                           onTap: _onTab,
                           items: masirInstituteTabs(),
                         ),
@@ -171,17 +176,30 @@ class _InstituteShellState extends State<InstituteShell> {
                     ),
                   );
                   final loaded = state.whenOrNull(success: (_, data) => data);
-                  return Stack(
-                    children: [
-                      scaffold,
-                      if (loaded != null)
-                        _BrandWash(
-                          key: const ValueKey('brand-wash'),
-                          preset: presetFor(loaded.themePreset),
-                          logoUrl: loaded.logoUrl,
-                          name: loaded.name ?? '',
-                        ),
-                    ],
+                  return PopScope(
+                    // Inside an institute, back climbs one level at a time:
+                    // other tab -> institute home -> ویترین.
+                    canPop: false,
+                    onPopInvokedWithResult: (didPop, _) {
+                      if (didPop) return;
+                      if (tab != 0) {
+                        _onTab(0);
+                      } else {
+                        CustomNavigator.go(MainPage.routeName);
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        scaffold,
+                        if (loaded != null)
+                          _BrandWash(
+                            key: const ValueKey('brand-wash'),
+                            preset: presetFor(loaded.themePreset),
+                            logoUrl: loaded.logoUrl,
+                            name: loaded.name ?? '',
+                          ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -198,6 +216,30 @@ class _Header extends StatelessWidget {
   final InstituteDetailState state;
 
   const _Header({required this.instituteId, required this.state});
+
+  /// Closing the student's current institute asks first; browsing any other
+  /// institute closes straight away.
+  void _close(BuildContext context) {
+    if (instituteId != HiveService.currentInstituteId) {
+      CustomNavigator.go(MainPage.routeName);
+      return;
+    }
+    showCustomModal(
+      context: context,
+      scrollControlDisabledMaxHeightRatio: .4,
+      callBack: (_) {},
+      child: ExitModal(
+        text: 'از این مؤسسه بیرون می‌ری؟',
+        description: 'برمی‌گردی به ویترین. هر وقت خواستی دوباره وارد می‌شی.',
+        deleteText: 'برو به ویترین',
+        confirmColor: context.colors.primary,
+        exitAction: () {
+          Navigator.of(context).pop();
+          CustomNavigator.go(MainPage.routeName);
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -237,7 +279,7 @@ class _Header extends StatelessWidget {
             children: [
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => CustomNavigator.go(MainPage.routeName),
+                onTap: () => _close(context),
                 child: Container(
                   width: 40,
                   height: 40,
@@ -249,21 +291,35 @@ class _Header extends StatelessWidget {
                 ),
               ),
               12.w,
-              Hero(
-                tag: 'institute-logo-$instituteId',
-                child: InstituteLogo(
-                  logoUrl: data.logoUrl,
-                  name: data.name ?? '',
-                  preset: preset,
-                  size: 44,
-                ),
-              ),
-              8.w,
               Expanded(
-                child: CustomText.headline(
-                  data.name ?? '',
-                  color: on,
-                  maxLines: 1,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => showInstituteSwitcher(context, replace: true),
+                  child: Row(
+                    children: [
+                      Hero(
+                        tag: 'institute-logo-$instituteId',
+                        child: InstituteLogo(
+                          logoUrl: data.logoUrl,
+                          name: data.name ?? '',
+                          preset: preset,
+                          size: 44,
+                        ),
+                      ),
+                      8.w,
+                      Flexible(
+                        child: CustomText.headline(
+                          data.name ?? '',
+                          color: on,
+                          maxLines: 1,
+                        ),
+                      ),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: on.withValues(alpha: 0.85),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               GestureDetector(

@@ -7,16 +7,17 @@ import '../../../about_us/presentation/page/about_us_page.dart';
 import '../../../auth/domain/entities/submit_username.dart';
 import '../../../auth/presentation/page/auth_screen.dart';
 import '../../../edit_profile/presentation/page/edit_profile_page.dart';
-import '../../../main/presentation/page/institutes_page.dart';
 import '../../../../widgets/exit_modal.dart';
 import '../../../../widgets/base_modal.dart';
 import '/core/theme/theme_context.dart';
 import '/core/helper/jalali_format.dart';
 import '/core/theme/institute_presets.dart';
+import '/features/institute/presentation/widgets/institute_switcher_sheet.dart';
 import '/widgets/brand_media.dart';
 import '/widgets/list_row.dart';
 import '/widgets/masir_card.dart';
 import '/widgets/masir_page.dart';
+import '/core/feedback/masir_feedback.dart';
 import '/widgets/section_header.dart';
 import '/core/theme/masir_style.dart';
 
@@ -53,6 +54,25 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(height: MasirSpace.md),
         ListRow.menu(
+          icon: Icons.vibration_rounded,
+          title: 'لرزش موقع لمس',
+          subtitle: 'یه حس کوچولو موقع زدن و برنده شدن',
+          trailing: Switch(
+            value: HiveService.hapticsEnabled,
+            onChanged: (v) {
+              HiveService.hapticsEnabled = v;
+              MasirFeedback.select();
+              setState(() {});
+            },
+          ),
+          onTap: () {
+            HiveService.hapticsEnabled = !HiveService.hapticsEnabled;
+            MasirFeedback.select();
+            setState(() {});
+          },
+        ),
+        const SizedBox(height: MasirSpace.md),
+        ListRow.menu(
           icon: Icons.logout_rounded,
           title: 'خروج از حساب',
           danger: true,
@@ -61,7 +81,7 @@ class _ProfilePageState extends State<ProfilePage> {
             scrollControlDisabledMaxHeightRatio: .4,
             callBack: (_) {},
             child: ExitModal(
-              text: 'می‌خواهی از حسابت خارج شوی؟',
+              text: 'می‌خوای از حسابت خارج بشی؟',
               exitAction: () {
                 HiveService.logout();
                 CustomNavigator.go(AuthScreen.routeName);
@@ -80,18 +100,20 @@ class _ProfilePageState extends State<ProfilePage> {
       leading: InstituteLogo(
         logoUrl: HiveService.currentInstituteLogoUrl,
         name: HiveService.currentInstituteName ?? '',
-        preset: presetFor(null),
+        preset: presetFor(HiveService.currentInstitutePreset),
         size: 40,
         ring: false,
       ),
       title: hasInstitute
           ? (HiveService.currentInstituteName ?? '')
           : 'هنوز انتخاب نشده',
-      subtitle: 'آخرین مؤسسه‌ای که وارد شدی',
+      subtitle: hasInstitute
+          ? 'برای عوض کردن بزن'
+          : 'یکی از مؤسسه‌هات رو انتخاب کن',
       trailing: Icon(Icons.swap_horiz_rounded, color: c.primary),
-      onTap: () => CustomNavigator.pushNamed(
-        InstitutesPage.routeName,
-      ).then((_) => setState(() {})),
+      onTap: () => showInstituteSwitcher(context).then((_) {
+        if (mounted) setState(() {});
+      }),
     );
   }
 }
@@ -130,7 +152,7 @@ class _ProfileHero extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CustomText.title(
-                  hasName ? name : 'نامت را تنظیم کن',
+                  hasName ? name : 'اسمت رو بذار',
                   color: on,
                   maxLines: 1,
                 ),

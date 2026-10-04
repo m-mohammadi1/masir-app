@@ -1,3 +1,4 @@
+import '/core/feedback/masir_feedback.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,6 +21,7 @@ import '/features/institute/presentation/widgets/announcement_preview_card.dart'
 import '/features/institute/presentation/widgets/course_card.dart';
 import '/features/main/data/models/request_courses_model.dart';
 import '/features/main/presentation/bloc/courses/courses_bloc.dart';
+import '/features/home/page/detail_course_page.dart';
 import '/features/main/presentation/page/outline_page.dart';
 import '/widgets/brand_media.dart';
 import '/widgets/chunky_box.dart';
@@ -61,6 +63,7 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
       listener: (context, state) {
         state.whenOrNull(
           success: () {
+            MasirFeedback.success();
             context.read<InstituteDetailBloc>().add(
               const InstituteDetailEvent.markJoined(),
             );
@@ -184,7 +187,7 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
             success: (_, data) {
               if (data.isEmpty) {
                 return CustomText.body(
-                  'هنوز دوره‌ای منتشر نشده. به‌زودی!',
+                  'هنوز دوره‌ای نیومده. به‌زودی!',
                   color: c.inkMuted,
                 );
               }
@@ -193,16 +196,15 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
                   for (final course in data) ...[
                     CourseCard(
                       course: course,
-                      locked: !isMember,
-                      onTap: isMember
-                          ? () => CustomNavigator.pushNamed(
-                              OutlinePage.routeName,
-                              arguments: withThemePreset({
-                                'id': course.id ?? '',
-                                'title': course.title ?? '',
-                              }, preset),
-                            )
-                          : null,
+                      // Course details first: it holds the sign-up button
+                      // and the way into the roadmap.
+                      onTap: () => CustomNavigator.pushNamed(
+                        DetailCoursePage.routeName,
+                        arguments: courseDetailArgs(
+                          course.id ?? '',
+                          themePreset: preset,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: MasirSpace.md),
                   ],
