@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_html/flutter_html.dart';
+import '/widgets/masir_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -27,7 +27,12 @@ import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/pill_chip.dart';
 import '/widgets/progress_pill.dart';
-import '/widgets/skeleton.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/section_header.dart';
+import '/widgets/state_view.dart';
+import '/core/helper/route_args.dart';
+import '/core/theme/institute_themed.dart';
+import '/core/theme/masir_style.dart';
 
 class InstituteHomePage extends StatefulWidget {
   const InstituteHomePage({super.key});
@@ -60,190 +65,178 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
               const InstituteDetailEvent.markJoined(),
             );
             context.read<WalletBloc>().add(const WalletEvent.wallet());
-            CustomToast.toast(context, 'شما اکنون در این مؤسسه هستید');
+            CustomToast.toast(context, 'حالا عضو این مؤسسه‌ای');
           },
         );
       },
       child: BlocBuilder<InstituteDetailBloc, InstituteDetailState>(
         builder: (context, state) {
           return state.when(
-            loading: (_) => const SkeletonList(count: 4, itemHeight: 120),
-            error: (_, _) => const SizedBox.shrink(),
+            loading: (_) => const MasirPage.tab(
+              title: 'خانه',
+              children: [StateView.loading(variant: SkeletonVariant.detail)],
+            ),
+            error: (_, _) => const MasirPage.tab(
+              title: 'خانه',
+              children: [SizedBox.shrink()],
+            ),
             success: (_, data) {
               _loadCourses(data.id ?? '');
-              return _HomeBody(detail: data, coursesBloc: coursesBloc);
+              return MasirPage.tab(
+                title: 'خانه',
+                children: _homeChildren(context, data),
+              );
             },
           );
         },
       ),
     );
   }
-}
 
-String _digits(int n) => toPersianDigits(n.toString());
-
-class _HomeBody extends StatelessWidget {
-  final InstituteDetailModel detail;
-  final CoursesBloc coursesBloc;
-
-  const _HomeBody({required this.detail, required this.coursesBloc});
-
-  @override
-  Widget build(BuildContext context) {
+  List<Widget> _homeChildren(
+    BuildContext context,
+    InstituteDetailModel detail,
+  ) {
     final c = context.colors;
     final isMember = detail.membership.isMember;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: AspectRatio(
-            aspectRatio: 2.4,
-            child: CoverImage(url: detail.coverUrl, fallback: c.primary),
-          ),
+    final preset = InstituteThemed.presetOf(context);
+    return [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(MasirRadius.hero),
+        child: AspectRatio(
+          aspectRatio: 2.4,
+          child: CoverImage(url: detail.coverUrl, fallback: c.primary),
         ),
-        16.h,
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: CustomText(
-                detail.name ?? '',
-                fontWeight: FontWeight.w800,
-                fontSize: 24,
+      ),
+      const SizedBox(height: MasirSpace.lg),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: CustomText.title(detail.name ?? '')),
+          if (detail.topic?.name != null) PillChip(detail.topic!.name!),
+        ],
+      ),
+      if (isMember && detail.membership.memberSince != null) ...[
+        const SizedBox(height: MasirSpace.xs),
+        CustomText.caption(
+          formatMemberSince(detail.membership.memberSince),
+          color: c.inkMuted,
+        ),
+      ],
+      const SizedBox(height: MasirSpace.md),
+      Wrap(
+        spacing: MasirSpace.sm,
+        runSpacing: MasirSpace.sm,
+        children: [
+          PillChip(
+            '${faDigits(detail.courseCount)} دوره',
+            icon: Icons.menu_book_rounded,
+          ),
+          PillChip(
+            '${faDigits(detail.teacherCount)} استاد',
+            icon: Icons.groups_rounded,
+          ),
+          PillChip(
+            '${faDigits(detail.studentCount)} دانش‌آموز',
+            icon: Icons.emoji_people_rounded,
+          ),
+        ],
+      ),
+      if (!isMember) ...[
+        const SizedBox(height: MasirSpace.xl),
+        CustomButton(
+          title: 'عضو شو',
+          loading: context.watch<JoinInstituteBloc>().state.maybeWhen(
+            loading: () => true,
+            orElse: () => false,
+          ),
+          onTap: () {
+            context.read<JoinInstituteBloc>().add(
+              JoinInstituteEvent.join(
+                params: RequestInstituteIdModel(id: detail.id ?? ''),
               ),
-            ),
-            if (detail.topic?.name != null) PillChip(detail.topic!.name!),
-          ],
-        ),
-        if (isMember && detail.membership.memberSince != null) ...[
-          4.h,
-          CustomText(
-            formatMemberSince(detail.membership.memberSince),
-            fontSize: 13,
-            color: c.inkMuted,
-          ),
-        ],
-        12.h,
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            PillChip('${_digits(detail.courseCount)} دوره', icon: Icons.menu_book_rounded),
-            PillChip('${_digits(detail.teacherCount)} استاد', icon: Icons.groups_rounded),
-            PillChip('${_digits(detail.studentCount)} دانش‌آموز', icon: Icons.emoji_people_rounded),
-          ],
-        ),
-        if (!isMember) ...[
-          20.h,
-          CustomButton(
-            title: 'عضو شو',
-            loading: context.watch<JoinInstituteBloc>().state.maybeWhen(
-              loading: () => true,
-              orElse: () => false,
-            ),
-            onTap: () {
-              context.read<JoinInstituteBloc>().add(
-                JoinInstituteEvent.join(
-                  params: RequestInstituteIdModel(id: detail.id ?? ''),
-                ),
-              );
-            },
-          ),
-          8.h,
-          Center(
-            child: CustomText(
-              'رایگان و فوری. هر وقت خواستی می‌توانی شروع کنی.',
-              fontSize: 12,
-              color: c.inkMuted,
-            ),
-          ),
-        ],
-        if (detail.intro != null && detail.intro!.isNotEmpty) ...[
-          20.h,
-          Html(
-            data: detail.intro!,
-            style: {
-              'body': Style(
-                margin: Margins.zero,
-                padding: HtmlPaddings.zero,
-                fontSize: FontSize(16),
-                fontFamily: 'Masir',
-                lineHeight: const LineHeight(1.7),
-                color: c.ink,
-                textAlign: TextAlign.right,
-                direction: TextDirection.rtl,
-              ),
-            },
-          ),
-        ],
-        20.h,
-        ..._homeMiddle(context, detail),
-        24.h,
-        const CustomText('دوره‌ها', fontWeight: FontWeight.w800, fontSize: 18),
-        12.h,
-        BlocBuilder<CoursesBloc, CoursesState>(
-          bloc: coursesBloc,
-          builder: (context, state) {
-            return state.maybeWhen(
-              loading: (_) => const SkeletonList(count: 3, itemHeight: 96),
-              success: (_, data) {
-                if (data.isEmpty) {
-                  return CustomText(
-                    'هنوز دوره‌ای منتشر نشده. به‌زودی!',
-                    color: c.inkMuted,
-                  );
-                }
-                return Column(
-                  children: [
-                    for (final course in data) ...[
-                      CourseCard(
-                        course: course,
-                        locked: !isMember,
-                        onTap: isMember
-                            ? () => CustomNavigator.pushNamed(
-                                OutlinePage.routeName,
-                                arguments: {
-                                  'id': course.id ?? '',
-                                  'title': course.title ?? '',
-                                },
-                              )
-                            : null,
-                      ),
-                      12.h,
-                    ],
-                  ],
-                );
-              },
-              orElse: () => const SizedBox.shrink(),
             );
           },
         ),
-        if (detail.links.isNotEmpty) ...[
-          12.h,
-          Row(
-            children: [
-              for (final link in detail.links)
-                if (link.url != null)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 12),
-                    child: ChunkyBox(
-                      width: 48,
-                      height: 48,
-                      radius: 16,
-                      fill: c.surface,
-                      edge: c.lip,
-                      borderColor: c.border,
-                      alignment: Alignment.center,
-                      onTap: () => launchUrl(Uri.parse(link.url!)),
-                      child: Icon(_iconFor(link.kind), color: c.primary),
-                    ),
-                  ),
-            ],
+        const SizedBox(height: MasirSpace.sm),
+        Center(
+          child: CustomText.caption(
+            'رایگان و فوری. هر وقت خواستی می‌تونی شروع کنی.',
+            color: c.inkMuted,
           ),
-        ],
+        ),
       ],
-    );
+      if (detail.intro != null && detail.intro!.isNotEmpty) ...[
+        const SizedBox(height: MasirSpace.section),
+        MasirHtml(detail.intro!),
+      ],
+      const SizedBox(height: MasirSpace.section),
+      ..._homeMiddle(context, detail),
+      const SectionHeader('دوره‌ها'),
+      BlocBuilder<CoursesBloc, CoursesState>(
+        bloc: coursesBloc,
+        builder: (context, state) {
+          return state.maybeWhen(
+            loading: (_) => const StateView.loading(
+              variant: SkeletonVariant.cards,
+              count: 2,
+            ),
+            success: (_, data) {
+              if (data.isEmpty) {
+                return CustomText.body(
+                  'هنوز دوره‌ای منتشر نشده. به‌زودی!',
+                  color: c.inkMuted,
+                );
+              }
+              return Column(
+                children: [
+                  for (final course in data) ...[
+                    CourseCard(
+                      course: course,
+                      locked: !isMember,
+                      onTap: isMember
+                          ? () => CustomNavigator.pushNamed(
+                              OutlinePage.routeName,
+                              arguments: withThemePreset({
+                                'id': course.id ?? '',
+                                'title': course.title ?? '',
+                              }, preset),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: MasirSpace.md),
+                  ],
+                ],
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
+          );
+        },
+      ),
+      if (detail.links.isNotEmpty) ...[
+        const SizedBox(height: MasirSpace.md),
+        Row(
+          children: [
+            for (final link in detail.links)
+              if (link.url != null)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: MasirSpace.md),
+                  child: ChunkyBox(
+                    width: 48,
+                    height: 48,
+                    radius: MasirRadius.row,
+                    fill: c.surface,
+                    edge: c.lip,
+                    borderColor: c.border,
+                    alignment: Alignment.center,
+                    onTap: () => launchUrl(Uri.parse(link.url!)),
+                    child: Icon(_iconFor(link.kind), color: c.primary),
+                  ),
+                ),
+          ],
+        ),
+      ],
+    ];
   }
 
   List<Widget> _homeMiddle(BuildContext context, InstituteDetailModel detail) {
@@ -271,11 +264,10 @@ class _HomeBody extends StatelessWidget {
         return _ContinueCard(card: card!);
       },
     );
-    if (announcements.isEmpty) return [continueCard];
-    if (unreadOnTop) {
-      return [announcementsSlot, 16.h, continueCard];
-    }
-    return [continueCard, 16.h, announcementsSlot];
+    const gap = SizedBox(height: MasirSpace.section);
+    if (announcements.isEmpty) return [continueCard, gap];
+    if (unreadOnTop) return [announcementsSlot, gap, continueCard, gap];
+    return [continueCard, gap, announcementsSlot, gap];
   }
 
   IconData _iconFor(String? kind) {
@@ -306,23 +298,19 @@ class _AnnouncementsHomeSlot extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const CustomText('اطلاعیه‌ها', fontWeight: FontWeight.w800, fontSize: 18),
-        12.h,
+        SectionHeader(
+          'اطلاعیه‌ها',
+          actionLabel: 'همه',
+          onAction: () => context.push('/i/$instituteId/announcements'),
+        ),
         for (final item in preview) ...[
           AnnouncementPreviewCard(
             item: item,
-            onTap: () => context.go('/i/$instituteId/announcements/${item.id}'),
+            onTap: () =>
+                context.push('/i/$instituteId/announcements/${item.id}'),
           ),
-          12.h,
+          const SizedBox(height: MasirSpace.md),
         ],
-        OnClick(
-          onTap: () => context.go('/i/$instituteId/announcements'),
-          child: CustomText(
-            'همه‌ی اطلاعیه‌ها',
-            color: context.colors.primary,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
       ],
     );
   }
@@ -340,16 +328,16 @@ class _ContinueCard extends StatelessWidget {
     return ChunkyBox(
       fill: c.primary,
       edge: c.primaryEdge,
-      radius: 24,
-      padding: const EdgeInsets.all(16),
+      radius: MasirRadius.hero,
+      padding: const EdgeInsets.all(MasirSpace.card),
       onTap: () {
         if (action.courseId != null) {
           CustomNavigator.pushNamed(
             OutlinePage.routeName,
-            arguments: {
+            arguments: withThemePreset({
               'id': action.courseId!,
               'title': action.courseTitle ?? '',
-            },
+            }, InstituteThemed.presetOf(context)),
           );
         }
       },
@@ -359,21 +347,17 @@ class _ContinueCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CustomText(
+                CustomText.caption(
                   'ادامه یادگیری',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
                   color: c.onPrimary.withValues(alpha: 0.85),
                 ),
-                4.h,
-                CustomText(
+                const SizedBox(height: MasirSpace.xs),
+                CustomText.headline(
                   action.unitTitle ?? action.courseTitle ?? '',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
                   color: c.onPrimary,
                   maxLines: 2,
                 ),
-                12.h,
+                const SizedBox(height: MasirSpace.md),
                 ProgressPill(
                   value: action.progressPercent,
                   color: c.onPrimary,
@@ -382,7 +366,7 @@ class _ContinueCard extends StatelessWidget {
               ],
             ),
           ),
-          16.w,
+          const SizedBox(width: MasirSpace.lg),
           Container(
             width: 52,
             height: 52,

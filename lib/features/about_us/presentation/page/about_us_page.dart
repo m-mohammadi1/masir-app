@@ -1,12 +1,11 @@
-import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_html/flutter_html.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/about_us/presentation/bloc/about_us_bloc.dart';
-import 'package:mohammad/widgets/base_screen.dart';
-import 'package:mohammad/widgets/custom_app_bar.dart';
-import '/widgets/custom_error.dart';
+import '/core/theme/masir_style.dart';
+import '/widgets/masir_html.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/state_view.dart';
 
 class AboutUsPage extends StatefulWidget {
   static const String routeName = "/about-us";
@@ -34,26 +33,25 @@ class _AboutUsPageState extends State<AboutUsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseScreen(
-      body: Column(
-        children: [
-          CustomAppBar(title: "درباره ما"),
-          20.h,
-          Expanded(
-            child: BlocBuilder<AboutUsBloc, AboutUsState>(
-              bloc: bloc,
-              builder: (context, state) {
-                return state.when(
-                  loading: (_) => CustomLoading(),
-                  error: (_, message) => CustomError(message: message),
-                  success: (isLoading, data) {
-                    return Html(data: data.id);
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+    return MasirPage.detail(
+      title: 'درباره‌ی ما',
+      body: BlocBuilder<AboutUsBloc, AboutUsState>(
+        bloc: bloc,
+        builder: (context, state) {
+          return state.when(
+            loading: (_) => const StateView.loading(count: 4),
+            error: (_, message) => StateView.error(message: message),
+            success: (isLoading, data) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  top: MasirSpace.lg,
+                  bottom: MasirSpace.xl,
+                ),
+                child: MasirHtml(data.id ?? ''),
+              );
+            },
+          );
+        },
       ),
     );
   }

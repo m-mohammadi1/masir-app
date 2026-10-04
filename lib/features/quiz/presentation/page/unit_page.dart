@@ -16,14 +16,17 @@ import 'package:mohammad/features/quiz/presentation/widgets/quiz_result_content.
 import 'package:mohammad/features/quiz/presentation/widgets/quiz_unit_content.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_content_framework.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/video_unit_content.dart';
+import 'package:mohammad/core/helper/route_args.dart';
 import 'package:mohammad/features/home/page/detail_course_page.dart';
-import 'package:mohammad/widgets/base_screen.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/helper/go_back.dart';
 import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 import '/widgets/chunky_box.dart';
-import '/widgets/custom_error.dart';
+import '/core/theme/institute_themed.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/state_view.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
 class UnitPage extends StatefulWidget {
@@ -34,12 +37,16 @@ class UnitPage extends StatefulWidget {
   final String unitTitle;
   final String status;
 
+  /// Institute theme carried over from the screen that opened this unit.
+  final String? themePreset;
+
   const UnitPage({
     super.key,
     required this.unitId,
     required this.unitType,
     this.unitTitle = '',
     this.status = '',
+    this.themePreset,
   });
 
   bool get isCompleted => status == 'completed';
@@ -68,9 +75,7 @@ class _UnitPageState extends State<UnitPage> {
 
   void _fetchUnit() {
     _unitsBloc.add(
-      UnitsEvent.units(
-        params: RequestUnitsModel(id: widget.unitId),
-      ),
+      UnitsEvent.units(params: RequestUnitsModel(id: widget.unitId)),
     );
   }
 
@@ -104,7 +109,7 @@ class _UnitPageState extends State<UnitPage> {
     return type == 'video';
   }
 
-  void _handleBack() => CustomNavigator.pop();
+  void _handleBack() => goBack(context);
 
   Widget? _previewBanner(UnitsModel data) {
     if (data.isPreview != true) return null;
@@ -114,18 +119,19 @@ class _UnitPageState extends State<UnitPage> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: context.colors.sunSoft,
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(MasirRadius.chip),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.card_giftcard_rounded,
-                size: 18, color: context.colors.sunEdge),
+            Icon(
+              Icons.card_giftcard_rounded,
+              size: 18,
+              color: context.colors.sunEdge,
+            ),
             8.w,
-            CustomText(
+            CustomText.caption(
               'پیش‌نمایش رایگان',
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
               color: context.colors.sunEdge,
             ),
           ],
@@ -142,21 +148,18 @@ class _UnitPageState extends State<UnitPage> {
         fill: context.colors.surface,
         edge: context.colors.sunEdge,
         borderColor: context.colors.sun,
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CustomText(
+            CustomText.title(
               'پایان بخش رایگان',
-              fontSize: MasirText.titleSize,
-              fontWeight: FontWeight.w800,
               color: context.colors.ink,
               textAlign: TextAlign.center,
             ),
             8.h,
-            CustomText(
-              'برای ادامه مسیر ثبت‌نام کنید',
-              fontSize: 13,
+            CustomText.caption(
+              'برای ادامه مسیر ثبت‌نام کن',
               color: context.colors.inkMuted,
               textAlign: TextAlign.center,
             ),
@@ -167,7 +170,10 @@ class _UnitPageState extends State<UnitPage> {
                 if (courseId == null || courseId.isEmpty) return;
                 CustomNavigator.pushNamed(
                   DetailCoursePage.routeName,
-                  arguments: courseId,
+                  arguments: courseDetailArgs(
+                    courseId,
+                    themePreset: widget.themePreset,
+                  ),
                 );
               },
             ),
@@ -184,10 +190,7 @@ class _UnitPageState extends State<UnitPage> {
     };
     _quizSubmitBloc.add(
       QuizSubmitEvent.quizSubmit(
-        params: RequestQuizSubmitModel(
-          id: widget.unitId,
-          answers: answers,
-        ),
+        params: RequestQuizSubmitModel(id: widget.unitId, answers: answers),
       ),
     );
   }
@@ -209,7 +212,7 @@ class _UnitPageState extends State<UnitPage> {
     }
 
     if (_homeworkAnswer == null) {
-      CustomToast.toast(context, 'لطفاً یک گزینه را انتخاب کنید');
+      CustomToast.toast(context, 'یک گزینه رو انتخاب کن');
       return;
     }
 
@@ -249,10 +252,11 @@ class _UnitPageState extends State<UnitPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: BaseScreen(
-        body: MultiBlocListener(
+    return InstituteThemed(
+      preset: widget.themePreset,
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: MultiBlocListener(
           listeners: [
             BlocListener<UnitsBloc, UnitsState>(
               bloc: _unitsBloc,
@@ -275,19 +279,16 @@ class _UnitPageState extends State<UnitPage> {
             builder: (context, state) {
               return state.when(
                 loading: (isLoading) {
-                  if (isLoading || _unitData == null) {
-                    return const Center(child: CustomLoading());
-                  }
+                  if (isLoading || _unitData == null) return _loadingPage();
                   return _buildContent();
                 },
-                error: (_, message) => CustomError(
-                  message: message,
-                  retry: _fetchUnit,
+                error: (_, message) => MasirPage.focus(
+                  title: widget.unitTitle,
+                  onClose: _handleBack,
+                  body: StateView.error(message: message, retry: _fetchUnit),
                 ),
                 success: (_, data) {
-                  if (_unitData == null) {
-                    return const Center(child: CustomLoading());
-                  }
+                  if (_unitData == null) return _loadingPage();
                   return _buildContent();
                 },
               );
@@ -297,6 +298,12 @@ class _UnitPageState extends State<UnitPage> {
       ),
     );
   }
+
+  Widget _loadingPage() => MasirPage.focus(
+    title: widget.unitTitle,
+    onClose: _handleBack,
+    body: const StateView.loading(variant: SkeletonVariant.detail),
+  );
 
   Widget _buildContent() {
     final data = _unitData!;
@@ -385,8 +392,9 @@ class _UnitPageState extends State<UnitPage> {
       return const Center(child: CustomText('سوالی برای نمایش وجود ندارد'));
     }
 
-    final title =
-        data.title?.isNotEmpty == true ? data.title! : widget.unitTitle;
+    final title = data.title?.isNotEmpty == true
+        ? data.title!
+        : widget.unitTitle;
     final instructionText = resolveInstructionText(data, question);
     final attachmentUrl = resolveAttachmentUrl(question);
     final typeLabel = unitTypeLabel(data.type ?? widget.unitType);

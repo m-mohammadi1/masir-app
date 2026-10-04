@@ -1,5 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
@@ -17,7 +18,7 @@ class EmptyWidget extends StatelessWidget {
     super.key,
     required this.text,
     required this.description,
-    this.icon = Icons.inbox_outlined,
+    this.icon = Icons.inbox_rounded,
     this.actionLabel,
     this.onAction,
   });
@@ -27,7 +28,7 @@ class EmptyWidget extends StatelessWidget {
     final colors = context.colors;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: MasirSpace.xxl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -41,23 +42,20 @@ class EmptyWidget extends StatelessWidget {
               ),
               child: Icon(icon, size: 44, color: colors.primary),
             ),
-            24.h,
-            CustomText(
+            MasirSpace.xl.h,
+            CustomText.headline(
               text,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
               color: colors.ink,
               textAlign: TextAlign.center,
             ),
-            8.h,
-            CustomText(
+            MasirSpace.sm.h,
+            CustomText.caption(
               description,
-              fontSize: 13,
               color: colors.inkMuted,
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[
-              24.h,
+              MasirSpace.xl.h,
               CustomButton(title: actionLabel, onTap: onAction, width: 200),
             ],
           ],

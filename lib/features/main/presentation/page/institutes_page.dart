@@ -6,18 +6,16 @@ import 'package:mohammad/features/main/data/models/request_institutes_model.dart
 import 'package:mohammad/features/main/presentation/bloc/institutes/institutes_bloc.dart';
 import 'package:mohammad/features/discovery/presentation/bloc/topics/topics_bloc.dart';
 import 'package:mohammad/features/discovery/presentation/widgets/topic_chip_row.dart';
-import 'package:mohammad/widgets/base_screen.dart';
-import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '../../data/models/institutes_model.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 import '/core/theme/institute_presets.dart';
 import '/widgets/brand_media.dart';
 import '/widgets/chunky_box.dart';
 import '/widgets/pill_chip.dart';
-import '/widgets/custom_error.dart';
-import '/widgets/empty_widget.dart';
-import '/widgets/skeleton.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/state_view.dart';
 
 class InstitutesPage extends StatefulWidget {
   static const String routeName = "/institutes";
@@ -40,9 +38,9 @@ class _InstitutesPageState extends State<InstitutesPage> {
   }
 
   void _load() {
-    bloc.add(InstitutesEvent.institutes(
-      params: RequestInstitutesModel(topic: _topic),
-    ));
+    bloc.add(
+      InstitutesEvent.institutes(params: RequestInstitutesModel(topic: _topic)),
+    );
   }
 
   void _openInstitute(InstitutesModel institute) {
@@ -53,17 +51,16 @@ class _InstitutesPageState extends State<InstitutesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseScreen(
+    return MasirPage.detail(
+      title: 'مؤسسه‌ها',
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CustomAppBar(title: "مؤسسه‌ها"),
-          8.h,
-          CustomText(
-            "یک مؤسسه انتخاب کن و وارد دنیایش شو",
+          CustomText.caption(
+            'یک مؤسسه انتخاب کن و وارد دنیایش شو',
             color: context.colors.inkMuted,
           ),
-          12.h,
+          const SizedBox(height: MasirSpace.md),
           TopicChipRow(
             bloc: topicsBloc,
             selectedSlug: _topic,
@@ -72,29 +69,28 @@ class _InstitutesPageState extends State<InstitutesPage> {
               _load();
             },
           ),
-          12.h,
+          const SizedBox(height: MasirSpace.md),
           Expanded(
             child: BlocBuilder<InstitutesBloc, InstitutesState>(
               bloc: bloc,
               builder: (context, state) {
                 return state.when(
-                  loading: (_) => const SkeletonList(),
-                  error: (_, message) => CustomError(
-                    message: message,
-                    retry: () => _load(),
-                  ),
+                  loading: (_) => const StateView.loading(),
+                  error: (_, message) =>
+                      StateView.error(message: message, retry: _load),
                   success: (_, data) {
                     if (data.isEmpty) {
-                      return const EmptyWidget(
-                        text: 'مؤسسه‌ای یافت نشد',
-                        description: 'در حال حاضر مؤسسه‌ای برای نمایش نیست.',
-                        icon: Icons.school_outlined,
+                      return const StateView.empty(
+                        text: 'مؤسسه‌ای پیدا نشد',
+                        description: 'فعلاً مؤسسه‌ای برای نمایش نیست.',
+                        icon: Icons.school_rounded,
                       );
                     }
                     return ListView.separated(
                       itemCount: data.length,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      separatorBuilder: (_, _) => 12.h,
+                      padding: const EdgeInsets.only(bottom: MasirSpace.xl),
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: MasirSpace.md),
                       itemBuilder: (context, index) {
                         final institute = data[index];
                         final preset = presetFor(institute.themePreset);
@@ -102,7 +98,7 @@ class _InstitutesPageState extends State<InstitutesPage> {
                           fill: context.colors.surface,
                           edge: preset.edge,
                           borderColor: preset.primary,
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(MasirSpace.card),
                           onTap: () => _openInstitute(institute),
                           child: Row(
                             children: [
@@ -113,19 +109,17 @@ class _InstitutesPageState extends State<InstitutesPage> {
                                 size: 56,
                                 ring: false,
                               ),
-                              14.w,
+                              const SizedBox(width: MasirSpace.lg),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    CustomText(
+                                    CustomText.headline(
                                       institute.name ?? '',
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 16,
                                       maxLines: 1,
                                     ),
                                     if (institute.topic?.name != null) ...[
-                                      6.h,
+                                      const SizedBox(height: MasirSpace.sm),
                                       PillChip(
                                         institute.topic!.name!,
                                         color: preset.primary,

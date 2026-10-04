@@ -9,10 +9,11 @@ import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
 import '/features/institute/presentation/widgets/membership_card.dart';
 import '/features/main/presentation/page/institutes_page.dart';
 import '/widgets/chunky_box.dart';
-import '/widgets/custom_error.dart';
 import '/widgets/custom_text.dart';
-import '/widgets/empty_widget.dart';
-import '/widgets/skeleton.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/state_view.dart';
+import '/core/helper/jalali_format.dart';
+import '/core/theme/masir_style.dart';
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -35,78 +36,55 @@ class _WalletPageState extends State<WalletPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.appSize.width.w,
-        56.h,
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: CustomText(
-            'مؤسسات من',
-            fontWeight: FontWeight.w800,
-            fontSize: 28,
-          ),
-        ),
-        4.h,
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: CustomText(
-            'کارت‌های عضویت تو',
-            fontSize: 14,
-            color: context.colors.inkMuted,
-          ),
-        ),
-        16.h,
-        Expanded(
-          child: BlocBuilder<WalletBloc, WalletState>(
-            bloc: bloc,
-            builder: (context, state) {
-              return state.when(
-                loading: (_) => const SkeletonList(itemHeight: 220),
-                error: (_, message) => CustomError(
-                  message: message,
-                  retry: () => bloc.add(const WalletEvent.wallet()),
-                ),
-                success: (_, data) {
-                  if (data.isEmpty) {
-                    return EmptyWidget(
-                      text: 'هنوز عضو جایی نیستی',
-                      description: 'یک مؤسسه پیدا کن و با یک لمس عضو شو.',
-                      icon: Icons.school_rounded,
-                      actionLabel: 'پیدا کردن مؤسسه',
-                      onAction: () =>
-                          CustomNavigator.pushNamed(InstitutesPage.routeName),
-                    );
-                  }
-                  final learning = data
-                      .where((e) => e.segment != 'joined')
-                      .toList();
-                  final joined = data
-                      .where((e) => e.segment == 'joined')
-                      .toList();
-                  final shown = _segment == 'learning' ? learning : joined;
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _SegmentSwitch(
-                          selected: _segment,
-                          learningCount: learning.length,
-                          joinedCount: joined.length,
-                          onChanged: (v) => setState(() => _segment = v),
-                        ),
-                      ),
-                      16.h,
-                      Expanded(child: _CardList(cards: shown, segment: _segment)),
-                    ],
-                  );
-                },
+    return MasirPage.tab(
+      title: 'مؤسسه‌های من',
+      subtitle: 'کارت‌های عضویت تو',
+      body: BlocBuilder<WalletBloc, WalletState>(
+        bloc: bloc,
+        builder: (context, state) {
+          return state.when(
+            loading: (_) => const StateView.loading(
+              variant: SkeletonVariant.cards,
+              count: 2,
+            ),
+            error: (_, message) => StateView.error(
+              message: message,
+              retry: () => bloc.add(const WalletEvent.wallet()),
+            ),
+            success: (_, data) {
+              if (data.isEmpty) {
+                return StateView.empty(
+                  text: 'هنوز عضو جایی نیستی',
+                  description: 'یک مؤسسه پیدا کن و با یک لمس عضو شو.',
+                  icon: Icons.school_rounded,
+                  actionLabel: 'پیدا کردن مؤسسه',
+                  onAction: () =>
+                      CustomNavigator.pushNamed(InstitutesPage.routeName),
+                );
+              }
+              final learning = data
+                  .where((e) => e.segment != 'joined')
+                  .toList();
+              final joined = data.where((e) => e.segment == 'joined').toList();
+              final shown = _segment == 'learning' ? learning : joined;
+              return Column(
+                children: [
+                  _SegmentSwitch(
+                    selected: _segment,
+                    learningCount: learning.length,
+                    joinedCount: joined.length,
+                    onChanged: (v) => setState(() => _segment = v),
+                  ),
+                  const SizedBox(height: MasirSpace.lg),
+                  Expanded(
+                    child: _CardList(cards: shown, segment: _segment),
+                  ),
+                ],
               );
             },
-          ),
-        ),
-      ],
+          );
+        },
+      ),
     );
   }
 }
@@ -120,7 +98,7 @@ class _CardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (cards.isEmpty) {
-      return EmptyWidget(
+      return StateView.empty(
         text: segment == 'learning'
             ? 'هنوز درسی شروع نکرده‌ای'
             : 'همه‌ی مؤسساتت را شروع کرده‌ای',
@@ -133,9 +111,9 @@ class _CardList extends StatelessWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.only(bottom: MasirSpace.xl),
       itemCount: cards.length,
-      separatorBuilder: (_, _) => 16.h,
+      separatorBuilder: (_, _) => MasirSpace.lg.h,
       itemBuilder: (context, index) {
         final card = cards[index];
         return MembershipCard(
@@ -172,16 +150,14 @@ class _SegmentSwitch extends StatelessWidget {
       return Expanded(
         child: ChunkyBox(
           height: 48,
-          radius: 16,
+          radius: MasirRadius.row,
           fill: on ? c.primary : c.surface,
           edge: on ? c.primaryEdge : c.lip,
           borderColor: on ? null : c.border,
           alignment: Alignment.center,
           onTap: () => onChanged(key),
-          child: CustomText(
-            '$label · ${_digits(count)}',
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
+          child: CustomText.bodyStrong(
+            '$label · ${faDigits(count)}',
             color: on ? c.onPrimary : c.ink,
           ),
         ),
@@ -195,10 +171,5 @@ class _SegmentSwitch extends StatelessWidget {
         tab('joined', 'عضو شده', joinedCount),
       ],
     );
-  }
-
-  String _digits(int n) {
-    const p = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-    return n.toString().split('').map((e) => p[int.parse(e)]).join();
   }
 }

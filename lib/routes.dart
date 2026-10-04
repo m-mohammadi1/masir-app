@@ -1,15 +1,12 @@
-import '/widgets/base_screen.dart';
-import '/widgets/custom_text.dart';
+import '/not_found_page.dart';
 import 'package:go_router/go_router.dart';
+import '/core/helper/route_args.dart';
 import '/splash_screen.dart';
 import 'package:easy_helper/easy_helper.dart';
-import 'package:flutter/material.dart';
 import 'features/about_us/presentation/page/about_us_page.dart';
 import 'features/auth/presentation/page/auth_screen.dart';
 import 'features/edit_profile/presentation/page/edit_profile_page.dart';
-import 'features/home/page/courses_screen.dart';
 import 'features/home/page/detail_course_page.dart';
-import 'features/home/page/route_map_page.dart';
 import 'features/intro/presentation/page/intro_screen.dart';
 import 'features/institute/presentation/page/announcement_detail_page.dart';
 import 'features/institute/presentation/page/institute_announcements_page.dart';
@@ -25,7 +22,6 @@ import 'features/main/presentation/page/institutes_page.dart';
 import 'features/main/presentation/page/main_page.dart';
 import 'features/main/presentation/page/outline_page.dart';
 import 'features/otp/presentation/page/otp_screen.dart';
-import 'features/quiz/presentation/page/end_quiz_page.dart';
 import 'features/quiz/presentation/page/unit_page.dart';
 import 'features/register/presentation/page/register_page.dart';
 
@@ -78,13 +74,17 @@ final GoRouter router = GoRouter(
           builder: (context, state) => InstitutesPage(),
         ),
         GoRoute(
-          path: CoursesScreen.routeName,
-          builder: (context, state) => CoursesScreen(),
-        ),
-        GoRoute(
           path: DetailCoursePage.routeName,
-          builder: (context, state) =>
-              DetailCoursePage(id: state.extra as String),
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is Map) {
+              return DetailCoursePage(
+                id: extra['id'] as String,
+                themePreset: extra[kThemePresetArg] as String?,
+              );
+            }
+            return DetailCoursePage(id: extra as String);
+          },
         ),
         GoRoute(
           path: OutlinePage.routeName,
@@ -94,6 +94,7 @@ final GoRouter router = GoRouter(
               id: extra['id']!,
               title: extra['title']!,
               moduleId: extra['moduleId'],
+              themePreset: extra[kThemePresetArg],
             );
           },
         ),
@@ -108,6 +109,7 @@ final GoRouter router = GoRouter(
           unitType: extra?['type'] ?? '',
           unitTitle: extra?['title'] ?? '',
           status: extra?['status'] ?? '',
+          themePreset: extra?[kThemePresetArg],
         );
       },
     ),
@@ -118,14 +120,6 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: AboutUsPage.routeName,
       builder: (context, state) => AboutUsPage(),
-    ),
-    GoRoute(
-      path: EndQuizPage.routeName,
-      builder: (context, state) => EndQuizPage(),
-    ),
-    GoRoute(
-      path: RouteMapPage.routeName,
-      builder: (context, state) => RouteMapPage(),
     ),
     GoRoute(
       path: '/teachers/:userId',
@@ -181,11 +175,7 @@ final GoRouter router = GoRouter(
       ],
     ),
   ],
-  errorBuilder: (context, state) {
-    return BaseScreen(
-      body: Center(child: CustomText("${state.error?.message}")),
-    );
-  },
+  errorBuilder: (context, state) => const NotFoundPage(),
   redirect: (context, state) {
     //   if (state.matchedLocation.contains("/protected")) {
     //     if (authService.state.status) {

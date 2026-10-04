@@ -97,26 +97,17 @@ class _TeacherLine extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CustomText(
-                teacher.name ?? '',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+              CustomText.caption(teacher.name ?? ''),
               if (showHeadline && (teacher.headline?.isNotEmpty ?? false))
-                CustomText(
+                CustomText.caption(
                   teacher.headline!,
-                  fontSize: 11,
                   color: context.colors.inkMuted,
                 ),
             ],
           ),
         ),
         if (trailing != null)
-          CustomText(
-            trailing!,
-            fontSize: 11,
-            color: context.colors.inkMuted,
-          ),
+          CustomText.caption(trailing!, color: context.colors.inkMuted),
       ],
     );
     if (!tappable) return row;
@@ -147,13 +138,8 @@ class TeacherHeaderChip extends StatelessWidget {
           photoUrl: teacher.photoUrl,
           size: 24,
         ),
-        6.w,
-        CustomText(
-          teacher.name ?? '',
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          maxLines: 1,
-        ),
+        4.w,
+        CustomText.caption(teacher.name ?? '', maxLines: 1),
       ],
     );
   }

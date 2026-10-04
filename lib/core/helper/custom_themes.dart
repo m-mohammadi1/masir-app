@@ -1,10 +1,12 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import '/core/theme/masir_colors.dart';
 import '/core/theme/masir_style.dart';
 
 ThemeData _buildTheme(Brightness brightness) {
-  final colors =
-      brightness == Brightness.dark ? MasirColors.dark : MasirColors.light;
+  final colors = brightness == Brightness.dark
+      ? MasirColors.dark
+      : MasirColors.light;
   final scheme = brightness == Brightness.dark
       ? ColorScheme.dark(
           primary: colors.primary,
@@ -25,7 +27,7 @@ ThemeData _buildTheme(Brightness brightness) {
 
   OutlineInputBorder inputBorder(Color color, [double width = 2]) =>
       OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(MasirRadius.row),
         borderSide: BorderSide(color: color, width: width),
       );
 
@@ -41,6 +43,15 @@ ThemeData _buildTheme(Brightness brightness) {
     useMaterial3: true,
     extensions: [colors],
     splashFactory: NoSplash.splashFactory,
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+      },
+    ),
     appBarTheme: AppBarTheme(
       backgroundColor: colors.background,
       foregroundColor: colors.ink,
@@ -83,7 +94,9 @@ ThemeData _buildTheme(Brightness brightness) {
           fontFamily: kMasirFont,
           fontWeight: FontWeight.w800,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MasirRadius.row),
+        ),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -96,7 +109,9 @@ ThemeData _buildTheme(Brightness brightness) {
           fontFamily: kMasirFont,
           fontWeight: FontWeight.w800,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MasirRadius.row),
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -106,7 +121,9 @@ ThemeData _buildTheme(Brightness brightness) {
           fontFamily: kMasirFont,
           fontWeight: FontWeight.w800,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MasirRadius.row),
+        ),
       ),
     ),
   );

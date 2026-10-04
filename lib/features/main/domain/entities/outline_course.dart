@@ -7,6 +7,7 @@ abstract class OutlineCourseEntity extends BaseResult {
   final String? title;
   final int? courseProgressPercent;
   final int? previewUnitCount;
+  final bool isSubscribed;
   final List<OutlineModuleEntity>? modules;
   final List<CourseTeacherSummary> teachers;
 
@@ -15,13 +16,21 @@ abstract class OutlineCourseEntity extends BaseResult {
     this.title,
     this.courseProgressPercent,
     this.previewUnitCount,
+    this.isSubscribed = false,
     this.modules,
     this.teachers = const [],
   });
 
   @override
-  List<Object?> get props =>
-      [id, title, courseProgressPercent, previewUnitCount, modules, teachers];
+  List<Object?> get props => [
+    id,
+    title,
+    courseProgressPercent,
+    previewUnitCount,
+    isSubscribed,
+    modules,
+    teachers,
+  ];
 }
 
 abstract class OutlineModuleEntity extends BaseResult {
@@ -61,7 +70,14 @@ abstract class OutlinePathEntity extends BaseResult {
   });
 
   @override
-  List<Object?> get props => [id, title, order, locked, pathProgressPercent, units];
+  List<Object?> get props => [
+    id,
+    title,
+    order,
+    locked,
+    pathProgressPercent,
+    units,
+  ];
 }
 
 abstract class OutlineUnitEntity extends BaseResult {
@@ -84,5 +100,13 @@ abstract class OutlineUnitEntity extends BaseResult {
   });
 
   @override
-  List<Object?> get props => [id, title, type, order, status, locked, isPreview];
+  List<Object?> get props => [
+    id,
+    title,
+    type,
+    order,
+    status,
+    locked,
+    isPreview,
+  ];
 }

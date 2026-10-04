@@ -68,13 +68,7 @@ class PillChip extends StatelessWidget {
             Icon(icon, size: 14, color: fg),
             const SizedBox(width: 4),
           ],
-          CustomText(
-            label,
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: fg,
-            maxLines: 1,
-          ),
+          CustomText.micro(label, color: fg, maxLines: 1),
         ],
       ),
     );

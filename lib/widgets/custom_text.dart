@@ -16,7 +16,7 @@ class CustomText extends StatelessWidget {
     this.text, {
     super.key,
     this.color,
-    this.fontSize = 14,
+    this.fontSize = MasirText.bodySize,
     this.fontWeight,
     this.fontFamily,
     this.textAlign,
@@ -24,11 +24,91 @@ class CustomText extends StatelessWidget {
     this.style,
   });
 
+  /// Role constructors. Prefer these over raw [fontSize] on screens.
+  const CustomText.display(
+    this.text, {
+    super.key,
+    this.color,
+    this.textAlign,
+    this.maxLines,
+  }) : fontSize = MasirText.displaySize,
+       fontWeight = MasirText.heavy,
+       fontFamily = null,
+       style = null;
+
+  const CustomText.title(
+    this.text, {
+    super.key,
+    this.color,
+    this.textAlign,
+    this.maxLines,
+  }) : fontSize = MasirText.titleSize,
+       fontWeight = MasirText.heavy,
+       fontFamily = null,
+       style = null;
+
+  const CustomText.headline(
+    this.text, {
+    super.key,
+    this.color,
+    this.textAlign,
+    this.maxLines,
+  }) : fontSize = MasirText.headlineSize,
+       fontWeight = MasirText.heavy,
+       fontFamily = null,
+       style = null;
+
+  const CustomText.body(
+    this.text, {
+    super.key,
+    this.color,
+    this.textAlign,
+    this.maxLines,
+  }) : fontSize = MasirText.bodySize,
+       fontWeight = MasirText.regular,
+       fontFamily = null,
+       style = null;
+
+  const CustomText.bodyStrong(
+    this.text, {
+    super.key,
+    this.color,
+    this.textAlign,
+    this.maxLines,
+  }) : fontSize = MasirText.bodySize,
+       fontWeight = MasirText.strong,
+       fontFamily = null,
+       style = null;
+
+  const CustomText.caption(
+    this.text, {
+    super.key,
+    this.color,
+    this.textAlign,
+    this.maxLines,
+    FontWeight? weight,
+  }) : fontSize = MasirText.captionSize,
+       fontWeight = weight ?? MasirText.label,
+       fontFamily = null,
+       style = null;
+
+  const CustomText.micro(
+    this.text, {
+    super.key,
+    this.color,
+    this.textAlign,
+    this.maxLines,
+  }) : fontSize = MasirText.microSize,
+       fontWeight = MasirText.heavy,
+       fontFamily = null,
+       style = null;
+
   @override
   Widget build(BuildContext context) {
     return Text(
       text.tr,
       maxLines: maxLines,
+      overflow: maxLines == null ? null : TextOverflow.ellipsis,
       textAlign: textAlign,
       style:
           style ??
@@ -36,7 +116,7 @@ class CustomText extends StatelessWidget {
             fontFamily: fontFamily ?? kMasirFont,
             color: color ?? context.colors.text,
             fontSize: fontSize,
-            fontWeight: fontWeight ?? FontWeight.w400,
+            fontWeight: fontWeight ?? MasirText.regular,
           ),
     );
   }
@@ -89,6 +169,6 @@ TextStyle customTextStyle(
     fontFamily: fontFamily ?? kMasirFont,
     color: color ?? context.colors.text,
     fontSize: fontSize,
-    fontWeight: fontWeight ?? FontWeight.w400,
+    fontWeight: fontWeight ?? MasirText.regular,
   );
 }

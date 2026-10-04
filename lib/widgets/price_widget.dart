@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '/core/helper/helper_extension.dart';
+import '/core/helper/jalali_format.dart';
 import '/widgets/custom_text.dart';
 
+/// A price in Persian digits with thousands separators, e.g. `۴۵۰٬۰۰۰ تومان`.
 class PriceWidget extends StatelessWidget {
   final num? price;
   final String? priceFormatted;
@@ -20,8 +21,11 @@ class PriceWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-        textDirection: TextDirection.ltr,
-        child: CustomText(priceFormatted ??"${price.toPrice} تومان", fontSize: fontSize, color: color , fontWeight: fontWeight,));
+    return CustomText(
+      priceFormatted ?? formatPrice(price ?? 0, unit: 'تومان'),
+      fontSize: fontSize,
+      color: color,
+      fontWeight: fontWeight,
+    );
   }
 }

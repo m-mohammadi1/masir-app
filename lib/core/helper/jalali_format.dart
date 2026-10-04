@@ -26,6 +26,23 @@ String toPersianDigits(String input) {
   }).join();
 }
 
+/// Converts every Latin digit in [input] to a Persian digit.
+String faDigits(Object? input) => toPersianDigits('${input ?? ''}');
+
+/// Formats an amount with Persian digits and thousands separators,
+/// e.g. `۴۵۰٬۰۰۰`. Pass [unit] to append a unit such as `تومان`.
+String formatPrice(num amount, {String? unit}) {
+  final digits = amount.round().abs().toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buf.write('٬');
+    buf.write(digits[i]);
+  }
+  final sign = amount < 0 ? '-' : '';
+  final text = toPersianDigits('$sign$buf');
+  return unit == null ? text : '$text $unit';
+}
+
 String formatMemberSince(String? rfc3339) {
   if (rfc3339 == null || rfc3339.isEmpty) return '';
   try {

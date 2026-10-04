@@ -2,6 +2,7 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 class SpeedWidget extends StatefulWidget {
   final Color color;
@@ -48,15 +49,13 @@ class _SpeedWidgetState extends State<SpeedWidget> {
                       ? widget.color
                       : context.colors.border,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(MasirRadius.card),
                 color: data[index] == selected
                     ? widget.color
                     : context.colors.surface,
               ),
-              child: CustomText(
+              child: CustomText.micro(
                 data[index],
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
                 color: data[index] == selected
                     ? context.colors.onPrimary
                     : context.colors.inkMuted,

@@ -8,6 +8,7 @@ import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/pill_chip.dart';
 import '/widgets/progress_pill.dart';
+import '/core/theme/masir_style.dart';
 
 String? levelLabelFa(String? level) {
   switch (level) {
@@ -53,7 +54,7 @@ class CourseCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(MasirRadius.row),
             child: SizedBox(
               width: 76,
               height: 76,
@@ -84,14 +85,9 @@ class CourseCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CustomText(
-                  course.title ?? '',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  maxLines: 2,
-                ),
+                CustomText.bodyStrong(course.title ?? '', maxLines: 2),
                 if (course.teachers.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   CourseTeacherRow(teachers: course.teachers),
                 ],
                 if (progress != null) ...[

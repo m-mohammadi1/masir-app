@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/theme/masir_style.dart';
 
 import '/core/theme/theme_context.dart';
 import '/widgets/custom_text.dart';
@@ -45,11 +46,12 @@ class TeacherAvatar extends StatelessWidget {
     return ColoredBox(
       color: context.colors.primarySoft,
       child: Center(
+        // Initials scale with the avatar, so they sit outside the type scale.
         child: CustomText(
           _initials,
-          fontSize: size * 0.36,
-          fontWeight: FontWeight.w800,
-          color: context.colors.primary,
+          style: MasirText.display(
+            context.colors.primary,
+          ).copyWith(fontSize: size * 0.36),
         ),
       ),
     );

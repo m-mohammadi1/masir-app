@@ -1,3 +1,4 @@
+import '/core/helper/route_args.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 
@@ -13,7 +14,9 @@ import '/widgets/brand_media.dart';
 import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/pill_chip.dart';
+import '/widgets/section_header.dart';
 import '/widgets/skeleton.dart';
+import '/core/theme/masir_style.dart';
 
 class SectionRenderer extends StatelessWidget {
   final MainFeedSectionEntity section;
@@ -52,16 +55,16 @@ class SectionSkeleton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: MasirSpace.pageH,
             child: SkeletonText(width: 120, height: 18),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: MasirSpace.inSection),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: MasirSpace.pageH,
             child: SkeletonBox(
-              width: screenWidth - 32,
+              width: screenWidth - MasirSpace.gutter * 2,
               height: 200,
-              radius: 24,
+              radius: MasirRadius.hero,
             ),
           ),
         ],
@@ -71,19 +74,22 @@ class SectionSkeleton extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+          padding: MasirSpace.pageH,
           child: SkeletonText(width: 140, height: 18),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: MasirSpace.inSection),
         SizedBox(
           height: 200,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: MasirSpace.pageH,
             itemCount: 3,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (_, _) =>
-                const SkeletonBox(width: 168, height: 200, radius: 20),
+            itemBuilder: (_, _) => const SkeletonBox(
+              width: 168,
+              height: 200,
+              radius: MasirRadius.card,
+            ),
           ),
         ),
       ],
@@ -97,10 +103,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: CustomText(title, fontWeight: FontWeight.w800, fontSize: 18),
-    );
+    return Padding(padding: MasirSpace.pageH, child: SectionHeader(title));
   }
 }
 
@@ -149,7 +152,7 @@ class _InstituteCarousel extends StatelessWidget {
           height: height,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: MasirSpace.pageH,
             itemCount: items.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
@@ -187,7 +190,7 @@ class _FeaturedInstituteCard extends StatelessWidget {
       width: width,
       fill: preset.primary,
       edge: preset.edge,
-      radius: 24,
+      radius: MasirRadius.hero,
       onTap: () => _openInstitute(item),
       child: Stack(
         fit: StackFit.expand,
@@ -229,12 +232,10 @@ class _FeaturedInstituteCard extends StatelessWidget {
                     children: [
                       if (item.topic?.name != null) ...[
                         PillChip(item.topic!.name!, tone: PillTone.onDark),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                       ],
-                      CustomText(
+                      CustomText.headline(
                         item.name ?? '',
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
                         color: Colors.white,
                         maxLines: 1,
                       ),
@@ -275,7 +276,7 @@ class _QuietInstituteCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(18),
+                  top: Radius.circular(MasirRadius.card),
                 ),
                 child: CoverImage(
                   url: item.coverUrl,
@@ -300,17 +301,11 @@ class _QuietInstituteCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CustomText(
-                  item.name ?? '',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                  maxLines: 1,
-                ),
+                CustomText.bodyStrong(item.name ?? '', maxLines: 1),
                 if (item.topic?.name != null) ...[
                   const SizedBox(height: 4),
-                  CustomText(
+                  CustomText.caption(
                     item.topic!.name!,
-                    fontSize: 12,
                     color: c.inkMuted,
                     maxLines: 1,
                   ),
@@ -341,7 +336,7 @@ class _CourseCarousel extends StatelessWidget {
           height: 236,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: MasirSpace.pageH,
             itemCount: items.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
@@ -382,12 +377,12 @@ class _CourseCarousel extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: c.surface,
-                                  borderRadius: BorderRadius.circular(99),
+                                  borderRadius: BorderRadius.circular(
+                                    MasirRadius.pill,
+                                  ),
                                 ),
-                                child: CustomText(
+                                child: CustomText.micro(
                                   item.topic!.name!,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
                                   color: c.primary,
                                   maxLines: 1,
                                 ),
@@ -400,18 +395,15 @@ class _CourseCarousel extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CustomText(
+                            CustomText.bodyStrong(
                               item.title ?? '',
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
                               maxLines: 2,
                             ),
                             if (item.instituteName != null &&
                                 item.instituteName!.isNotEmpty) ...[
                               const SizedBox(height: 4),
-                              CustomText(
+                              CustomText.caption(
                                 item.instituteName!,
-                                fontSize: 12,
                                 color: c.inkMuted,
                                 maxLines: 1,
                               ),
@@ -446,7 +438,12 @@ class _ActivityList extends StatelessWidget {
         _SectionHeader(section.title),
         for (var i = 0; i < items.length; i++)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            padding: const EdgeInsets.fromLTRB(
+              MasirSpace.gutter,
+              0,
+              MasirSpace.gutter,
+              MasirSpace.md,
+            ),
             child: _PopIn(
               index: i,
               child: ChunkyBox(
@@ -462,7 +459,8 @@ class _ActivityList extends StatelessWidget {
                         width: 44,
                         height: 44,
                         color: c.primaryTint,
-                        child: items[i].instituteLogoUrl != null &&
+                        child:
+                            items[i].instituteLogoUrl != null &&
                                 items[i].instituteLogoUrl!.isNotEmpty
                             ? Image.network(
                                 items[i].instituteLogoUrl!,
@@ -485,18 +483,12 @@ class _ActivityList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CustomText(
-                            items[i].title ?? '',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            maxLines: 2,
-                          ),
+                          CustomText.body(items[i].title ?? '', maxLines: 2),
                           if (items[i].instituteName != null &&
                               items[i].instituteName!.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            CustomText(
+                            const SizedBox(height: 4),
+                            CustomText.caption(
                               items[i].instituteName!,
-                              fontSize: 12,
                               color: c.inkMuted,
                               maxLines: 1,
                             ),
@@ -520,26 +512,33 @@ class _ActivityList extends StatelessWidget {
     final result = await inject<CourseDetailUseCase>()(
       params: RequestCourseDetailModel(id: courseId),
     );
-    result.fold((_) {
-      CustomNavigator.pushNamed(DetailCoursePage.routeName, arguments: courseId);
-    }, (detail) {
-      final subscribed = detail.coursesModel?.isSubscribed == true;
-      if (!subscribed) {
+    result.fold(
+      (_) {
         CustomNavigator.pushNamed(
           DetailCoursePage.routeName,
           arguments: courseId,
         );
-        return;
-      }
-      CustomNavigator.pushNamed(
-        OutlinePage.routeName,
-        arguments: {
-          'id': courseId,
-          'title': detail.coursesModel?.title ?? item.courseTitle ?? '',
-          if (item.moduleId != null && item.moduleId!.isNotEmpty)
-            'moduleId': item.moduleId,
-        },
-      );
-    });
+      },
+      (detail) {
+        final subscribed = detail.coursesModel?.isSubscribed == true;
+        final preset = detail.coursesModel?.institute?.themePreset;
+        if (!subscribed) {
+          CustomNavigator.pushNamed(
+            DetailCoursePage.routeName,
+            arguments: courseDetailArgs(courseId, themePreset: preset),
+          );
+          return;
+        }
+        CustomNavigator.pushNamed(
+          OutlinePage.routeName,
+          arguments: withThemePreset({
+            'id': courseId,
+            'title': detail.coursesModel?.title ?? item.courseTitle ?? '',
+            if (item.moduleId != null && item.moduleId!.isNotEmpty)
+              'moduleId': item.moduleId!,
+          }, preset),
+        );
+      },
+    );
   }
 }

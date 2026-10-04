@@ -5,6 +5,7 @@ import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/modal_title.dart';
 import '/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 class CustomDatePicker {
   static void show({
@@ -19,20 +20,25 @@ class CustomDatePicker {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           children: [
-            TitleModal(txt: "تاریخ تولد خود را انتخاب کنید"),
-            20.h,
-            DatePickerInline(onChange: (v){
-              value = v;
-            }, initialValue: initialValue),
-            20.h,
-            CustomButton(title: "تایید",onTap: () {
-              if(value != null){
-                onChange(value!);
-              }
-              CustomNavigator.pop();
-
-            },),
-            20.h,
+            TitleModal(txt: "تاریخ تولدت رو انتخاب کن"),
+            16.h,
+            DatePickerInline(
+              onChange: (v) {
+                value = v;
+              },
+              initialValue: initialValue,
+            ),
+            16.h,
+            CustomButton(
+              title: "تایید",
+              onTap: () {
+                if (value != null) {
+                  onChange(value!);
+                }
+                CustomNavigator.pop();
+              },
+            ),
+            16.h,
           ],
         ),
       ),
@@ -138,7 +144,7 @@ class _DatePickerInlineState extends State<DatePickerInline> {
             width: context.appSize.width,
             decoration: BoxDecoration(
               color: context.colors.primary.withValues(alpha: .3),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(MasirRadius.chip),
             ),
           ),
           Directionality(
@@ -206,10 +212,8 @@ class _DatePickerInlineState extends State<DatePickerInline> {
             final value = index + initialOffset;
             final display = value.toString().padLeft(2, '0');
             return Center(
-              child: CustomText(
+              child: CustomText.body(
                 display,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
                 color: index == controller.selectedItem
                     ? context.colors.text
                     : context.colors.text92,

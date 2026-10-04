@@ -4,6 +4,7 @@ import '/widgets/custom_button.dart';
 import '/widgets/custom_outline_button.dart';
 import '/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 class VerifyPhoneBottomSheet extends StatelessWidget {
   final String phoneNumber;
@@ -20,49 +21,35 @@ class VerifyPhoneBottomSheet extends StatelessWidget {
           8.h,
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(MasirRadius.chip),
               color: context.colors.text92.withValues(alpha: .1),
             ),
             height: 45,
             alignment: Alignment.center,
-            child: CustomText(
-              "تایید شماره تلفن",
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            child: CustomText.body("تایید شماره تلفن"),
           ),
 
           16.h,
-          CustomText(
-            "این شماره درسته؟",
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          CustomText.body("این شماره درسته؟"),
           16.h,
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CustomText(
+              CustomText.caption(
                 "کد فعال‌سازی که به شماره ",
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
                 color: context.colors.text92,
               ),
               Directionality(
                 textDirection: TextDirection.ltr,
-                child: CustomText(
+                child: CustomText.caption(
                   phoneNumber,
-                  fontSize: 12,
                   color: context.colors.secondary,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
-              CustomText(
-                " ارسال شده را وارد کنید.",
-                fontSize: 12,
+              CustomText.caption(
+                " ارسال شده رو وارد کن.",
                 color: context.colors.text92,
-                fontWeight: FontWeight.w500,
               ),
             ],
           ),
@@ -83,7 +70,7 @@ class VerifyPhoneBottomSheet extends StatelessWidget {
                   ),
                 ),
               ),
-              10.w,
+              8.w,
               Expanded(
                 child: CustomButton(
                   title: "بله درسته",

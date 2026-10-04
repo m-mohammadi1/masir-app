@@ -1,7 +1,7 @@
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_html/flutter_html.dart';
+import '/widgets/masir_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -10,12 +10,14 @@ import '/core/theme/theme_context.dart';
 import '/features/teacher/data/models/request_teacher_id_model.dart';
 import '/features/teacher/presentation/bloc/teacher_detail/teacher_detail_bloc.dart';
 import '/features/teacher/presentation/widgets/teacher_avatar.dart';
-import '/widgets/base_screen.dart';
-import '/widgets/chunky_box.dart';
-import '/widgets/custom_app_bar.dart';
-import '/widgets/custom_error.dart';
+import '/core/theme/institute_presets.dart';
+import '/widgets/brand_media.dart';
 import '/widgets/custom_text.dart';
-import '/widgets/skeleton.dart';
+import '/widgets/list_row.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/section_header.dart';
+import '/widgets/state_view.dart';
+import '/core/theme/masir_style.dart';
 
 class TeacherPage extends StatefulWidget {
   const TeacherPage({super.key});
@@ -41,33 +43,29 @@ class _TeacherPageState extends State<TeacherPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseScreen(
+    return MasirPage.detail(
+      title: 'استاد',
       body: BlocBuilder<TeacherDetailBloc, TeacherDetailState>(
         bloc: bloc,
         builder: (context, state) {
           return state.when(
-            loading: (_) => const SkeletonList(),
-            error: (_, message) => Column(
-              children: [
-                const CustomAppBar(title: 'استاد'),
-                Expanded(child: CustomError(message: message)),
-              ],
-            ),
+            loading: (_) =>
+                const StateView.loading(variant: SkeletonVariant.detail),
+            error: (_, message) => StateView.error(message: message),
             success: (_, data) {
+              final c = context.colors;
               return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                padding: const EdgeInsets.only(
+                  top: MasirSpace.lg,
+                  bottom: MasirSpace.xxl,
+                ),
                 children: [
-                  const CustomAppBar(title: 'استاد'),
-                  16.h,
                   Center(
                     child: Container(
                       padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: context.colors.primary,
-                          width: 4,
-                        ),
+                        border: Border.all(color: c.primary, width: 4),
                       ),
                       child: TeacherAvatar(
                         name: data.name ?? '',
@@ -76,111 +74,52 @@ class _TeacherPageState extends State<TeacherPage> {
                       ),
                     ),
                   ),
-                  16.h,
-                  Center(
-                    child: CustomText(
-                      data.name ?? '',
-                      fontWeight: FontWeight.w800,
-                      fontSize: 24,
-                    ),
-                  ),
+                  const SizedBox(height: MasirSpace.lg),
+                  Center(child: CustomText.title(data.name ?? '')),
                   if (data.headline?.isNotEmpty == true) ...[
-                    6.h,
+                    const SizedBox(height: MasirSpace.sm),
                     Center(
-                      child: CustomText(
+                      child: CustomText.body(
                         data.headline!,
-                        color: context.colors.inkMuted,
+                        color: c.inkMuted,
                         textAlign: TextAlign.center,
                       ),
                     ),
                   ],
                   if (data.bio?.isNotEmpty == true) ...[
-                    20.h,
-                    Html(
-                      data: data.bio!,
-                      style: {
-                        'body': Style(
-                          margin: Margins.zero,
-                          padding: HtmlPaddings.zero,
-                          fontSize: FontSize(16),
-                          color: context.colors.ink,
-                          textAlign: TextAlign.right,
-                          direction: TextDirection.rtl,
-                        ),
-                      },
-                    ),
+                    const SizedBox(height: MasirSpace.section),
+                    MasirHtml(data.bio!),
                   ],
                   if (data.links.isNotEmpty) ...[
-                    16.h,
+                    const SizedBox(height: MasirSpace.lg),
                     for (final link in data.links)
                       if (link.url != null && link.url!.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.only(bottom: MasirSpace.sm),
                           child: OnClick(
                             onTap: () => launchUrl(Uri.parse(link.url!)),
-                            child: CustomText(
-                              link.url!,
-                              color: context.colors.primary,
-                            ),
+                            child: CustomText.body(link.url!, color: c.primary),
                           ),
                         ),
                   ],
                   if (data.institutes.isNotEmpty) ...[
-                    20.h,
-                    const CustomText(
-                      'مؤسسات',
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                    ),
-                    12.h,
+                    const SizedBox(height: MasirSpace.section),
+                    const SectionHeader('مؤسسه‌ها'),
                     for (final institute in data.institutes)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: ChunkyBox(
-                          fill: context.colors.surface,
-                          edge: context.colors.lip,
-                          borderColor: context.colors.border,
-                          padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.only(bottom: MasirSpace.md),
+                        child: ListRow(
+                          leading: InstituteLogo(
+                            logoUrl: institute.logoUrl,
+                            name: institute.name ?? '',
+                            preset: presetFor(null),
+                            size: 40,
+                            ring: false,
+                          ),
+                          title: institute.name ?? '',
                           onTap: institute.id == null
                               ? null
                               : () => context.go('/i/${institute.id}/home'),
-                          child: Row(
-                            children: [
-                              institute.logoUrl?.isNotEmpty == true
-                                  ? ClipOval(
-                                      child: Image.network(
-                                        institute.logoUrl!,
-                                        width: 44,
-                                        height: 44,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  : CircleAvatar(
-                                      radius: 22,
-                                      backgroundColor:
-                                          context.colors.primarySoft,
-                                      child: CustomText(
-                                        (institute.name ?? '?')
-                                            .characters
-                                            .first,
-                                        fontWeight: FontWeight.w800,
-                                        color: context.colors.primary,
-                                      ),
-                                    ),
-                              12.w,
-                              Expanded(
-                                child: CustomText(
-                                  institute.name ?? '',
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_left_rounded,
-                                color: context.colors.locked,
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                   ],

@@ -6,18 +6,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/request_outline_course_model.dart';
 import 'package:mohammad/features/main/domain/entities/outline_course.dart';
+import 'package:mohammad/features/main/data/models/request_subscribe_course_model.dart';
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
-import 'package:mohammad/core/helper/paper_surface.dart';
+import 'package:mohammad/features/main/presentation/bloc/subscribe_course/subscribe_course_bloc.dart';
 import 'package:mohammad/features/main/presentation/page/outline/roadmap/paper_theme.dart';
-import 'package:mohammad/features/home/page/detail_course_page.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
 import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
-import 'package:mohammad/widgets/base_screen.dart';
-import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
+import '/core/helper/jalali_format.dart';
+import '/core/theme/institute_themed.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
-import '/widgets/custom_error.dart';
+import '/widgets/chunky_box.dart';
+import '/widgets/icon_tile.dart';
+import '/widgets/masir_card.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/progress_pill.dart';
+import '/widgets/state_view.dart';
 
 // ---------------------------------------------------------------------------
 // ARCHITECTURE NOTE
@@ -42,7 +48,16 @@ import '/widgets/custom_error.dart';
 /// Kept moderate (not 0.5) so the route still zigzags, but gentle enough
 /// that a thick trail reads as a winding path rather than a coiling snake.
 const double _kRoadSideRatio = 0.30;
-const double _kRoadNodeSize = 44;
+const double _kRoadNodeSize = 64;
+
+/// Horizontal inset of the trail canvas inside the page. The zigzag geometry
+/// is a fraction of the canvas width, so this must not change.
+const double _kCanvasInset = 12;
+
+/// Width of a unit's slot: wide enough for its caption pill, centred on the
+/// unit's trail line.
+double _unitSlotWidth(double canvasWidth) =>
+    (canvasWidth * 0.44).clamp(80.0, 130.0);
 
 // Fixed vertical space reserved for each waypoint type. Generous on
 // purpose — text is always capped with `maxLines` + ellipsis, so these are
@@ -60,149 +75,67 @@ const double _kTrophyNodeHeight = 112;
 const double _kCourseFinishHeight = 150;
 
 // ---------------------------------------------------------------------------
-// The trail — drawn as a walkable path ribbon, not a thin line, so the
-// roadmap reads as an actual route rather than a graph. Only the color
-// changes between the part still ahead (purple) and the part already
-// adventured (green).
-//
-// Each piece only strokes its two long edges (never the flat cut ends), and
-// caps are plain filled circles with no outline — so wherever two segments
-// meet the colors blend instead of forming a visible ring/knot.
+// The trail — a thick rounded ribbon with a solid "lip" underneath (the same
+// depth as ChunkyBox). The part already walked is solid green; the part still
+// ahead is a dashed neutral track. Lips are painted before faces so they never
+// cover a neighbouring segment.
 // ---------------------------------------------------------------------------
 
 class _TrailRibbon {
   const _TrailRibbon._();
 
-  static const double halfWidth = 6.5;
-  static const double _sampleStep = 8.0;
+  /// Walked ribbon width and the dashed track width.
+  static const double walkedWidth = 14;
+  static const double trackWidth = 10;
+  static const double _dash = 14;
+  static const double _gap = 12;
 
-  /// The portion of [source] already adventured — solid green.
-  static void drawWalked(Canvas canvas, Path source, PaperTheme theme) {
-    _drawSolid(
+  /// Paints the whole trail in two passes (lips, then faces) so a lip is
+  /// never drawn over a neighbouring segment's face.
+  static void paint(
+    Canvas canvas, {
+    required Path walked,
+    required Path ahead,
+    required PaperTheme theme,
+  }) {
+    const lip = Offset(0, Chunky.lip);
+    _dashed(
       canvas,
-      source,
-      fill: theme.trailWalked,
-      edge: theme.trailWalkedEdge,
+      ahead.shift(lip),
+      color: theme.trailUnwalkedEdge,
+      width: trackWidth,
     );
+    canvas.drawPath(
+      walked.shift(lip),
+      _stroke(theme.trailWalkedEdge, walkedWidth),
+    );
+    _dashed(canvas, ahead, color: theme.trailUnwalked, width: trackWidth);
+    canvas.drawPath(walked, _stroke(theme.trailWalked, walkedWidth));
   }
 
-  /// The portion of [source] not yet adventured — solid purple.
-  static void drawUnwalked(Canvas canvas, Path source, PaperTheme theme) {
-    _drawSolid(
-      canvas,
-      source,
-      fill: theme.trailUnwalked,
-      edge: theme.trailUnwalkedEdge,
-    );
-  }
+  static Paint _stroke(Color color, double width) => Paint()
+    ..color = color
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = width
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
 
-  static void _drawSolid(
+  static void _dashed(
     Canvas canvas,
     Path source, {
-    required Color fill,
-    required Color edge,
+    required Color color,
+    required double width,
   }) {
-    final fillPaint = Paint()
-      ..color = fill
-      ..style = PaintingStyle.fill;
-    final edgePaint = Paint()
-      ..color = edge
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..strokeCap = StrokeCap.round;
-
+    final paint = _stroke(color, width);
     for (final metric in source.computeMetrics()) {
-      if (metric.length <= 0.5) continue;
-      _paintPiece(
-        canvas,
-        metric.extractPath(0, metric.length),
-        fillPaint,
-        edgePaint,
-      );
-    }
-  }
-
-  static void _paintPiece(
-    Canvas canvas,
-    Path piece,
-    Paint fillPaint,
-    Paint edgePaint,
-  ) {
-    final points = _samplePoints(piece);
-    if (points == null) return;
-
-    final fillPath = Path()..moveTo(points.left.first.dx, points.left.first.dy);
-    for (final p in points.left.skip(1)) {
-      fillPath.lineTo(p.dx, p.dy);
-    }
-    for (final p in points.right.reversed) {
-      fillPath.lineTo(p.dx, p.dy);
-    }
-    fillPath.close();
-    canvas.drawPath(fillPath, fillPaint);
-
-    final leftEdge = Path()..moveTo(points.left.first.dx, points.left.first.dy);
-    for (final p in points.left.skip(1)) {
-      leftEdge.lineTo(p.dx, p.dy);
-    }
-    canvas.drawPath(leftEdge, edgePaint);
-
-    final rightEdge = Path()
-      ..moveTo(points.right.first.dx, points.right.first.dy);
-    for (final p in points.right.skip(1)) {
-      rightEdge.lineTo(p.dx, p.dy);
-    }
-    canvas.drawPath(rightEdge, edgePaint);
-
-    canvas.drawCircle(points.startCenter, halfWidth, fillPaint);
-    canvas.drawCircle(points.endCenter, halfWidth, fillPaint);
-  }
-
-  static _RibbonPoints? _samplePoints(Path path) {
-    final leftPts = <Offset>[];
-    final rightPts = <Offset>[];
-    Offset? startCenter;
-    Offset? endCenter;
-
-    for (final metric in path.computeMetrics()) {
-      final len = metric.length;
-      if (len <= 0) continue;
-
-      var d = 0.0;
-      while (d < len) {
-        final tangent = metric.getTangentForOffset(d);
-        if (tangent != null) {
-          final normal = Offset(-tangent.vector.dy, tangent.vector.dx);
-          leftPts.add(tangent.position + normal * halfWidth);
-          rightPts.add(tangent.position - normal * halfWidth);
-          startCenter ??= tangent.position;
-        }
-        d += _sampleStep;
-      }
-
-      final endTangent = metric.getTangentForOffset(len);
-      if (endTangent != null) {
-        final normal = Offset(-endTangent.vector.dy, endTangent.vector.dx);
-        leftPts.add(endTangent.position + normal * halfWidth);
-        rightPts.add(endTangent.position - normal * halfWidth);
-        endCenter = endTangent.position;
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final end = math.min(distance + _dash, metric.length);
+        canvas.drawPath(metric.extractPath(distance, end), paint);
+        distance += _dash + _gap;
       }
     }
-
-    if (leftPts.length < 2 || startCenter == null || endCenter == null) {
-      return null;
-    }
-    return _RibbonPoints(leftPts, rightPts, startCenter, endCenter);
   }
-}
-
-class _RibbonPoints {
-  final List<Offset> left;
-  final List<Offset> right;
-  final Offset startCenter;
-  final Offset endCenter;
-
-  const _RibbonPoints(this.left, this.right, this.startCenter, this.endCenter);
 }
 
 // ---------------------------------------------------------------------------
@@ -228,6 +161,11 @@ class _TrailNode {
   /// fixed size for every marker type.
   final double pinRadius;
 
+  /// When set, the waypoint is centred on its trail line in a slot this wide
+  /// (units, whose caption sits under the node). Otherwise its pin edge is
+  /// anchored to the line using [pinRadius] (paths).
+  final double Function(double canvasWidth)? slotWidth;
+
   /// Deterministic horizontal nudges for the two control points of the
   /// cubic bezier leading into this node, so consecutive segments bow in
   /// slightly different ways instead of every curve having identical
@@ -247,6 +185,7 @@ class _TrailNode {
     this.isLeft = false,
     this.xJitter = 0,
     this.pinRadius = _kRoadNodeSize / 2,
+    this.slotWidth,
     this.curveKickA = 0,
     this.curveKickB = 0,
     required this.incomingSolid,
@@ -279,6 +218,9 @@ List<double> _computeCentersY(List<_TrailNode> nodes) {
 class OutlinePage extends StatefulWidget {
   final String title, id;
   final String? moduleId;
+
+  /// Institute theme carried over from the screen that opened the roadmap.
+  final String? themePreset;
   static const String routeName = "/outline";
 
   const OutlinePage({
@@ -286,6 +228,7 @@ class OutlinePage extends StatefulWidget {
     required this.title,
     required this.id,
     this.moduleId,
+    this.themePreset,
   });
 
   @override
@@ -295,10 +238,15 @@ class OutlinePage extends StatefulWidget {
 class _OutlinePageState extends State<OutlinePage>
     with SingleTickerProviderStateMixin {
   final bloc = inject<OutlineCourseBloc>();
+  final subscribeBloc = inject<SubscribeCourseBloc>();
   late final AnimationController _entranceController;
   final _scrollController = ScrollController();
   bool _hasPlayedEntrance = false;
   bool _hasScrolledToCurrent = false;
+
+  /// Set as soon as joining succeeds, so the free-start prompts disappear
+  /// before the reloaded roadmap arrives.
+  bool _justSubscribed = false;
 
   @override
   void initState() {
@@ -317,7 +265,11 @@ class _OutlinePageState extends State<OutlinePage>
   void _playEntranceOnce() {
     if (_hasPlayedEntrance) return;
     _hasPlayedEntrance = true;
-    _entranceController.forward(from: 0);
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _entranceController.value = 1;
+    } else {
+      _entranceController.forward(from: 0);
+    }
   }
 
   /// Scrolls straight to a precomputed Y — no GlobalKey, no `ensureVisible`
@@ -346,6 +298,10 @@ class _OutlinePageState extends State<OutlinePage>
         0.0,
         position.maxScrollExtent,
       );
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _scrollController.jumpTo(target);
+        return;
+      }
       _scrollController.animateTo(
         target,
         duration: const Duration(milliseconds: 850),
@@ -381,17 +337,17 @@ class _OutlinePageState extends State<OutlinePage>
   IconData _getTypeIcon(String type) {
     switch (type) {
       case 'html':
-        return Icons.description_outlined;
+        return Icons.description_rounded;
       case 'practice':
-        return Icons.fact_check_outlined;
+        return Icons.fact_check_rounded;
       case 'quiz':
-        return Icons.help_outline;
+        return Icons.quiz_rounded;
       case 'audio':
-        return Icons.headphones_outlined;
+        return Icons.headphones_rounded;
       case 'video':
-        return Icons.videocam_outlined;
+        return Icons.videocam_rounded;
       default:
-        return Icons.article_outlined;
+        return Icons.article_rounded;
     }
   }
 
@@ -423,34 +379,59 @@ class _OutlinePageState extends State<OutlinePage>
     return count;
   }
 
+  /// Joins the course (free for now: payment is not wired yet) and reloads
+  /// the roadmap once the server confirms, so locked units open up.
+  void _subscribe() {
+    subscribeBloc.add(
+      SubscribeCourseEvent.subscribeCourse(
+        params: RequestSubscribeCourseModel(id: widget.id),
+      ),
+    );
+  }
+
+  void _onSubscribed() {
+    CustomToast.toast(context, 'عضو دوره شدی! بزن بریم');
+    setState(() => _justSubscribed = true);
+    _hasScrolledToCurrent = false;
+    bloc.add(
+      OutlineCourseEvent.outlineCourse(
+        params: RequestOutlineCourseModel(id: widget.id),
+      ),
+    );
+  }
+
   void _promptSubscribe() {
     showModalBottomSheet<void>(
       context: context,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              CustomText(
-                'برای ادامه این واحد ثبت‌نام کنید',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                textAlign: TextAlign.center,
-              ),
-              16.h,
-              CustomButton(
-                title: 'شروع رایگان',
-                onTap: () {
-                  Navigator.pop(context);
-                  CustomNavigator.pushNamed(
-                    DetailCoursePage.routeName,
-                    arguments: widget.id,
-                  );
-                },
-              ),
-            ],
+      builder: (sheetContext) {
+        // The sheet lives on the root overlay, so carry the institute theme.
+        return InstituteThemed(
+          preset: widget.themePreset,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              MasirSpace.gutter,
+              MasirSpace.gutter,
+              MasirSpace.gutter,
+              MasirSpace.xxl,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CustomText.headline(
+                  'برای ادامه این واحد ثبت‌نام کن',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: MasirSpace.lg),
+                CustomButton(
+                  title: 'شروع رایگان',
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _subscribe();
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -477,6 +458,7 @@ class _OutlinePageState extends State<OutlinePage>
         unitType: type ?? '',
         unitTitle: title ?? '',
         status: status ?? '',
+        themePreset: widget.themePreset,
       ).toMap(),
     );
 
@@ -551,8 +533,9 @@ class _OutlinePageState extends State<OutlinePage>
   /// rather than a winding trail.
   _NodeBuildResult _buildTrailNodes(
     List<OutlineModuleEntity> modules,
-    String? currentUnitId,
-  ) {
+    String? currentUnitId, {
+    required bool subscribed,
+  }) {
     final nodes = <_TrailNode>[];
     int? currentUnitIndex;
     bool? previousModuleFullyCompleted;
@@ -625,7 +608,7 @@ class _OutlinePageState extends State<OutlinePage>
             centered: false,
             isLeft: pathIsLeft,
             xJitter: jitter(0.055),
-            pinRadius: 25,
+            pinRadius: _PathWaypoint._size / 2,
             curveKickA: jitter(22),
             curveKickB: jitter(22),
             incomingSolid: pathIncomingSolid,
@@ -657,19 +640,20 @@ class _OutlinePageState extends State<OutlinePage>
               centered: false,
               isLeft: isLeft,
               xJitter: jitter(0.05),
+              slotWidth: _unitSlotWidth,
               curveKickA: jitter(18),
               curveKickB: jitter(18),
               incomingSolid: incomingSolid,
               build: (canvasWidth) => _RoadUnitNode(
+                pinKey: ValueKey('roadmap-pin-${unit.id}'),
                 title: unit.title ?? '',
                 typeLabel: _getTypeLabel(unitType),
                 icon: _getTypeIcon(unitType),
                 isCompleted: isCompleted,
                 isLocked: isLocked,
-                isPreview: unit.isPreview == true,
+                isPreview: !subscribed && unit.isPreview == true,
                 isCurrent: isCurrent,
-                isLeft: isLeft,
-                maxLabelWidth: (canvasWidth * 0.44).clamp(80.0, 130.0),
+                slotWidth: _unitSlotWidth(canvasWidth),
                 onTap: () => _onUnitTap(
                   id: unit.id,
                   type: unitType,
@@ -721,129 +705,154 @@ class _OutlinePageState extends State<OutlinePage>
 
   @override
   Widget build(BuildContext context) {
-    // The roadmap keeps its original paper palette; see RoadmapPalette.
-    return RoadmapPalette.scope(
-      context,
-      child: Builder(builder: _buildRoadmap),
+    return InstituteThemed(
+      preset: widget.themePreset,
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: BlocListener<SubscribeCourseBloc, SubscribeCourseState>(
+          bloc: subscribeBloc,
+          listener: (context, sub) {
+            sub.whenOrNull(
+              success: (_, _) => _onSubscribed(),
+              error: (_, message) => CustomToast.toast(context, message),
+            );
+          },
+          child: BlocBuilder<OutlineCourseBloc, OutlineCourseState>(
+            bloc: bloc,
+            builder: (context, state) {
+              return state.when(
+                loading: (_) => _shell(
+                  body: const StateView.loading(
+                    variant: SkeletonVariant.detail,
+                  ),
+                ),
+                error: (_, message) => _shell(
+                  body: StateView.error(
+                    message: message,
+                    retry: () => bloc.add(
+                      OutlineCourseEvent.outlineCourse(
+                        params: RequestOutlineCourseModel(id: widget.id),
+                      ),
+                    ),
+                  ),
+                ),
+                success: (isLoading, data) {
+                  final courseProgress = data.courseProgressPercent ?? 0;
+                  final modules = data.modules ?? [];
+                  final currentUnitId = _findCurrentUnitId(modules);
+                  final subscribed = data.isSubscribed || _justSubscribed;
+                  final result = _buildTrailNodes(
+                    modules,
+                    currentUnitId,
+                    subscribed: subscribed,
+                  );
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _playEntranceOnce();
+                    _scrollToCurrentUnitOnce(result);
+                  });
+
+                  return _shell(
+                    bleed: true,
+                    stickyBottom: !subscribed && _shouldShowPreviewBar(modules)
+                        ? _PreviewSubscribeBar(
+                            previewCount:
+                                data.previewUnitCount ?? _previewCount(modules),
+                            bloc: subscribeBloc,
+                            onSubscribe: _subscribe,
+                          )
+                        : null,
+                    body: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: MasirSpace.pageH,
+                          child: _CourseProgressHeader(
+                            progress: courseProgress,
+                          ),
+                        ),
+                        const SizedBox(height: MasirSpace.md),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            controller: _scrollController,
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(
+                              _kCanvasInset,
+                              0,
+                              _kCanvasInset,
+                              MasirSpace.xxl,
+                            ),
+                            child: _TrailCanvas(
+                              nodes: result.nodes,
+                              entrance: _entranceController,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildRoadmap(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: BaseScreen(
-        usePaperGrain: false,
-        backgroundColor: context.colors.background,
-        body: Column(
-          children: [
-            CustomAppBar(title: widget.title, topSpacing: 4),
-            10.h,
-            BlocBuilder<OutlineCourseBloc, OutlineCourseState>(
-              bloc: bloc,
-              builder: (context, state) {
-                return state.when(
-                  loading: (_) => CustomLoading(),
-                  error: (_, message) => CustomError(message: message),
-                  success: (isLoading, data) {
-                    final courseProgress = data.courseProgressPercent ?? 0;
-                    final modules = data.modules ?? [];
-                    final currentUnitId = _findCurrentUnitId(modules);
-                    final result = _buildTrailNodes(modules, currentUnitId);
-
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (!mounted) return;
-                      _playEntranceOnce();
-                      _scrollToCurrentUnitOnce(result);
-                    });
-
-                    return Expanded(
-                      child: Column(
-                        children: [
-                          _CourseProgressHeader(progress: courseProgress),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            child: PaperBackdrop(
-                              child: SingleChildScrollView(
-                                controller: _scrollController,
-                                physics: const BouncingScrollPhysics(),
-                                padding: const EdgeInsets.fromLTRB(
-                                  12,
-                                  0,
-                                  12,
-                                  32,
-                                ),
-                                child: _TrailCanvas(
-                                  nodes: result.nodes,
-                                  entrance: _entranceController,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (_shouldShowPreviewBar(modules))
-                            _PreviewSubscribeBar(
-                              previewCount: data.previewUnitCount ??
-                                  _previewCount(modules),
-                              onSubscribe: () {
-                                CustomNavigator.pushNamed(
-                                  DetailCoursePage.routeName,
-                                  arguments: widget.id,
-                                );
-                              },
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+  Widget _shell({
+    required Widget body,
+    Widget? stickyBottom,
+    bool bleed = false,
+  }) {
+    return MasirPage.detail(
+      title: widget.title,
+      body: body,
+      bleed: bleed,
+      stickyBottom: stickyBottom,
     );
   }
 }
 
 class _PreviewSubscribeBar extends StatelessWidget {
   final int previewCount;
+  final SubscribeCourseBloc bloc;
   final VoidCallback onSubscribe;
 
   const _PreviewSubscribeBar({
     required this.previewCount,
+    required this.bloc,
     required this.onSubscribe,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-      decoration: BoxDecoration(
-        color: PaperTheme.of(context).cardPaper,
-        border: Border(
-          top: BorderSide(color: PaperTheme.of(context).paperEdge),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CustomText.caption(
+          '${faDigits(previewCount)} واحد اول رایگان است',
+          textAlign: TextAlign.center,
+          color: context.colors.inkMuted,
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          CustomText(
-            '$previewCount واحد اول رایگان است',
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            textAlign: TextAlign.center,
-            color: PaperTheme.of(context).ink,
+        const SizedBox(height: MasirSpace.sm),
+        BlocBuilder<SubscribeCourseBloc, SubscribeCourseState>(
+          bloc: bloc,
+          builder: (context, state) => CustomButton(
+            title: 'شروع رایگان',
+            loading: state.isLoading,
+            onTap: onSubscribe,
           ),
-          const SizedBox(height: 8),
-          CustomButton(title: 'شروع رایگان', onTap: onSubscribe),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Course header ("ledger" card)
+// Course progress header (pinned above the trail)
 // ---------------------------------------------------------------------------
 
 class _CourseProgressHeader extends StatelessWidget {
@@ -853,48 +862,28 @@ class _CourseProgressHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: PaperTheme.of(context).cardPaper,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: PaperTheme.of(context).paperEdge),
+    final t = PaperTheme.of(context);
+    return MasirCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: MasirSpace.card,
+        vertical: MasirSpace.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              CustomText(
-                'مسیر یادگیری',
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: PaperTheme.of(context).ink,
-              ),
-              _StampBadge(
-                size: 32,
-                ringColor: PaperTheme.of(context).accent,
-                child: CustomText(
-                  '$progress٪',
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: PaperTheme.of(context).ink,
-                ),
+              Expanded(child: CustomText.bodyStrong('مسیر یادگیری')),
+              CustomText.bodyStrong(
+                '${faDigits(progress)}٪',
+                color: progress >= 100 ? t.success : t.accent,
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress / 100.0,
-              minHeight: 6,
-              backgroundColor: PaperTheme.of(context).inkFaint.withValues(alpha: 0.3),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                PaperTheme.of(context).accent,
-              ),
-            ),
+          const SizedBox(height: MasirSpace.sm),
+          ProgressPill(
+            value: progress,
+            color: progress >= 100 ? t.success : t.accent,
           ),
         ],
       ),
@@ -957,6 +946,7 @@ class _TrailCanvas extends StatelessWidget {
                             width: width,
                             xJitter: nodes[i].xJitter,
                             pinRadius: nodes[i].pinRadius,
+                            slotWidth: nodes[i].slotWidth?.call(width),
                             child: nodes[i].build(width),
                           ),
                   ),
@@ -978,6 +968,9 @@ class _ZigZagSlot extends StatelessWidget {
   final double width;
   final double xJitter;
   final double pinRadius;
+
+  /// When set, [child] is centred on the line instead of edge-anchored.
+  final double? slotWidth;
   final Widget child;
 
   const _ZigZagSlot({
@@ -985,6 +978,7 @@ class _ZigZagSlot extends StatelessWidget {
     required this.width,
     required this.xJitter,
     required this.pinRadius,
+    this.slotWidth,
     required this.child,
   });
 
@@ -993,6 +987,26 @@ class _ZigZagSlot extends StatelessWidget {
     final base = isLeft ? _kRoadSideRatio : (1 - _kRoadSideRatio);
     final nodeCenterX = (base + xJitter) * width;
     final nodeRadius = pinRadius;
+
+    final centeredWidth = slotWidth;
+    if (centeredWidth != null) {
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: 0,
+            bottom: 0,
+            left: nodeCenterX - centeredWidth / 2,
+            width: centeredWidth,
+            child: OverflowBox(
+              maxHeight: double.infinity,
+              alignment: Alignment.center,
+              child: child,
+            ),
+          ),
+        ],
+      );
+    }
 
     return Stack(
       clipBehavior: Clip.none,
@@ -1071,6 +1085,9 @@ class _FullTrailPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final walked = Path();
+    final ahead = Path();
+
     for (var i = 1; i < nodes.length; i++) {
       final x1 = _x(nodes[i - 1], size.width);
       final y1 = centersY[i - 1];
@@ -1091,12 +1108,10 @@ class _FullTrailPainter extends CustomPainter {
           y2,
         );
 
-      if (nodes[i].incomingSolid) {
-        _TrailRibbon.drawWalked(canvas, segment, theme);
-      } else {
-        _TrailRibbon.drawUnwalked(canvas, segment, theme);
-      }
+      (nodes[i].incomingSolid ? walked : ahead).addPath(segment, Offset.zero);
     }
+
+    _TrailRibbon.paint(canvas, walked: walked, ahead: ahead, theme: theme);
   }
 
   @override
@@ -1107,11 +1122,8 @@ class _FullTrailPainter extends CustomPainter {
 // Waypoint widgets — pure visuals, no positioning logic of their own.
 // ---------------------------------------------------------------------------
 
-/// Chapter title plate — a full-width header card, *not* a trail marker.
-/// It still sits on the timeline (so the trail keeps flowing between
-/// modules), but it reads as a section title. All "waypoint" styling is
-/// reserved for paths and units, which is what should actually look like
-/// beads on the trail.
+/// Chapter title plate — a full-width card, *not* a trail marker. It still
+/// sits on the timeline so the trail flows between chapters.
 class _ChapterHeader extends StatelessWidget {
   final int index;
   final String title;
@@ -1127,138 +1139,74 @@ class _ChapterHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isComplete ? PaperTheme.of(context).success : PaperTheme.of(context).accent;
+    final t = PaperTheme.of(context);
+    final accent = isComplete ? t.success : t.accent;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        color: PaperTheme.of(context).cardPaper,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: PaperTheme.of(context).paperEdge),
-        boxShadow: [
-          BoxShadow(
-            color: PaperTheme.of(context).ink.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: PaperTheme.of(context).cardPaper,
-              border: Border.all(color: accent, width: 1.8),
-            ),
-            child: isComplete
-                ? Icon(
-                    Icons.check_rounded,
-                    size: 18,
-                    color: PaperTheme.of(context).success,
-                  )
-                : CustomText(
-                    persianDigits(index + 1),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: PaperTheme.of(context).ink,
-                  ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CustomText(
-                  title,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: PaperTheme.of(context).ink,
-                  maxLines: 2,
+    final content = Row(
+      children: [
+        isComplete
+            ? const IconTile(Icons.check_rounded, tone: IconTileTone.success)
+            : Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: t.accentTint,
+                  borderRadius: BorderRadius.circular(MasirRadius.chip),
                 ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress / 100.0,
-                    minHeight: 4,
-                    backgroundColor: PaperTheme.of(context).inkFaint.withValues(alpha: 0.3),
-                    valueColor: AlwaysStoppedAnimation<Color>(accent),
-                  ),
+                child: CustomText.headline(
+                  faDigits(index + 1),
+                  color: t.accent,
                 ),
-              ],
-            ),
+              ),
+        const SizedBox(width: MasirSpace.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  CustomText.micro('فصل ${faDigits(index + 1)}', color: accent),
+                  const SizedBox(width: MasirSpace.sm),
+                  Expanded(child: CustomText.bodyStrong(title, maxLines: 1)),
+                ],
+              ),
+              const SizedBox(height: MasirSpace.sm - 2),
+              ProgressPill(value: progress, height: 6, color: accent),
+            ],
           ),
-          const SizedBox(width: 10),
-          CustomText(
-            isComplete ? 'کامل' : '$progress٪',
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: accent,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: MasirSpace.md),
+        CustomText.caption(
+          isComplete ? 'کامل' : '${faDigits(progress)}٪',
+          color: accent,
+          weight: MasirText.heavy,
+        ),
+      ],
+    );
+
+    const padding = EdgeInsets.symmetric(
+      horizontal: MasirSpace.md,
+      vertical: MasirSpace.sm,
+    );
+
+    if (!isComplete) {
+      return MasirCard(padding: padding, child: content);
+    }
+    return ChunkyBox(
+      fill: t.successSoft,
+      edge: t.successEdge.withValues(alpha: 0.35),
+      borderColor: t.successEdge.withValues(alpha: 0.35),
+      radius: MasirRadius.card,
+      padding: padding,
+      child: content,
     );
   }
 }
 
-/// Circular "wax seal" style badge reused for numbering, percentages, and
-/// the completed-unit stamp.
-class _StampBadge extends StatelessWidget {
-  final Widget child;
-  final double size;
-  final Color ringColor;
-
-  const _StampBadge({
-    required this.child,
-    required this.size,
-    required this.ringColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: -0.05,
-      child: Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: PaperTheme.of(context).cardPaper,
-          border: Border.all(color: ringColor, width: 2),
-        ),
-        child: Container(
-          margin: const EdgeInsets.all(3),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: ringColor.withValues(alpha: 0.35),
-              width: 1,
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-/// Path waypoint — a solid-*filled* rounded-square "milestone" badge (paper
-/// icon on a colored fill, ringed in paper like a sticker on the page),
-/// unmistakably heavier than a unit's light paper-on-paper outline pin. The
-/// filled treatment is what actually separates "this is a bigger
-/// checkpoint" from "this is one step" at a glance, on top of the
-/// square-vs-circle shape difference. Positioned in the same left/right
-/// zigzag as units (see `_buildTrailNodes`'s `randomSide`) instead of
-/// always sitting dead-center, so the trail keeps winding naturally
-/// through every path instead of snapping back to the middle each time.
+/// Path waypoint — a rounded-square milestone tile in sun, green once the
+/// path is done, with a soft label beside it.
 class _PathWaypoint extends StatelessWidget {
   final OutlinePathEntity path;
   final bool isLeft;
@@ -1270,69 +1218,73 @@ class _PathWaypoint extends StatelessWidget {
     required this.maxLabelWidth,
   });
 
+  static const double _size = 52;
+
   @override
   Widget build(BuildContext context) {
+    final t = PaperTheme.of(context);
     final pathProgress = path.pathProgressPercent ?? 0;
     final isComplete = pathProgress >= 100;
-    final accent = isComplete ? PaperTheme.of(context).success : PaperTheme.of(context).accent;
+    final fg = isComplete ? t.successEdge : t.sunEdge;
+    final soft = isComplete ? t.successSoft : t.sunSoft;
 
-    // A gently muted fill (not the raw saturated accent) so it stays
-    // heavier than a unit's outline pin without looking like a harsh block
-    // of color dropped onto a soft paper page.
-    final fill = Color.lerp(accent, PaperTheme.of(context).cardPaper, 0.22)!;
-
-    final pin = Container(
-      width: 50,
-      height: 50,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: fill,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: PaperTheme.of(context).cardPaper, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: 0.18),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+    // The lip hangs below the face, so size the slot to the face alone and
+    // let the lip overflow: the tile's face centre is then the slot centre.
+    final pin = SizedBox(
+      width: _size,
+      height: _size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 0,
+            top: 0,
+            width: _size,
+            height: _size + Chunky.lip,
+            child: ChunkyBox(
+              fill: soft,
+              edge: fg,
+              borderColor: fg,
+              radius: MasirRadius.row,
+              alignment: Alignment.center,
+              child: Icon(
+                isComplete ? Icons.flag_circle_rounded : Icons.route_rounded,
+                size: MasirIconSize.lg,
+                color: fg,
+              ),
+            ),
           ),
         ],
       ),
-      child: Icon(
-        isComplete ? Icons.flag_circle_rounded : Icons.route_rounded,
-        size: 22,
-        color: PaperTheme.of(context).cardPaper,
-      ),
     );
 
+    final align = isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+    final textAlign = isLeft ? TextAlign.left : TextAlign.right;
     final label = Container(
       constraints: BoxConstraints(maxWidth: maxLabelWidth),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: MasirSpace.md,
+        vertical: MasirSpace.sm,
+      ),
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        color: soft,
+        borderRadius: BorderRadius.circular(MasirRadius.row),
       ),
       child: Column(
-        crossAxisAlignment: isLeft
-            ? CrossAxisAlignment.start
-            : CrossAxisAlignment.end,
+        crossAxisAlignment: align,
         mainAxisSize: MainAxisSize.min,
         children: [
-          CustomText(
+          CustomText.caption(
             path.title ?? '',
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: PaperTheme.of(context).ink,
-            textAlign: isLeft ? TextAlign.left : TextAlign.right,
+            weight: MasirText.strong,
+            textAlign: textAlign,
             maxLines: 2,
           ),
           const SizedBox(height: 2),
-          CustomText(
-            isComplete ? 'مسیر کامل شد' : 'پیشرفت مسیر $pathProgress٪',
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: accent,
-            textAlign: isLeft ? TextAlign.left : TextAlign.right,
+          CustomText.micro(
+            isComplete ? 'مسیر کامل شد' : 'پیشرفت ${faDigits(pathProgress)}٪',
+            color: fg,
+            textAlign: textAlign,
           ),
         ],
       ),
@@ -1342,222 +1294,173 @@ class _PathWaypoint extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       textDirection: TextDirection.ltr,
       children: isLeft
-          ? [pin, const SizedBox(width: 10), label]
-          : [label, const SizedBox(width: 10), pin],
+          ? [pin, const SizedBox(width: MasirSpace.md), label]
+          : [label, const SizedBox(width: MasirSpace.md), pin],
     );
   }
 }
 
-/// Trophy waypoint at the end of a completed module — a wax-seal medallion
-/// with a short "completed" caption.
-///
-/// The medallion — not "medallion + caption" combined — is what the
-/// trail's line should visually end at. Stacking them in a plain `Column`
-/// would make this widget's reported center (and therefore the line's
-/// target) the midpoint of the whole block, which sits below the actual
-/// medallion once the caption's height is added in — the line would
-/// visibly run past the medallion into the caption. Using a `Stack` with
-/// the caption as a `Positioned` overflow annotation keeps the medallion
-/// itself as this widget's center, regardless of caption length.
-class _TrophyNode extends StatelessWidget {
-  const _TrophyNode();
+/// A round chunky medallion whose *face centre* is this widget's centre. The
+/// caption is a `Positioned` overflow annotation, so the trail ends at the
+/// medallion and not at the midpoint of "medallion + caption".
+class _Medallion extends StatelessWidget {
+  final double size;
+  final Color fill;
+  final Color edge;
+  final Color? borderColor;
+  final IconData icon;
+  final Color iconColor;
+  final Widget caption;
 
-  static const double _badgeSize = 60;
+  const _Medallion({
+    super.key,
+    required this.size,
+    required this.fill,
+    required this.edge,
+    this.borderColor,
+    required this.icon,
+    required this.iconColor,
+    required this.caption,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.center,
-      children: [
-        Transform.rotate(
-          angle: -0.06,
-          child: Container(
-            width: _badgeSize,
-            height: _badgeSize,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: PaperTheme.of(context).cardPaper,
-              border: Border.all(color: PaperTheme.of(context).accent, width: 2.4),
-            ),
-            child: Container(
-              margin: const EdgeInsets.all(5),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: PaperTheme.of(context).accent.withValues(alpha: 0.35),
-                ),
-              ),
-              child: Icon(
-                Icons.verified_rounded,
-                size: 26,
-                color: PaperTheme.of(context).accent,
+    // Centered waypoints are laid out with tight full-width constraints, which
+    // would stretch a plain SizedBox and glue the medallion to one side. The
+    // Center loosens them so the medallion keeps its own size, mid-trail.
+    return Center(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              width: size,
+              height: size + Chunky.lip,
+              child: ChunkyBox(
+                fill: fill,
+                edge: edge,
+                borderColor: borderColor,
+                radius: size / 2,
+                alignment: Alignment.center,
+                child: Icon(icon, size: size * 0.5, color: iconColor),
               ),
             ),
-          ),
-        ),
-        Positioned(
-          top: _badgeSize + 8,
-          left: 0,
-          right: 0,
-          child: OverflowBox(
-            maxWidth: double.infinity,
-            alignment: Alignment.center,
-            child: CustomText(
-              'این فصل کامل شد',
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: PaperTheme.of(context).success,
+            Positioned(
+              top: size + Chunky.lip + MasirSpace.sm,
+              left: 0,
+              right: 0,
+              height: 0,
+              child: OverflowBox(
+                maxWidth: double.infinity,
+                maxHeight: double.infinity,
+                alignment: Alignment.topCenter,
+                child: caption,
+              ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-/// The finish line — always the very last waypoint on the whole trail, so
-/// the destination is revealed from the moment the roadmap loads instead
-/// of only appearing once you happen to finish. It sits there as a locked
-/// goal (same dashed-outline language as a locked unit) until every module
-/// — and so every unit — in the course is completed, then unlocks into a
-/// bigger, greener medallion than a per-chapter trophy since it caps the
-/// entire adventure, not just one leg of it.
-///
-/// Same reasoning as [_TrophyNode]: the badge itself, not "badge +
-/// caption" combined, is where the trail should visually end. The caption
-/// is a `Positioned` overflow annotation below it so it never pulls this
-/// widget's reported center away from the badge.
+/// Trophy waypoint at the end of a completed chapter.
+class _TrophyNode extends StatelessWidget {
+  const _TrophyNode();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = PaperTheme.of(context);
+    return _Medallion(
+      key: const ValueKey('roadmap-trophy'),
+      size: 64,
+      fill: t.sun,
+      edge: t.sunEdge,
+      icon: Icons.workspace_premium_rounded,
+      iconColor: t.colors.white,
+      caption: CustomText.caption(
+        'این فصل کامل شد',
+        color: t.success,
+        weight: MasirText.strong,
+      ),
+    );
+  }
+}
+
+/// The finish line — always the last waypoint, so the destination is visible
+/// from the start. Sun while the course is unfinished, green once it is done.
 class _CourseFinishNode extends StatelessWidget {
   final bool isComplete;
 
   const _CourseFinishNode({required this.isComplete});
 
-  static const double _lockedBadgeSize = 70;
-  static const double _doneBadgeSize = 78;
-
   @override
   Widget build(BuildContext context) {
+    final t = PaperTheme.of(context);
+
     if (!isComplete) {
-      return Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          _DashedCircle(
-            size: _lockedBadgeSize,
-            child: Icon(
-              Icons.flag_outlined,
-              size: 28,
-              color: PaperTheme.of(context).locked,
+      return _Medallion(
+        key: const ValueKey('roadmap-finish'),
+        size: 72,
+        fill: t.sunSoft,
+        edge: t.sunEdge,
+        borderColor: t.sunEdge,
+        icon: Icons.flag_rounded,
+        iconColor: t.sunEdge,
+        caption: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomText.bodyStrong('پایان مسیر', textAlign: TextAlign.center),
+            const SizedBox(height: 2),
+            CustomText.caption(
+              'با تموم شدن دوره باز می‌شه',
+              color: t.inkMuted,
+              textAlign: TextAlign.center,
             ),
-          ),
-          Positioned(
-            top: _lockedBadgeSize + 10,
-            left: 0,
-            right: 0,
-            child: OverflowBox(
-              maxWidth: double.infinity,
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CustomText(
-                    'پایان مسیر',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: PaperTheme.of(context).locked,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 2),
-                  CustomText(
-                    'با اتمام دوره باز می‌شود',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: PaperTheme.of(context).inkMuted,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.center,
-      children: [
-        Container(
-          width: _doneBadgeSize,
-          height: _doneBadgeSize,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: PaperTheme.of(context).cardPaper,
-            border: Border.all(color: PaperTheme.of(context).success, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: PaperTheme.of(context).success.withValues(alpha: 0.28),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
-              ),
-            ],
+    return _Medallion(
+      key: const ValueKey('roadmap-finish'),
+      size: 80,
+      fill: t.success,
+      edge: t.successEdge,
+      icon: Icons.emoji_events_rounded,
+      iconColor: t.colors.white,
+      caption: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CustomText.bodyStrong(
+            'دوره با موفقیت تموم شد!',
+            color: t.success,
+            textAlign: TextAlign.center,
           ),
-          child: Container(
-            margin: const EdgeInsets.all(6),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: PaperTheme.of(context).success.withValues(alpha: 0.35),
-              ),
-            ),
-            child: Icon(
-              Icons.emoji_events_rounded,
-              size: 36,
-              color: PaperTheme.of(context).success,
-            ),
+          const SizedBox(height: 2),
+          CustomText.caption(
+            'همه واحدها رو گذروندی 🎉',
+            color: t.inkMuted,
+            textAlign: TextAlign.center,
           ),
-        ),
-        Positioned(
-          top: _doneBadgeSize + 10,
-          left: 0,
-          right: 0,
-          child: OverflowBox(
-            maxWidth: double.infinity,
-            alignment: Alignment.center,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CustomText(
-                  'دوره با موفقیت به پایان رسید!',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: PaperTheme.of(context).success,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 2),
-                CustomText(
-                  'همه واحدها را با موفقیت گذراندی 🎉',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: PaperTheme.of(context).inkMuted,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-/// A single unit "waypoint" — pin/stamp marker plus its paper label tag.
+/// A single unit: a 64px chunky circular button with a type icon, a caption
+/// pill underneath and, for the current / free unit, a small bubble above.
+///
+/// The column is padded symmetrically above and below the button, so the
+/// button's face centre is exactly this widget's centre — which is where the
+/// trail passes.
 class _RoadUnitNode extends StatelessWidget {
+  final Key? pinKey;
   final String title;
   final String typeLabel;
   final IconData icon;
@@ -1565,11 +1468,11 @@ class _RoadUnitNode extends StatelessWidget {
   final bool isLocked;
   final bool isPreview;
   final bool isCurrent;
-  final bool isLeft;
-  final double maxLabelWidth;
+  final double slotWidth;
   final VoidCallback onTap;
 
   const _RoadUnitNode({
+    this.pinKey,
     required this.title,
     required this.typeLabel,
     required this.icon,
@@ -1577,197 +1480,256 @@ class _RoadUnitNode extends StatelessWidget {
     required this.isLocked,
     required this.isPreview,
     required this.isCurrent,
-    required this.isLeft,
-    required this.maxLabelWidth,
+    required this.slotWidth,
     required this.onTap,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final Widget pin;
+  static const double _halo = 36;
+
+  Widget _pin(PaperTheme t) {
+    final Color fill;
+    final Color edge;
+    Color? border;
+    final Color fg;
+    final IconData glyph;
 
     if (isCompleted) {
-      pin = _StampBadge(
-        size: _kRoadNodeSize,
-        ringColor: PaperTheme.of(context).success,
-        child: Icon(
-          Icons.check_rounded,
-          size: 20,
-          color: PaperTheme.of(context).success,
-        ),
-      );
+      fill = t.success;
+      edge = t.successEdge;
+      fg = t.colors.white;
+      glyph = Icons.check_rounded;
     } else if (isLocked) {
-      pin = _DashedCircle(
-        size: _kRoadNodeSize,
-        child: Icon(
-          Icons.lock_outline_rounded,
-          size: 18,
-          color: PaperTheme.of(context).locked,
-        ),
-      );
+      fill = t.colors.border100;
+      edge = t.border;
+      fg = t.locked;
+      glyph = Icons.lock_rounded;
     } else if (isCurrent) {
-      pin = Container(
-        width: _kRoadNodeSize,
-        height: _kRoadNodeSize,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: PaperTheme.of(context).cardPaper,
-          border: Border.all(color: PaperTheme.of(context).accent, width: 2.4),
-          boxShadow: [
-            BoxShadow(
-              color: PaperTheme.of(context).accent.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Icon(
-          Icons.flag_rounded,
-          size: 20,
-          color: PaperTheme.of(context).accent,
-        ),
-      );
+      fill = t.accent;
+      edge = t.accentEdge;
+      fg = t.onAccent;
+      glyph = icon;
     } else {
-      pin = Container(
-        width: _kRoadNodeSize,
-        height: _kRoadNodeSize,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: PaperTheme.of(context).cardPaper,
-          border: Border.all(color: PaperTheme.of(context).inkFaint, width: 1.6),
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: PaperTheme.of(context).accent.withValues(alpha: 0.8),
-        ),
-      );
+      fill = t.surface;
+      edge = t.accent.withValues(alpha: 0.35);
+      border = t.accent.withValues(alpha: 0.35);
+      fg = t.accent;
+      glyph = icon;
     }
 
-    final tagRotation = isLeft ? -0.035 : 0.035;
-    final label = Transform.rotate(
-      angle: tagRotation,
-      child: Container(
-        constraints: BoxConstraints(maxWidth: maxLabelWidth),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: PaperTheme.of(context).cardPaper,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isLocked ? PaperTheme.of(context).inkFaint : PaperTheme.of(context).paperEdge,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: isLeft
-              ? CrossAxisAlignment.start
-              : CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CustomText(
-              title,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: isLocked ? PaperTheme.of(context).locked : PaperTheme.of(context).ink,
-              textAlign: isLeft ? TextAlign.left : TextAlign.right,
-              maxLines: 2,
-            ),
-            const SizedBox(height: 2),
-            CustomText(
-              typeLabel,
-              fontSize: 11,
-              color: PaperTheme.of(context).inkMuted,
-              textAlign: isLeft ? TextAlign.left : TextAlign.right,
-            ),
-            if (isPreview && !isLocked) ...[
-              const SizedBox(height: 2),
-              CustomText(
-                'رایگان',
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: PaperTheme.of(context).accent,
-                textAlign: isLeft ? TextAlign.left : TextAlign.right,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-
-    return OnClick(
-      onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        textDirection: TextDirection.ltr,
-        children: isLeft
-            ? [pin, const SizedBox(width: 10), label]
-            : [label, const SizedBox(width: 10), pin],
-      ),
-    );
-  }
-}
-
-/// Circle with a dashed ink outline (locked waypoints).
-class _DashedCircle extends StatelessWidget {
-  final double size;
-  final Widget child;
-
-  const _DashedCircle({required this.size, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
     return SizedBox(
-      width: size,
-      height: size,
+      width: _kRoadNodeSize,
+      height: _kRoadNodeSize,
       child: Stack(
+        clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          CustomPaint(
-            size: Size(size, size),
-            painter: _DashedCirclePainter(color: PaperTheme.of(context).locked),
-          ),
-          Container(
-            width: size - 8,
-            height: size - 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: PaperTheme.of(context).cardPaper,
+          if (isCurrent) const _PulseRing(size: _kRoadNodeSize),
+          Positioned(
+            left: 0,
+            top: 0,
+            width: _kRoadNodeSize,
+            height: _kRoadNodeSize + Chunky.lip,
+            child: ChunkyBox(
+              key: pinKey,
+              fill: fill,
+              edge: edge,
+              borderColor: border,
+              radius: _kRoadNodeSize / 2,
+              alignment: Alignment.center,
+              onTap: onTap,
+              child: Icon(glyph, size: MasirIconSize.lg + 2, color: fg),
             ),
           ),
-          child,
         ],
       ),
     );
   }
+
+  Widget? _bubble(PaperTheme t) {
+    if (isCurrent) {
+      return _Bubble(label: 'شروع', fill: t.accent, fg: t.onAccent);
+    }
+    if (isPreview && !isLocked && !isCompleted) {
+      return _Bubble(label: 'رایگان', fill: t.sunSoft, fg: t.sunEdge);
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = PaperTheme.of(context);
+    final bubble = _bubble(t);
+
+    final pill = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: slotWidth),
+        padding: const EdgeInsets.symmetric(
+          horizontal: MasirSpace.md - 2,
+          vertical: MasirSpace.xs,
+        ),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(MasirRadius.pill),
+          border: Border.all(color: t.border, width: Chunky.border),
+        ),
+        child: CustomText.caption(
+          title,
+          weight: MasirText.strong,
+          color: isLocked ? t.locked : t.ink,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+        ),
+      ),
+    );
+
+    return Semantics(
+      button: true,
+      label: '$title، $typeLabel',
+      child: SizedBox(
+        width: slotWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: _halo,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: bubble,
+                ),
+              ),
+            ),
+            _pin(t),
+            // Lip + gap, then the pill, in a box as tall as the halo above.
+            SizedBox(
+              height: _halo,
+              child: Padding(
+                padding: const EdgeInsets.only(top: Chunky.lip + 4),
+                child: Align(alignment: Alignment.topCenter, child: pill),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _DashedCirclePainter extends CustomPainter {
+/// Small speech bubble ("شروع", "رایگان") with a tail pointing at the node.
+class _Bubble extends StatelessWidget {
+  final String label;
+  final Color fill;
+  final Color fg;
+
+  const _Bubble({required this.label, required this.fill, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: MasirSpace.md,
+            vertical: 3,
+          ),
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(MasirRadius.pill),
+          ),
+          child: CustomText.micro(label, color: fg),
+        ),
+        CustomPaint(size: const Size(10, 5), painter: _TailPainter(fill)),
+      ],
+    );
+  }
+}
+
+class _TailPainter extends CustomPainter {
   final Color color;
 
-  const _DashedCirclePainter({required this.color});
+  const _TailPainter(this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6;
     final path = Path()
-      ..addOval(Rect.fromLTWH(1, 1, size.width - 2, size.height - 2));
-    const dashWidth = 3.0;
-    const dashSpace = 3.0;
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final end = math.min(distance + dashWidth, metric.length);
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance += dashWidth + dashSpace;
-      }
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TailPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+/// Soft ring that breathes around the current unit. Static when the system
+/// asks for reduced motion.
+class _PulseRing extends StatefulWidget {
+  final double size;
+
+  const _PulseRing({required this.size});
+
+  @override
+  State<_PulseRing> createState() => _PulseRingState();
+}
+
+class _PulseRingState extends State<_PulseRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
+  bool _reduce = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduce = MediaQuery.disableAnimationsOf(context);
+    if (_reduce) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
     }
   }
 
   @override
-  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) =>
-      oldDelegate.color != color;
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = context.colors.primary;
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final t = _reduce ? 0.0 : Curves.easeOut.transform(_controller.value);
+          final scale = _reduce ? 1.18 : 1.0 + 0.4 * t;
+          final opacity = _reduce ? 0.28 : 0.4 * (1 - t);
+          return Transform.scale(
+            scale: scale,
+            child: Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: color.withValues(alpha: opacity),
+                  width: 4,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }

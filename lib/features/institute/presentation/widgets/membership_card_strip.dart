@@ -11,6 +11,7 @@ import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/paper_card.dart';
 import '/widgets/skeleton.dart';
+import '/core/theme/masir_style.dart';
 
 /// Horizontal strip of collectible membership cards. A single membership
 /// collapses to one full-width card, so a student with one club never learns
@@ -32,15 +33,15 @@ class MembershipCardStrip extends StatelessWidget {
       builder: (context, state) {
         return state.when(
           loading: (_) => const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: SkeletonBox(height: 200, radius: 20),
+            padding: MasirSpace.pageH,
+            child: SkeletonBox(height: 200, radius: MasirRadius.card),
           ),
           error: (_, _) => const SizedBox.shrink(),
           success: (_, data) {
             if (data.isEmpty) return const _NoMembershipsCard();
             if (data.length == 1) {
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: MasirSpace.pageH,
                 child: MembershipCard(
                   card: data.first,
                   onTap: () => onTap(data.first),
@@ -52,7 +53,7 @@ class MembershipCardStrip extends StatelessWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: MasirSpace.pageH,
                 itemCount: data.length,
                 separatorBuilder: (_, _) => 12.w,
                 itemBuilder: (context, index) {
@@ -82,11 +83,11 @@ class _NoMembershipsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: MasirSpace.pageH,
       child: PaperCard(
         tint: c.primaryTint,
         tintEdge: c.primary.withValues(alpha: 0.35),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(MasirSpace.card),
         child: Row(
           children: [
             Container(
@@ -103,15 +104,10 @@ class _NoMembershipsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const CustomText(
-                    'هنوز عضو جایی نیستی',
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
+                  const CustomText.headline('هنوز عضو جایی نیستی'),
                   4.h,
-                  CustomText(
+                  CustomText.caption(
                     'یک مؤسسه پیدا کن و با یک لمس عضو شو.',
-                    fontSize: 13,
                     color: c.inkMuted,
                   ),
                   12.h,

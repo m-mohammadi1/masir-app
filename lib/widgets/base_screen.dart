@@ -1,15 +1,16 @@
-import 'package:easy_helper/easy_helper.dart';
-
-import '/core/helper/paper_surface.dart';
 import 'package:flutter/material.dart';
-import '/core/theme/theme_context.dart';
 
-class BaseScreen extends StatefulWidget {
+import '/core/theme/masir_style.dart';
+import '/widgets/masir_page.dart';
+
+/// Legacy wrapper kept for screens that draw their own header. It now just
+/// delegates to [MasirPage] (real safe area, one gutter, keyboard handling).
+/// New screens should use `MasirPage.tab/detail/focus` directly.
+class BaseScreen extends StatelessWidget {
   final Widget body;
   final Widget? floatActionButton;
   final Color? backgroundColor;
   final EdgeInsets? padding;
-  final bool usePaperGrain;
 
   const BaseScreen({
     super.key,
@@ -17,61 +18,20 @@ class BaseScreen extends StatefulWidget {
     this.floatActionButton,
     this.backgroundColor,
     this.padding,
-    this.usePaperGrain = false,
   });
 
   @override
-  State<BaseScreen> createState() => _BaseScreenState();
-}
-
-class _BaseScreenState extends State<BaseScreen> {
-  final GlobalKey<ScaffoldState> _key = GlobalKey();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusManager.instance.primaryFocus?.unfocus();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ClosableKeyBoard(
-      child: Scaffold(
-        key: _key,
-        drawerScrimColor: Colors.transparent,
-        resizeToAvoidBottomInset: true,
-        backgroundColor: widget.backgroundColor ?? context.colors.background,
-        drawerEnableOpenDragGesture: false,
-        floatingActionButton: widget.floatActionButton,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            45.h,
-            Expanded(
-              child: widget.usePaperGrain
-                  ? PaperBackdrop(
-                      child: Padding(
-                        padding:
-                            widget.padding ??
-                            const EdgeInsets.symmetric(horizontal: 16),
-                        child: widget.body,
-                      ),
-                    )
-                  : Padding(
-                      padding:
-                          widget.padding ??
-                          const EdgeInsets.symmetric(horizontal: 16),
-                      child: widget.body,
-                    ),
+    return MasirPage.plain(
+      backgroundColor: backgroundColor,
+      floatingActionButton: floatActionButton,
+      body: padding == null
+          ? body
+          : Padding(
+              // Cancel the page gutter, then apply the caller's padding.
+              padding: padding! - MasirSpace.pageH,
+              child: body,
             ),
-            HandleOpenKeyBoard(),
-          ],
-        ),
-      ),
     );
   }
 }

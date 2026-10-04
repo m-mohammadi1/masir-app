@@ -7,6 +7,7 @@ class OutlineCourseModel extends OutlineCourseEntity {
     super.title,
     super.courseProgressPercent,
     super.previewUnitCount,
+    super.isSubscribed,
     super.modules,
     super.teachers,
   });
@@ -18,6 +19,7 @@ class OutlineCourseModel extends OutlineCourseEntity {
       title: json['title'],
       courseProgressPercent: json['course_progress_percent'],
       previewUnitCount: json['preview_unit_count'],
+      isSubscribed: json['is_subscribed'] == true,
       modules: (json['modules'] as List<dynamic>?)
           ?.map((e) => OutlineModuleModel.fromJson(e))
           .toList(),

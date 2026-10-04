@@ -1,4 +1,3 @@
-import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,10 +9,10 @@ import '/features/teacher/presentation/bloc/institute_teachers/institute_teacher
 import '/features/teacher/presentation/widgets/teacher_avatar.dart';
 import '/features/teacher/presentation/widgets/teacher_sheet.dart';
 import '/widgets/chunky_box.dart';
-import '/widgets/custom_error.dart';
+import '/core/theme/masir_style.dart';
 import '/widgets/custom_text.dart';
-import '/widgets/empty_widget.dart';
-import '/widgets/skeleton.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/state_view.dart';
 
 class InstituteTeachersPage extends StatefulWidget {
   const InstituteTeachersPage({super.key});
@@ -43,74 +42,84 @@ class _InstituteTeachersPageState extends State<InstituteTeachersPage> {
       bloc: bloc,
       builder: (context, state) {
         return state.when(
-          loading: (_) => const SkeletonList(),
-          error: (_, message) => CustomError(message: message),
+          loading: (_) => const MasirPage.tab(
+            title: 'استادها',
+            children: [StateView.loading(variant: SkeletonVariant.grid)],
+          ),
+          error: (_, message) => MasirPage.tab(
+            title: 'استادها',
+            body: StateView.error(message: message),
+          ),
           success: (_, data) {
             if (data.isEmpty) {
-              return const EmptyWidget(
-                text: 'استادی یافت نشد',
-                description: 'هنوز استادی به این مؤسسه اضافه نشده است.',
-                icon: Icons.school_outlined,
+              return const MasirPage.tab(
+                title: 'استادها',
+                body: StateView.empty(
+                  text: 'استادی پیدا نشد',
+                  description: 'هنوز استادی به این مؤسسه اضافه نشده.',
+                  icon: Icons.school_rounded,
+                ),
               );
             }
-            return GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.8,
-              ),
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                final teacher = data[index];
-                return ChunkyBox(
-                  fill: context.colors.surface,
-                  edge: context.colors.lip,
-                  borderColor: context.colors.border,
-                  padding: const EdgeInsets.all(14),
-                  onTap: () => showInstituteTeacherSheet(
-                    context: context,
-                    teacher: teacher,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: context.colors.primary,
-                            width: 3,
+            return MasirPage.tab(
+              title: 'استادها',
+              body: GridView.builder(
+                padding: const EdgeInsets.only(
+                  top: MasirSpace.sm,
+                  bottom: MasirSpace.xl,
+                ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: MasirSpace.md,
+                  crossAxisSpacing: MasirSpace.md,
+                  childAspectRatio: 0.8,
+                ),
+                itemCount: data.length,
+                itemBuilder: (context, index) {
+                  final teacher = data[index];
+                  final c = context.colors;
+                  return ChunkyBox(
+                    fill: c.surface,
+                    edge: c.lip,
+                    borderColor: c.border,
+                    padding: const EdgeInsets.all(MasirSpace.card),
+                    onTap: () => showInstituteTeacherSheet(
+                      context: context,
+                      teacher: teacher,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: c.primary, width: 3),
+                          ),
+                          child: TeacherAvatar(
+                            name: teacher.name ?? '',
+                            photoUrl: teacher.photoUrl,
+                            size: 72,
                           ),
                         ),
-                        child: TeacherAvatar(
-                          name: teacher.name ?? '',
-                          photoUrl: teacher.photoUrl,
-                          size: 72,
+                        const SizedBox(height: MasirSpace.md),
+                        CustomText.bodyStrong(
+                          teacher.name ?? '',
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
                         ),
-                      ),
-                      12.h,
-                      CustomText(
-                        teacher.name ?? '',
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                      ),
-                      4.h,
-                      CustomText(
-                        teacher.headline ?? '',
-                        fontSize: 12,
-                        color: context.colors.inkMuted,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                      ),
-                    ],
-                  ),
-                );
-              },
+                        const SizedBox(height: MasirSpace.xs),
+                        CustomText.caption(
+                          teacher.headline ?? '',
+                          color: c.inkMuted,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             );
           },
         );

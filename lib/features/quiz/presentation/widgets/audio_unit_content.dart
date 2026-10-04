@@ -49,9 +49,8 @@ class AudioUnitContent extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: _mediaUrl.isNotEmpty
             ? CustomAudioPlayer(url: _mediaUrl, onChanged: (_) {})
-            : CustomText(
+            : CustomText.body(
                 'فایل صوتی در دسترس نیست',
-                fontSize: 14,
                 color: context.colors.inkMuted,
               ),
       ),

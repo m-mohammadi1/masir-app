@@ -6,6 +6,7 @@ import '/core/theme/theme_context.dart';
 import '/features/institute/data/models/announcement_model.dart';
 import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/masir_style.dart';
 
 /// Announcement as a "megaphone" card. Unread ones glow in sun colours.
 class AnnouncementPreviewCard extends StatelessWidget {
@@ -26,7 +27,7 @@ class AnnouncementPreviewCard extends StatelessWidget {
       fill: unread ? c.sunSoft : c.surface,
       edge: unread ? c.sun : c.lip,
       borderColor: unread ? c.sun : c.border,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       onTap: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,7 +37,7 @@ class AnnouncementPreviewCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: unread ? c.sun : c.primaryTint,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(MasirRadius.chip),
             ),
             child: Icon(
               Icons.campaign_rounded,
@@ -49,23 +50,16 @@ class AnnouncementPreviewCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CustomText(
-                  item.title ?? '',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                  maxLines: 2,
-                ),
+                CustomText.bodyStrong(item.title ?? '', maxLines: 2),
                 4.h,
-                CustomText(
+                CustomText.caption(
                   htmlExcerpt(item.body),
-                  fontSize: 13,
                   color: c.inkMuted,
                   maxLines: 2,
                 ),
-                6.h,
-                CustomText(
+                4.h,
+                CustomText.caption(
                   formatRelativeFa(item.publishedAt),
-                  fontSize: 12,
                   color: c.inkMuted,
                 ),
               ],

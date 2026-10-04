@@ -49,9 +49,8 @@ class VideoUnitContent extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: _mediaUrl.isNotEmpty
             ? CustomVideoPlayer(url: _mediaUrl)
-            : CustomText(
+            : CustomText.body(
                 'فایل ویدئو در دسترس نیست',
-                fontSize: 14,
                 color: context.colors.inkMuted,
               ),
       ),

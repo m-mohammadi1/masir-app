@@ -1,46 +1,28 @@
-import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/widgets/back_button.dart';
 
-import 'custom_text.dart';
+import '/widgets/masir_page.dart';
 
+/// Compact detail header. Prefer `MasirPage.detail`, which includes it; this
+/// stays for screens that compose their own body.
 class CustomAppBar extends StatelessWidget {
   final String title;
   final Widget? icon;
   final Function? backAction;
-  final double topSpacing;
 
   const CustomAppBar({
     super.key,
     required this.title,
     this.icon,
     this.backAction,
-    this.topSpacing = 20,
+    @Deprecated('Spacing is handled by MasirPage') double topSpacing = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(height: topSpacing),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            CustomBackButton(backAction: backAction),
-            12.w,
-            Expanded(
-              child: CustomText(
-                title,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                maxLines: 1,
-              ),
-            ),
-            if (icon != null) ...[8.w, icon!],
-          ],
-        ),
-      ],
+    return MasirDetailBar(
+      title: title,
+      trailing: icon,
+      onBack: backAction == null ? null : () => backAction!(),
     );
   }
 }

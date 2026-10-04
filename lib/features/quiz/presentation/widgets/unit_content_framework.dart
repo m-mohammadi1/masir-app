@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/pill_chip.dart';
-import '/features/quiz/presentation/widgets/unit_top_bar.dart';
+import '/core/theme/masir_style.dart';
+import '/widgets/masir_page.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
 
@@ -43,20 +44,16 @@ class UnitContentFramework extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return MasirPage.focus(
+      title: title,
+      trailing: headerIcon,
+      onClose: onBack,
       children: [
-        UnitTopBar(
-          title: title,
-          onClose: onBack,
-          trailing: headerIcon,
-        ),
-        14.h,
         Row(
           children: [
             PillChip(typeLabel),
             if (isCompleted) ...[
-              8.w,
+              const SizedBox(width: MasirSpace.sm),
               const PillChip(
                 'تکمیل شده',
                 icon: Icons.check_circle_rounded,
@@ -65,36 +62,27 @@ class UnitContentFramework extends StatelessWidget {
             ],
           ],
         ),
-        if (banner != null) ...[12.h, banner!],
-        16.h,
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (instructionText.isNotEmpty)
-                  _InstructionCard(
-                    instructionText: instructionText,
-                    attachmentUrl: attachmentUrl,
-                    onAttachmentTap: onAttachmentTap,
-                  ),
-                if (content != null) ...[
-                  if (instructionText.isNotEmpty) 16.h,
-                  content!,
-                ],
-                if (footer != null) ...[16.h, footer!],
-              ],
-            ),
+        if (banner != null) ...[const SizedBox(height: MasirSpace.md), banner!],
+        const SizedBox(height: MasirSpace.lg),
+        if (instructionText.isNotEmpty)
+          _InstructionCard(
+            instructionText: instructionText,
+            attachmentUrl: attachmentUrl,
+            onAttachmentTap: onAttachmentTap,
           ),
-        ),
-        UnitActionButtons(
-          showPrimary: !isCompleted,
-          primaryTitle: primaryButtonTitle,
-          isSubmitting: isSubmitting,
-          onPrimary: onComplete,
-          onBack: onBack,
-        ),
+        if (content != null) ...[
+          if (instructionText.isNotEmpty) const SizedBox(height: MasirSpace.lg),
+          content!,
+        ],
+        if (footer != null) ...[const SizedBox(height: MasirSpace.lg), footer!],
       ],
+      stickyBottom: UnitActionButtons(
+        showPrimary: !isCompleted,
+        primaryTitle: primaryButtonTitle,
+        isSubmitting: isSubmitting,
+        onPrimary: onComplete,
+        onBack: onBack,
+      ),
     );
   }
 }
@@ -117,23 +105,13 @@ class _InstructionCard extends StatelessWidget {
       fill: c.surface,
       edge: c.lip,
       borderColor: c.border,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CustomText(
-            'دستورالعمل',
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: c.primary,
-          ),
-          10.h,
-          CustomText(
-            instructionText,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: c.ink,
-          ),
+          CustomText.caption('دستورالعمل', color: c.primary),
+          MasirSpace.sm.h,
+          CustomText.headline(instructionText, color: c.ink),
           if (attachmentUrl != null && attachmentUrl!.isNotEmpty) ...[
             16.h,
             OnClick(
@@ -143,12 +121,7 @@ class _InstructionCard extends StatelessWidget {
                 children: [
                   Icon(Icons.attach_file_rounded, size: 18, color: c.primary),
                   4.w,
-                  CustomText(
-                    'مشاهده پیوست',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: c.primary,
-                  ),
+                  CustomText.bodyStrong('مشاهده پیوست', color: c.primary),
                 ],
               ),
             ),

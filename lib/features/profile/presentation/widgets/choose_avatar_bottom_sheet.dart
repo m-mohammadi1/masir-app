@@ -7,6 +7,7 @@ import '../../../../core/helper/assets.dart';
 import '../../../../widgets/custom_text.dart';
 import '../../../../widgets/dynamic_height_grid_view.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 class ChooseAvatarBottomSheet {
   static void show(BuildContext context) {
@@ -25,11 +26,7 @@ class _ChooseAvatarBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        CustomText(
-          "انتخاب عکس پروفایل",
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
+        CustomText.headline("انتخاب عکس پروفایل"),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: DynamicHeightGridView(
@@ -46,7 +43,7 @@ class _ChooseAvatarBottomSheet extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: context.colors.border150,
                   border: Border.all(color: context.colors.border),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(MasirRadius.row),
                 ),
                 alignment: Alignment.center,
                 child: Column(
@@ -58,15 +55,13 @@ class _ChooseAvatarBottomSheet extends StatelessWidget {
                       child: CustomImage(
                         assets: Assets.banner,
                         height: 100,
-                        radius: 8,
+                        radius: MasirRadius.chip,
                       ),
                     ),
                     8.h,
-                    CustomText(
+                    CustomText.body(
                       "آواتار".tr,
-                      fontSize: 14,
                       color: context.colors.secondary,
-                      fontWeight: FontWeight.w500,
                     ),
                   ],
                 ),
@@ -74,12 +69,12 @@ class _ChooseAvatarBottomSheet extends StatelessWidget {
             },
           ),
         ),
-        20.h,
+        16.h,
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: CustomButton(title: "انتخاب و ذخیره"),
         ),
-        20.h,
+        16.h,
       ],
     );
   }

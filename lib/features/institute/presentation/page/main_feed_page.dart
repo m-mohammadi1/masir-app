@@ -10,9 +10,10 @@ import '/features/discovery/presentation/widgets/section_renderer.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
 import '/features/institute/presentation/widgets/continue_hero.dart';
 import '/features/institute/presentation/widgets/membership_card_strip.dart';
-import '/widgets/custom_error.dart';
 import '/widgets/custom_text.dart';
-import '/widgets/empty_widget.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/state_view.dart';
+import '/core/theme/masir_style.dart';
 
 class MainFeedPage extends StatefulWidget {
   const MainFeedPage({super.key});
@@ -45,125 +46,91 @@ class _MainFeedPageState extends State<MainFeedPage> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
-    return RefreshIndicator(
-      color: c.primary,
-      backgroundColor: c.surface,
+    final name = _name;
+    return MasirPage.tab(
+      title: 'امروز چی یاد می‌گیری؟',
+      subtitle: name == null ? 'سلام!' : 'سلام $name',
+      trailing: _Avatar(name: name),
       onRefresh: _refresh,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 32),
-        children: [
-          56.h,
-          _Header(name: _name),
-          20.h,
-          ContinueHero(bloc: walletBloc),
-          MembershipCardStrip(
-            bloc: walletBloc,
-            onTap: (card) {
-              if (card.instituteId != null) {
-                CustomNavigator.pushNamed('/i/${card.instituteId}/home');
-              }
-            },
-          ),
-          28.h,
-          BlocBuilder<MainFeedBloc, MainFeedState>(
-            bloc: feedBloc,
-            builder: (context, state) {
-              return state.when(
-                loading: (_) => const Column(
-                  children: [
-                    SectionSkeleton(hero: true),
-                    SizedBox(height: 32),
-                    SectionSkeleton(),
-                  ],
+      bleed: true,
+      children: [
+        ContinueHero(bloc: walletBloc),
+        MembershipCardStrip(
+          bloc: walletBloc,
+          onTap: (card) {
+            if (card.instituteId != null) {
+              CustomNavigator.pushNamed('/i/${card.instituteId}/home');
+            }
+          },
+        ),
+        const SizedBox(height: MasirSpace.section),
+        BlocBuilder<MainFeedBloc, MainFeedState>(
+          bloc: feedBloc,
+          builder: (context, state) {
+            return state.when(
+              loading: (_) => const Column(
+                children: [
+                  SectionSkeleton(hero: true),
+                  SizedBox(height: MasirSpace.section),
+                  SectionSkeleton(),
+                ],
+              ),
+              error: (_, message) => SizedBox(
+                height: 320,
+                child: StateView.error(
+                  message: message,
+                  retry: () => feedBloc.add(const MainFeedEvent.load()),
                 ),
-                error: (_, message) => SizedBox(
-                  height: 320,
-                  child: CustomError(
-                    message: message,
-                    retry: () => feedBloc.add(const MainFeedEvent.load()),
-                  ),
-                ),
-                success: (_, sections) {
-                  if (sections.isEmpty) {
-                    return const SizedBox(
-                      height: 320,
-                      child: EmptyWidget(
-                        text: 'هنوز چیزی اینجا نیست',
-                        description:
-                            'وقتی مؤسسات و دوره‌های خوب آماده شوند، اینجا می‌آیند.',
-                        icon: Icons.auto_stories_rounded,
-                      ),
-                    );
-                  }
-                  return Column(
-                    children: [
-                      for (var i = 0; i < sections.length; i++) ...[
-                        if (i > 0) 32.h,
-                        SectionRenderer(section: sections[i]),
-                      ],
-                    ],
+              ),
+              success: (_, sections) {
+                if (sections.isEmpty) {
+                  return const SizedBox(
+                    height: 320,
+                    child: StateView.empty(
+                      text: 'هنوز چیزی اینجا نیست',
+                      description:
+                          'وقتی مؤسسه‌ها و دوره‌های خوب آماده شوند، اینجا می‌آیند.',
+                      icon: Icons.auto_stories_rounded,
+                    ),
                   );
-                },
-              );
-            },
-          ),
-        ],
-      ),
+                }
+                return Column(
+                  children: [
+                    for (var i = 0; i < sections.length; i++) ...[
+                      if (i > 0) const SizedBox(height: MasirSpace.section),
+                      SectionRenderer(section: sections[i]),
+                    ],
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ],
     );
   }
 }
 
-class _Header extends StatelessWidget {
+class _Avatar extends StatelessWidget {
   final String? name;
-  const _Header({this.name});
+  const _Avatar({this.name});
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CustomText(
-                  name == null ? 'سلام!' : 'سلام $name',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: c.inkMuted,
-                  maxLines: 1,
-                ),
-                2.h,
-                const CustomText(
-                  'امروز چی یاد می‌گیری؟',
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                ),
-              ],
-            ),
-          ),
-          12.w,
-          Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: c.primaryTint,
-              shape: BoxShape.circle,
-              border: Border.all(color: c.primary, width: 2),
-            ),
-            child: CustomText(
-              (name != null && name!.isNotEmpty) ? name!.characters.first : 'م',
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: c.primary,
-            ),
-          ),
-        ],
+    final hasName = name != null && name!.isNotEmpty;
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: c.primaryTint,
+        shape: BoxShape.circle,
+        border: Border.all(color: c.primary, width: Chunky.border),
+      ),
+      child: CustomText.title(
+        hasName ? name!.characters.first : 'م',
+        color: c.primary,
       ),
     );
   }

@@ -8,18 +8,17 @@ import '../../../main/presentation/page/main_page.dart';
 import '/core/services/service_locator.dart';
 import '/features/otp/presentation/page/otp_screen.dart';
 import '/widgets/base_modal.dart';
-import '/widgets/base_screen.dart';
 import '/core/theme/masir_style.dart';
-import '/widgets/chunky_box.dart';
+import '/features/auth/presentation/widgets/auth_text_field.dart';
+import '/widgets/auth_hero.dart';
+import '/widgets/masir_page.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/pill_chip.dart';
 import '/widgets/custom_text.dart';
-import '/widgets/custom_text_field.dart';
 
 import '../bloc/auth_bloc.dart';
 import '../widget/verify_phone_bottom_sheet.dart';
 import '/core/theme/theme_context.dart';
-
 
 enum _AuthMode { login, register }
 
@@ -119,31 +118,22 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseScreen(
+    return MasirPage.plain(
       backgroundColor: context.colors.background,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 24),
+          padding: const EdgeInsets.symmetric(vertical: MasirSpace.xl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _AuthLogo(),
-              16.h,
-              CustomText(
-                _mode == _AuthMode.login ? "خوش برگشتی!" : "بیا شروع کنیم",
-                fontSize: MasirText.displaySize,
-                fontWeight: FontWeight.w800,
-                textAlign: TextAlign.center,
-              ),
-              6.h,
-              CustomText(
-                _mode == _AuthMode.login
+              AuthHero(
+                icon: Icons.route_rounded,
+                title: _mode == _AuthMode.login
+                    ? "خوش برگشتی!"
+                    : "بیا شروع کنیم",
+                subtitle: _mode == _AuthMode.login
                     ? "نام کاربری و رمز عبورت رو وارد کن"
                     : "کد دعوت و شماره موبایلت رو وارد کن",
-                fontSize: 14,
-                color: context.colors.inkMuted,
-                textAlign: TextAlign.center,
               ),
               24.h,
               _ModeTabs(mode: _mode, onChanged: _switchMode),
@@ -168,14 +158,14 @@ class _AuthScreenState extends State<AuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _AuthTextField(
+        AuthTextField(
           label: "نام کاربری",
           controller: _usernameController,
           focusNode: _usernameFocus,
           onChanged: (_) => setState(() {}),
         ),
         16.h,
-        _AuthTextField(
+        AuthTextField(
           label: "رمز عبور",
           controller: _passwordController,
           focusNode: _passwordFocus,
@@ -183,7 +173,7 @@ class _AuthScreenState extends State<AuthScreen> {
           action: TextInputAction.done,
           onChanged: (_) => setState(() {}),
         ),
-        28.h,
+        24.h,
         BlocConsumer<LoginBloc, LoginState>(
           bloc: loginBloc,
           listener: (context, state) {
@@ -205,7 +195,7 @@ class _AuthScreenState extends State<AuthScreen> {
             );
           },
         ),
-        20.h,
+        16.h,
         _AuthLink(
           text: "فراموشی رمز عبور",
           onTap: () {
@@ -234,7 +224,7 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
         8.h,
-        _AuthTextField(
+        AuthTextField(
           label: "کد دعوت",
           controller: _inviteCodeController,
           focusNode: _inviteCodeFocus,
@@ -245,7 +235,7 @@ class _AuthScreenState extends State<AuthScreen> {
           },
         ),
         16.h,
-        _AuthTextField(
+        AuthTextField(
           label: "شماره موبایل",
           controller: _phoneController,
           focusNode: _phoneFocus,
@@ -258,7 +248,7 @@ class _AuthScreenState extends State<AuthScreen> {
             setState(() {});
           },
         ),
-        28.h,
+        24.h,
         BlocConsumer<AuthBloc, AuthState>(
           bloc: authBloc,
           listener: (context, state) {
@@ -286,7 +276,7 @@ class _AuthScreenState extends State<AuthScreen> {
             );
           },
         ),
-        20.h,
+        16.h,
         _AuthLink(
           text: "حساب دارید؟ ورود",
           onTap: () => _switchMode(_AuthMode.login),
@@ -322,10 +312,8 @@ class _ModeTabs extends StatelessWidget {
                   ? Border.all(color: c.primary, width: Chunky.border)
                   : null,
             ),
-            child: CustomText(
+            child: CustomText.bodyStrong(
               label,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
               color: selected ? c.primary : c.inkMuted,
             ),
           ),
@@ -349,83 +337,6 @@ class _ModeTabs extends StatelessWidget {
   }
 }
 
-class _AuthLogo extends StatelessWidget {
-  const _AuthLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ChunkyBox(
-        fill: context.colors.primary,
-        edge: context.colors.primaryEdge,
-        radius: 24,
-        width: 84,
-        height: 88,
-        alignment: Alignment.center,
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: CustomText(
-            "R/",
-            fontSize: 34,
-            fontWeight: FontWeight.w800,
-            color: context.colors.onPrimary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AuthTextField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final bool isPassword;
-  final TextInputType? type;
-  final TextDirection? textDirection;
-  final int? maxLength;
-  final TextInputAction action;
-  final ValueChanged<String>? onChanged;
-
-  const _AuthTextField({
-    required this.label,
-    required this.controller,
-    required this.focusNode,
-    this.isPassword = false,
-    this.type,
-    this.textDirection,
-    this.maxLength,
-    this.action = TextInputAction.next,
-    this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isFocused = focusNode.hasFocus;
-
-    return CustomTextField(
-      controller: controller,
-      currentFocus: focusNode,
-      labelText: label,
-      isPassword: isPassword,
-      type: type,
-      textDirection: textDirection,
-      maxLength: maxLength,
-      action: action,
-      onChanged: onChanged,
-      textFieldRadius: 16,
-      borderColor: isFocused ? context.colors.primary : context.colors.border,
-      backgroundColor: isFocused ? context.colors.primary100 : context.colors.surface,
-      labelStyle: customTextStyle(
-        context,
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: context.colors.ink,
-      ),
-    );
-  }
-}
-
 class _AuthLink extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
@@ -437,11 +348,9 @@ class _AuthLink extends StatelessWidget {
     return Center(
       child: GestureDetector(
         onTap: onTap,
-        child: CustomText(
+        child: CustomText.bodyStrong(
           text,
           textAlign: TextAlign.center,
-          fontSize: 14,
-          fontWeight: FontWeight.w800,
           color: context.colors.primary,
         ),
       ),

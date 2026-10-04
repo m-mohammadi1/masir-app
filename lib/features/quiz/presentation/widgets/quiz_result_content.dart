@@ -12,9 +12,9 @@ import 'package:mohammad/widgets/custom_text.dart';
 import 'package:mohammad/widgets/pill_chip.dart';
 import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
-import '/features/main/presentation/page/outline/roadmap/paper_theme.dart'
-    show persianDigits;
-import '/features/quiz/presentation/widgets/unit_top_bar.dart';
+import '/core/helper/jalali_format.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/section_header.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
 
 class QuizResultContent extends StatefulWidget {
@@ -87,83 +87,64 @@ class _QuizResultContentState extends State<QuizResultContent> {
 
     return Stack(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        MasirPage.focus(
+          title: title,
+          onClose: widget.onBack,
+          trailing: unitTeacherHeaderIcon(widget.data.teachers),
           children: [
-            UnitTopBar(
-              title: title,
-              onClose: widget.onBack,
-              trailing: unitTeacherHeaderIcon(widget.data.teachers),
-            ),
-            if (widget.banner != null) ...[12.h, widget.banner!],
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(top: 20, bottom: 12),
-                children: [
-                  _ScoreHero(
-                    score: score,
-                    passed: passed,
-                    threshold: _passThreshold,
-                  ),
-                  if (_questions.isNotEmpty) ...[
-                    24.h,
-                    CustomText(
-                      'مرور پاسخ‌ها',
-                      fontSize: MasirText.titleSize,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    12.h,
-                  ],
-                  for (var i = 0; i < _questions.length; i++) ...[
-                    _ResultQuestionCard(
-                      index: i + 1,
-                      question: _questions[i],
-                      isCorrect: _isCorrect(_questions[i].id ?? ''),
-                      userAnswer: widget.userAnswers[_questions[i].id ?? ''],
-                    ),
-                    12.h,
-                  ],
-                  if (widget.footer != null) widget.footer!,
-                ],
+            if (widget.banner != null) ...[
+              widget.banner!,
+              const SizedBox(height: MasirSpace.md),
+            ],
+            const SizedBox(height: MasirSpace.lg),
+            _ScoreHero(score: score, passed: passed, threshold: _passThreshold),
+            if (_questions.isNotEmpty) ...[
+              const SizedBox(height: MasirSpace.section),
+              const SectionHeader('مرور پاسخ‌ها'),
+            ],
+            for (var i = 0; i < _questions.length; i++) ...[
+              _ResultQuestionCard(
+                index: i + 1,
+                question: _questions[i],
+                isCorrect: _isCorrect(_questions[i].id ?? ''),
+                userAnswer: widget.userAnswers[_questions[i].id ?? ''],
               ),
-            ),
-            UnitBottomBar(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (passed)
-                    CustomButton(
-                      title: 'ادامه مسیر',
-                      variant: ButtonVariant.success,
-                      height: 54,
-                      onTap: widget.onBack,
-                    )
-                  else ...[
-                    CustomButton(
-                      title: 'تلاش مجدد',
-                      height: 54,
-                      onTap: widget.onRetry,
-                    ),
-                    4.h,
-                    OnClick(
-                      onTap: widget.onBack,
-                      child: SizedBox(
-                        height: 40,
-                        child: Center(
-                          child: CustomText(
-                            'بازگشت به مسیر',
-                            color: c.inkMuted,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+              const SizedBox(height: MasirSpace.md),
+            ],
+            if (widget.footer != null) widget.footer!,
+          ],
+          stickyBottom: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (passed)
+                CustomButton(
+                  title: 'ادامه مسیر',
+                  variant: ButtonVariant.success,
+                  height: 54,
+                  onTap: widget.onBack,
+                )
+              else ...[
+                CustomButton(
+                  title: 'تلاش مجدد',
+                  height: 54,
+                  onTap: widget.onRetry,
+                ),
+                const SizedBox(height: MasirSpace.xs),
+                OnClick(
+                  onTap: widget.onBack,
+                  child: SizedBox(
+                    height: 40,
+                    child: Center(
+                      child: CustomText.bodyStrong(
+                        'بازگشت به مسیر',
+                        color: c.inkMuted,
                       ),
                     ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         Positioned(
           top: 0,
@@ -215,8 +196,13 @@ class _ScoreHero extends StatelessWidget {
       child: Column(
         children: [
           TweenAnimationBuilder<double>(
-            tween: Tween(begin: reduce ? score.toDouble() : 0, end: score.toDouble()),
-            duration: reduce ? Duration.zero : const Duration(milliseconds: 1100),
+            tween: Tween(
+              begin: reduce ? score.toDouble() : 0,
+              end: score.toDouble(),
+            ),
+            duration: reduce
+                ? Duration.zero
+                : const Duration(milliseconds: 1100),
             curve: Curves.easeOutCubic,
             builder: (context, v, _) {
               return SizedBox(
@@ -229,10 +215,8 @@ class _ScoreHero extends StatelessWidget {
                     track: c.surface,
                   ),
                   child: Center(
-                    child: CustomText(
-                      '${persianDigits(v.round())}٪',
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
+                    child: CustomText.display(
+                      '${faDigits(v.round())}٪',
                       color: edge,
                     ),
                   ),
@@ -241,17 +225,15 @@ class _ScoreHero extends StatelessWidget {
             },
           ),
           16.h,
-          CustomText(
+          CustomText.title(
             passed ? 'آفرین! قبول شدی' : 'این بار نشد، ولی نزدیکی',
-            fontSize: MasirText.titleSize,
-            fontWeight: FontWeight.w800,
             color: edge,
             textAlign: TextAlign.center,
           ),
           if (threshold != null) ...[
             8.h,
             PillChip(
-              'حد نصاب ${persianDigits(threshold!)}٪',
+              'حد نصاب ${faDigits(threshold!)}٪',
               tone: passed ? PillTone.success : PillTone.sun,
             ),
           ],
@@ -324,7 +306,7 @@ class _ResultQuestionCard extends StatelessWidget {
       fill: c.surface,
       edge: c.lip,
       borderColor: c.border,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -340,13 +322,11 @@ class _ResultQuestionCard extends StatelessWidget {
               ),
             ),
           if (isCorrect != null) 12.h,
-          CustomText(
-            '${persianDigits(index)}. ${question.text ?? ''}',
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
+          CustomText.headline(
+            '${faDigits(index)}. ${question.text ?? ''}',
             color: c.ink,
           ),
-          14.h,
+          12.h,
           switch (layoutType) {
             QuizLayoutType.trueFalse => Row(
               children: [
@@ -435,37 +415,25 @@ class _ResultTile extends StatelessWidget {
       fill: fill,
       edge: edge,
       borderColor: border,
-      radius: 16,
-      padding: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: left ? 14 : 0,
-      ),
+      radius: MasirRadius.row,
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: left ? 14 : 0),
       height: left ? null : 54,
       alignment: left ? null : Alignment.center,
       child: Row(
-        mainAxisAlignment:
-            left ? MainAxisAlignment.start : MainAxisAlignment.center,
+        mainAxisAlignment: left
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.center,
         children: [
           if (left)
             Expanded(
-              child: CustomText(
+              child: CustomText.bodyStrong(
                 title,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
                 color: selected ? text : c.ink,
               ),
             )
           else
-            CustomText(
-              title,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: selected ? text : c.ink,
-            ),
-          if (icon != null) ...[
-            10.w,
-            Icon(icon, size: 20, color: text),
-          ],
+            CustomText.headline(title, color: selected ? text : c.ink),
+          if (icon != null) ...[8.w, Icon(icon, size: 20, color: text)],
         ],
       ),
     );

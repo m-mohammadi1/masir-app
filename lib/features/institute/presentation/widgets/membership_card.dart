@@ -9,6 +9,7 @@ import '/widgets/brand_media.dart';
 import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/progress_pill.dart';
+import '/core/theme/masir_style.dart';
 
 /// Collectible membership card in the institute's own colours.
 class MembershipCard extends StatelessWidget {
@@ -48,7 +49,7 @@ class MembershipCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(18),
+                  top: Radius.circular(MasirRadius.card),
                 ),
                 child: SizedBox(
                   height: coverHeight,
@@ -80,21 +81,12 @@ class MembershipCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                CustomText(
-                  name,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  maxLines: 1,
-                ),
+                CustomText.headline(name, maxLines: 1),
                 if (!compact && memberSince.isNotEmpty) ...[
-                  2.h,
-                  CustomText(
-                    memberSince,
-                    fontSize: 12,
-                    color: c.inkMuted,
-                  ),
+                  4.h,
+                  CustomText.caption(memberSince, color: c.inkMuted),
                 ],
-                10.h,
+                8.h,
                 if (action == null)
                   Row(
                     children: [
@@ -103,31 +95,24 @@ class MembershipCard extends StatelessWidget {
                         size: 18,
                         color: preset.primary,
                       ),
-                      6.w,
-                      CustomText(
-                        'شروع یادگیری',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: preset.primary,
-                      ),
+                      4.w,
+                      CustomText.caption('شروع یادگیری', color: preset.primary),
                     ],
                   )
                 else ...[
                   Row(
                     children: [
                       Expanded(
-                        child: CustomText(
-                          action.unitTitle ?? action.courseTitle ?? 'ادامه یادگیری',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                        child: CustomText.caption(
+                          action.unitTitle ??
+                              action.courseTitle ??
+                              'ادامه یادگیری',
                           maxLines: 1,
                         ),
                       ),
                       8.w,
-                      CustomText(
+                      CustomText.caption(
                         formatProgressPercent(action.progressPercent),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
                         color: preset.primary,
                       ),
                     ],

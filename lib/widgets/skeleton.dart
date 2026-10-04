@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 
 class SkeletonBox extends StatelessWidget {
@@ -10,7 +11,7 @@ class SkeletonBox extends StatelessWidget {
     super.key,
     this.width,
     this.height = 16,
-    this.radius = 8,
+    this.radius = MasirRadius.chip,
   });
 
   @override
@@ -36,7 +37,7 @@ class SkeletonText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SkeletonBox(width: width, height: height, radius: 6);
+    return SkeletonBox(width: width, height: height, radius: MasirRadius.chip);
   }
 }
 
@@ -51,10 +52,11 @@ class SkeletonList extends StatelessWidget {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: MasirSpace.md),
       itemCount: count,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, _) => SkeletonBox(height: itemHeight, radius: 20),
+      separatorBuilder: (_, _) => const SizedBox(height: MasirSpace.md),
+      itemBuilder: (_, _) =>
+          SkeletonBox(height: itemHeight, radius: MasirRadius.card),
     );
   }
 }

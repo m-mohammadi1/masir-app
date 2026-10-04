@@ -28,7 +28,9 @@ void main() async {
   await setup();
 
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     await FCMManager.initial();
   } catch (_) {}
 
@@ -129,12 +131,10 @@ class _MyAppState extends State<MyApp> {
               40.h,
               const Directionality(
                 textDirection: TextDirection.rtl,
-                child: CustomText(
+                child: CustomText.body(
                   textAlign: TextAlign.center,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 18,
                   color: Colors.white,
-                  "خطای اتصال به سرور\nلطفا اینترنت خود را برسی کنید.",
+                  "خطای اتصال به سرور\nاینترنتت رو بررسی کن.",
                 ),
               ),
             ],

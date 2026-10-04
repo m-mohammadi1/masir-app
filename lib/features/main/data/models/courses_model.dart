@@ -25,7 +25,10 @@ class CoursesModel extends CoursesEntity {
 
   static List<String> _stringList(dynamic raw) {
     if (raw is! List) return const [];
-    return raw.map((e) => e.toString()).where((e) => e.trim().isNotEmpty).toList();
+    return raw
+        .map((e) => e.toString())
+        .where((e) => e.trim().isNotEmpty)
+        .toList();
   }
 
   static CourseTopic? _topic(dynamic raw) {
@@ -43,11 +46,13 @@ class CoursesModel extends CoursesEntity {
       id: raw['id']?.toString(),
       name: raw['name']?.toString(),
       coverUrl: raw['cover_url']?.toString(),
+      themePreset: raw['theme_preset']?.toString(),
     );
   }
 
   @override
-  CoursesModel fromJson(Map<String, dynamic> json) => CoursesModel.fromJson(json);
+  CoursesModel fromJson(Map<String, dynamic> json) =>
+      CoursesModel.fromJson(json);
 
   factory CoursesModel.fromJson(Map<String, dynamic> json) {
     return CoursesModel(

@@ -2,6 +2,7 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 class TimePickerAnchor extends StatefulWidget {
   final Function(String) onChange;
@@ -65,7 +66,9 @@ class _TimePickerAnchorState extends State<TimePickerAnchor>
                       hour = h;
                       minute = m;
                     });
-                    widget.onChange('${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
+                    widget.onChange(
+                      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+                    );
                   },
                 ),
               ),
@@ -102,9 +105,11 @@ class _TimePickerAnchorState extends State<TimePickerAnchor>
           width: context.appSize.width,
           decoration: BoxDecoration(
             color: context.colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(MasirRadius.chip),
             border: Border.all(
-              color: _overlay == null ? context.colors.border : context.colors.primary,
+              color: _overlay == null
+                  ? context.colors.border
+                  : context.colors.primary,
             ),
           ),
           child: Padding(
@@ -187,7 +192,7 @@ class _TimePickerOverlayState extends State<_TimePickerOverlay>
         scale: Tween(begin: 0.95, end: 1.0).animate(_controller),
         child: Material(
           elevation: 6,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(MasirRadius.chip),
           child: Container(
             width: (context.appSize.width / 2) - 28,
             padding: const EdgeInsets.all(8),
@@ -199,7 +204,7 @@ class _TimePickerOverlayState extends State<_TimePickerOverlay>
                   width: context.appSize.width,
                   decoration: BoxDecoration(
                     color: context.colors.primary100,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(MasirRadius.chip),
                   ),
                 ),
                 Column(
@@ -255,12 +260,8 @@ class _TimePickerOverlayState extends State<_TimePickerOverlay>
         onSelectedItemChanged: onChanged,
         childDelegate: ListWheelChildBuilderDelegate(
           childCount: count,
-          builder: (_, index) => Center(
-            child: CustomText(
-              index.toString().padLeft(2, '0'),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          builder: (_, index) =>
+              Center(child: CustomText.body(index.toString().padLeft(2, '0'))),
         ),
       ),
     );

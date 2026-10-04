@@ -26,8 +26,10 @@ class UnitsModel extends UnitsEntity {
           ? UnitsPayloadModel.fromJson(json['payload'])
           : null,
       teachers: parseCourseTeachers(json['teachers']),
-      isPreview: json['is_preview'] == true,
-      isLastPreview: json['is_last_preview'] == true,
+      // Preview hints only matter until the student has joined the course.
+      isPreview: json['is_subscribed'] != true && json['is_preview'] == true,
+      isLastPreview:
+          json['is_subscribed'] != true && json['is_last_preview'] == true,
     );
   }
 
@@ -42,8 +44,10 @@ class UnitsModel extends UnitsEntity {
           ? UnitsPayloadModel.fromJson(json['payload'])
           : null,
       teachers: parseCourseTeachers(json['teachers']),
-      isPreview: json['is_preview'] == true,
-      isLastPreview: json['is_last_preview'] == true,
+      // Preview hints only matter until the student has joined the course.
+      isPreview: json['is_subscribed'] != true && json['is_preview'] == true,
+      isLastPreview:
+          json['is_subscribed'] != true && json['is_last_preview'] == true,
     );
   }
 }
@@ -77,12 +81,7 @@ class UnitsPayloadModel extends UnitsPayloadEntity {
 }
 
 class UnitsQuestionModel extends UnitsQuestionEntity {
-  const UnitsQuestionModel({
-    super.id,
-    super.type,
-    super.text,
-    super.options,
-  });
+  const UnitsQuestionModel({super.id, super.type, super.text, super.options});
 
   factory UnitsQuestionModel.fromJson(Map<String, dynamic> json) {
     return UnitsQuestionModel(

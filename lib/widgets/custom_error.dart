@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 import 'custom_button.dart';
 import 'custom_text.dart';
@@ -20,7 +21,7 @@ class CustomError extends StatelessWidget {
     final c = context.colors;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: MasirSpace.xxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -33,16 +34,14 @@ class CustomError extends StatelessWidget {
               ),
               child: Icon(Icons.wifi_off_rounded, size: 36, color: c.coral),
             ),
-            const SizedBox(height: 16),
-            CustomText(
+            const SizedBox(height: MasirSpace.lg),
+            CustomText.bodyStrong(
               message,
               textAlign: TextAlign.center,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
               color: textColor ?? c.ink,
             ),
             if (retry != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: MasirSpace.xl),
               CustomButton(title: 'تلاش مجدد', onTap: retry, width: 200),
             ],
           ],

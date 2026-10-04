@@ -1,16 +1,17 @@
-import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '/core/helper/jalali_format.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
 import '/features/institute/presentation/bloc/institute_detail/institute_detail_bloc.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
 import '/features/institute/presentation/widgets/membership_card.dart';
 import '/widgets/custom_text.dart';
-import '/widgets/paper_card.dart';
+import '/widgets/masir_card.dart';
+import '/widgets/masir_page.dart';
 import '/widgets/pill_chip.dart';
-import '/widgets/skeleton.dart';
+import '/widgets/state_view.dart';
 
 class InstituteMePage extends StatelessWidget {
   const InstituteMePage({super.key});
@@ -21,19 +22,21 @@ class InstituteMePage extends StatelessWidget {
     return BlocBuilder<InstituteDetailBloc, InstituteDetailState>(
       builder: (context, detailState) {
         return detailState.when(
-          loading: (_) => const SkeletonList(),
-          error: (_, _) => const SizedBox.shrink(),
+          loading: (_) => const MasirPage.tab(
+            title: 'من در این مؤسسه',
+            children: [
+              StateView.loading(variant: SkeletonVariant.cards, count: 1),
+            ],
+          ),
+          error: (_, _) => const MasirPage.tab(
+            title: 'من در این مؤسسه',
+            children: [SizedBox.shrink()],
+          ),
           success: (_, detail) {
             final isMember = detail.membership.isMember;
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            return MasirPage.tab(
+              title: 'من در این مؤسسه',
               children: [
-                const CustomText(
-                  'من در این مؤسسه',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 28,
-                ),
-                12.h,
                 Row(
                   children: [
                     PillChip(
@@ -41,19 +44,18 @@ class InstituteMePage extends StatelessWidget {
                       tone: isMember ? PillTone.success : PillTone.neutral,
                       icon: isMember
                           ? Icons.verified_rounded
-                          : Icons.lock_outline_rounded,
+                          : Icons.lock_rounded,
                     ),
                     if (detail.membership.memberSince != null) ...[
-                      8.w,
-                      CustomText(
+                      const SizedBox(width: MasirSpace.sm),
+                      CustomText.caption(
                         formatMemberSince(detail.membership.memberSince),
-                        fontSize: 12,
                         color: c.inkMuted,
                       ),
                     ],
                   ],
                 ),
-                20.h,
+                const SizedBox(height: MasirSpace.xl),
                 BlocBuilder<WalletBloc, WalletState>(
                   builder: (context, walletState) {
                     final card = walletState.whenOrNull(
@@ -65,18 +67,18 @@ class InstituteMePage extends StatelessWidget {
                       },
                     );
                     if (card == null) {
-                      return PaperCard(
-                        tint: c.primaryTint,
-                        tintEdge: c.primary.withValues(alpha: 0.35),
+                      return MasirCard.tinted(
                         child: Row(
                           children: [
-                            Icon(Icons.badge_rounded, color: c.primary, size: 32),
-                            12.w,
+                            Icon(
+                              Icons.badge_rounded,
+                              color: c.primary,
+                              size: 32,
+                            ),
+                            const SizedBox(width: MasirSpace.md),
                             Expanded(
-                              child: CustomText(
-                                'کارت عضویتت پس از عضو شدن اینجا نمایش داده می‌شود.',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                              child: CustomText.bodyStrong(
+                                'کارت عضویتت بعد از عضو شدن اینجا نشونش می‌دیم.',
                                 color: c.ink,
                               ),
                             ),

@@ -6,6 +6,7 @@ import '/features/discovery/data/models/main_feed_model.dart';
 import '/features/discovery/presentation/bloc/topics/topics_bloc.dart';
 import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/masir_style.dart';
 
 class TopicChipRow extends StatelessWidget {
   final TopicsBloc bloc;
@@ -26,10 +27,10 @@ class TopicChipRow extends StatelessWidget {
       builder: (context, state) {
         return state.maybeWhen(
           success: (_, items) => SizedBox(
-            height: 48,
+            height: 52,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              clipBehavior: Clip.none,
               children: [
                 _Chip(
                   label: 'همه',
@@ -38,7 +39,9 @@ class TopicChipRow extends StatelessWidget {
                 ),
                 ...items.map(
                   (DiscoveryTopicModel topic) => Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 8),
+                    padding: const EdgeInsetsDirectional.only(
+                      start: MasirSpace.sm,
+                    ),
                     child: _Chip(
                       label: topic.name ?? topic.slug ?? '',
                       selected: selectedSlug == topic.slug,
@@ -71,19 +74,14 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     return ChunkyBox(
-      radius: 16,
+      radius: MasirRadius.chip,
       fill: selected ? c.primary : c.surface,
       edge: selected ? c.primaryEdge : c.lip,
       borderColor: selected ? null : c.border,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.center,
       onTap: onTap,
-      child: CustomText(
-        label,
-        fontSize: 13,
-        fontWeight: FontWeight.w800,
-        color: selected ? c.onPrimary : c.ink,
-      ),
+      child: CustomText.caption(label, color: selected ? c.onPrimary : c.ink),
     );
   }
 }

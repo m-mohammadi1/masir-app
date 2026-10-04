@@ -10,10 +10,13 @@ import '/features/main/data/models/request_courses_model.dart';
 import '/features/main/presentation/bloc/courses/courses_bloc.dart';
 import '/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import '/features/main/presentation/page/outline_page.dart';
-import '/widgets/custom_error.dart';
+import '/core/helper/route_args.dart';
+import '/core/theme/institute_themed.dart';
+import '/core/theme/masir_style.dart';
 import '/widgets/custom_text.dart';
-import '/widgets/empty_widget.dart';
-import '/widgets/skeleton.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/section_header.dart';
+import '/widgets/state_view.dart';
 
 class InstituteCoursesPage extends StatefulWidget {
   const InstituteCoursesPage({super.key});
@@ -42,7 +45,21 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
   void _open(String? id, String? title) {
     CustomNavigator.pushNamed(
       OutlinePage.routeName,
-      arguments: {'id': id ?? '', 'title': title ?? ''},
+      arguments: withThemePreset({
+        'id': id ?? '',
+        'title': title ?? '',
+      }, InstituteThemed.presetOf(context)),
+    );
+  }
+
+  void _reload() {
+    coursesBloc.add(
+      CoursesEvent.courses(
+        params: RequestCoursesModel(
+          instituteId:
+              GoRouterState.of(context).pathParameters['instituteId'] ?? '',
+        ),
+      ),
     );
   }
 
@@ -55,7 +72,8 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
             subState.whenOrNull(
               success: (_, data) => {
                 for (final e in data)
-                  if (e.courseId != null) e.courseId!: e.courseProgressPercent ?? 0,
+                  if (e.courseId != null)
+                    e.courseId!: e.courseProgressPercent ?? 0,
               },
             ) ??
             <String, int>{};
@@ -64,25 +82,25 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
           bloc: coursesBloc,
           builder: (context, state) {
             return state.when(
-              loading: (_) => const SkeletonList(itemHeight: 96),
-              error: (_, message) => CustomError(
-                message: message,
-                retry: () => coursesBloc.add(
-                  CoursesEvent.courses(
-                    params: RequestCoursesModel(
-                      instituteId:
-                          GoRouterState.of(context).pathParameters['instituteId'] ??
-                          '',
-                    ),
-                  ),
-                ),
+              loading: (_) => const MasirPage.tab(
+                title: 'دوره‌ها',
+                children: [
+                  StateView.loading(variant: SkeletonVariant.cards, count: 3),
+                ],
+              ),
+              error: (_, message) => MasirPage.tab(
+                title: 'دوره‌ها',
+                body: StateView.error(message: message, retry: _reload),
               ),
               success: (_, data) {
                 if (data.isEmpty) {
-                  return const EmptyWidget(
-                    text: 'دوره‌ای یافت نشد',
-                    description: 'این مؤسسه هنوز دوره‌ای منتشر نکرده است.',
-                    icon: Icons.menu_book_rounded,
+                  return const MasirPage.tab(
+                    title: 'دوره‌ها',
+                    body: StateView.empty(
+                      text: 'دوره‌ای پیدا نشد',
+                      description: 'این مؤسسه هنوز دوره‌ای منتشر نکرده.',
+                      icon: Icons.menu_book_rounded,
+                    ),
                   );
                 }
                 final mine = data
@@ -91,30 +109,24 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
                 final others = data
                     .where((c) => !progressById.containsKey(c.id))
                     .toList();
-                return ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                return MasirPage.tab(
+                  title: 'دوره‌ها',
                   children: [
-                    const CustomText(
-                      'دوره‌ها',
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    16.h,
                     if (mine.isNotEmpty) ...[
-                      const _SectionTitle('دوره‌های من'),
+                      const SectionHeader('دوره‌های من'),
                       for (final course in mine) ...[
                         CourseCard(
                           course: course,
                           progress: progressById[course.id],
                           onTap: () => _open(course.id, course.title),
                         ),
-                        12.h,
+                        const SizedBox(height: MasirSpace.md),
                       ],
-                      12.h,
+                      const SizedBox(height: MasirSpace.md),
                     ],
-                    const _SectionTitle('دوره‌های دیگر'),
+                    const SectionHeader('دوره‌های دیگر'),
                     if (others.isEmpty)
-                      CustomText(
+                      CustomText.body(
                         'همه‌ی دوره‌ها را شروع کرده‌ای. آفرین!',
                         color: context.colors.inkMuted,
                       )
@@ -124,7 +136,7 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
                           course: course,
                           onTap: () => _open(course.id, course.title),
                         ),
-                        12.h,
+                        const SizedBox(height: MasirSpace.md),
                       ],
                   ],
                 );
@@ -133,19 +145,6 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
           },
         );
       },
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: CustomText(text, fontWeight: FontWeight.w800, fontSize: 18),
     );
   }
 }

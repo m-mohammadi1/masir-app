@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '/core/theme/theme_context.dart';
 import '/widgets/custom_text.dart';
+import '/core/theme/masir_style.dart';
 
 class MasirBottomBarItem {
   final int index;
@@ -92,7 +93,7 @@ class _Tab extends StatelessWidget {
               height: 32,
               decoration: BoxDecoration(
                 color: selected ? c.primaryTint : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(MasirRadius.row),
               ),
               child: Icon(
                 selected ? item.selectedIcon : item.icon,
@@ -101,7 +102,7 @@ class _Tab extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           CustomText(
             item.label,
             fontSize: 11,
@@ -118,13 +119,13 @@ List<MasirBottomBarItem> masirGlobalTabs() => const [
   MasirBottomBarItem(
     index: 2,
     label: 'خانه',
-    icon: Icons.explore_outlined,
+    icon: Icons.explore_rounded,
     selectedIcon: Icons.explore_rounded,
   ),
   MasirBottomBarItem(
     index: 1,
     label: 'مؤسسات من',
-    icon: Icons.school_outlined,
+    icon: Icons.school_rounded,
     selectedIcon: Icons.school_rounded,
   ),
   MasirBottomBarItem(
@@ -139,25 +140,25 @@ List<MasirBottomBarItem> masirInstituteTabs() => const [
   MasirBottomBarItem(
     index: 0,
     label: 'خانه',
-    icon: Icons.home_outlined,
+    icon: Icons.home_rounded,
     selectedIcon: Icons.home_rounded,
   ),
   MasirBottomBarItem(
     index: 1,
     label: 'دوره‌ها',
-    icon: Icons.menu_book_outlined,
+    icon: Icons.menu_book_rounded,
     selectedIcon: Icons.menu_book_rounded,
   ),
   MasirBottomBarItem(
     index: 2,
     label: 'اساتید',
-    icon: Icons.groups_outlined,
+    icon: Icons.groups_rounded,
     selectedIcon: Icons.groups_rounded,
   ),
   MasirBottomBarItem(
     index: 3,
     label: 'من',
-    icon: Icons.emoji_events_outlined,
+    icon: Icons.emoji_events_rounded,
     selectedIcon: Icons.emoji_events_rounded,
   ),
 ];

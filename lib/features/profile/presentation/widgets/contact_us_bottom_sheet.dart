@@ -5,6 +5,7 @@ import '../../../../core/helper/assets.dart';
 import '../../../../widgets/custom_text.dart';
 import '../../../../widgets/modal_title.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 class ContactUsBottomSheet extends StatelessWidget {
   const ContactUsBottomSheet({super.key});
@@ -22,7 +23,7 @@ class ContactUsBottomSheet extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: Color(0xFF0088CC).withValues(alpha: .2),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(MasirRadius.chip),
           ),
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Padding(
@@ -35,11 +36,10 @@ class ContactUsBottomSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    CustomText("پیام در تلگرام", fontWeight: FontWeight.w500),
+                    CustomText.body("پیام در تلگرام"),
                     4.h,
-                    CustomText(
+                    CustomText.caption(
                       "گفت‌وگوی آسان و امن با پشتیبانی آنلاین",
-                      fontSize: 11,
                     ),
                   ],
                 ),
@@ -51,7 +51,7 @@ class ContactUsBottomSheet extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: context.colors.green.withValues(alpha: .2),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(MasirRadius.chip),
           ),
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Padding(
@@ -64,11 +64,10 @@ class ContactUsBottomSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    CustomText("پیام در واتساپ", fontWeight: FontWeight.w500),
+                    CustomText.body("پیام در واتساپ"),
                     4.h,
-                    CustomText(
+                    CustomText.caption(
                       "گفت‌وگوی آسان و امن با پشتیبانی آنلاین",
-                      fontSize: 11,
                     ),
                   ],
                 ),
@@ -79,7 +78,7 @@ class ContactUsBottomSheet extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: Color(0xFF4CAF50).withValues(alpha: .2),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(MasirRadius.chip),
           ),
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Padding(
@@ -92,12 +91,9 @@ class ContactUsBottomSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    CustomText("تماس مستقیم", fontWeight: FontWeight.w500),
+                    CustomText.body("تماس مستقیم"),
                     4.h,
-                    CustomText(
-                      "صحبت برای مشاوره و دریافت اطلاعات",
-                      fontSize: 11,
-                    ),
+                    CustomText.caption("صحبت برای مشاوره و دریافت اطلاعات"),
                   ],
                 ),
               ],

@@ -7,7 +7,10 @@ import 'package:flutter/material.dart';
 import 'core/helper/assets.dart';
 import 'features/auth/presentation/page/auth_screen.dart';
 import 'features/main/presentation/page/main_page.dart';
+import '/core/theme/masir_style.dart';
 import '/core/theme/theme_context.dart';
+import '/widgets/chunky_box.dart';
+import '/widgets/custom_text.dart';
 
 class SplashScreen extends StatefulWidget {
   static const String routeName = "/splash";
@@ -50,12 +53,31 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: context.colors.primary,
+      backgroundColor: c.primary,
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(48),
-          child: CustomImage(assets: Assets.logo, color: context.colors.secondary),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ChunkyBox(
+              width: 112,
+              height: 112,
+              radius: MasirRadius.hero,
+              fill: c.surface,
+              edge: c.primaryEdge,
+              padding: const EdgeInsets.all(MasirSpace.xl),
+              alignment: Alignment.center,
+              child: CustomImage(assets: Assets.logo, color: c.primary),
+            ),
+            const SizedBox(height: MasirSpace.xl),
+            CustomText.display('مسیر', color: c.onPrimary),
+            const SizedBox(height: MasirSpace.xs),
+            CustomText.body(
+              'یادگیری، قدم به قدم',
+              color: c.onPrimary.withValues(alpha: 0.85),
+            ),
+          ],
         ),
       ),
     );

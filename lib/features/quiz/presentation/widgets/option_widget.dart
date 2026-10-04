@@ -33,12 +33,7 @@ class OptionWidget extends StatelessWidget {
         width: context.appSize.width,
         alignment: Alignment.center,
         onTap: readOnly ? null : onTap,
-        child: CustomText(
-          title,
-          fontWeight: FontWeight.w800,
-          color: selected ? c.primary : c.ink,
-          fontSize: 17,
-        ),
+        child: CustomText.headline(title, color: selected ? c.primary : c.ink),
       ),
     );
   }

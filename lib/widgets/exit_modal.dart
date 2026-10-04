@@ -4,6 +4,7 @@ import '../../../../widgets/custom_text.dart';
 import 'custom_button.dart';
 import 'custom_outline_button.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 class ExitModal extends StatelessWidget {
   final String text;
@@ -29,22 +30,21 @@ class ExitModal extends StatelessWidget {
           Container(
             height: 48,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(MasirRadius.row),
               color: context.colors.primaryTint,
             ),
             child: Center(
-              child: CustomText(
+              child: CustomText.bodyStrong(
                 "تاییدیه",
-                fontWeight: FontWeight.w800,
                 color: context.colors.primary,
               ),
             ),
           ),
           16.h,
-          CustomText(text, fontSize: 18, fontWeight: FontWeight.w800),
+          CustomText.headline(text),
           8.h,
           CustomText(
-            description ?? "با بستن مرحله، تغییرات شما ذخیره نخواهد شد.",
+            description ?? "اگه الان خارج بشی، تغییراتت ذخیره نمی‌شه.",
             color: context.colors.inkMuted,
           ),
           16.h,
@@ -58,7 +58,7 @@ class ExitModal extends StatelessWidget {
                   },
                 ),
               ),
-              10.w,
+              8.w,
               Expanded(
                 child: CustomButton(
                   title: deleteText ?? "خروج",

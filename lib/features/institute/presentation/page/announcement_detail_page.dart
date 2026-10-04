@@ -1,8 +1,8 @@
+import '/core/helper/go_back.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_html/flutter_html.dart';
-import 'package:go_router/go_router.dart';
+import '/widgets/masir_html.dart';
 
 import '/core/helper/jalali_format.dart';
 import '/core/services/service_locator.dart';
@@ -14,8 +14,13 @@ import '/features/main/data/models/request_course_detail_model.dart';
 import '/features/main/domain/usecases/course_detail_usecase.dart';
 import '/features/main/presentation/page/outline_page.dart';
 import '/widgets/custom_button.dart';
+import '/core/helper/route_args.dart';
+import '/core/theme/institute_themed.dart';
 import '/widgets/custom_text.dart';
-import '/widgets/skeleton.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/pill_chip.dart';
+import '/widgets/state_view.dart';
+import '/core/theme/masir_style.dart';
 
 class AnnouncementDetailPage extends StatefulWidget {
   final String instituteId;
@@ -56,32 +61,44 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
     final result = await inject<CourseDetailUseCase>()(
       params: RequestCourseDetailModel(id: courseId),
     );
-    result.fold((_) {
-      if (!mounted) return;
-      CustomNavigator.pushNamed(
-        DetailCoursePage.routeName,
-        arguments: courseId,
-      );
-    }, (detail) {
-      if (!mounted) return;
-      final subscribed = detail.coursesModel?.isSubscribed == true;
-      if (!subscribed) {
+    result.fold(
+      (_) {
+        if (!mounted) return;
         CustomNavigator.pushNamed(
           DetailCoursePage.routeName,
-          arguments: courseId,
+          arguments: courseDetailArgs(
+            courseId,
+            themePreset: InstituteThemed.presetOf(context),
+          ),
         );
-        return;
-      }
-      CustomNavigator.pushNamed(
-        OutlinePage.routeName,
-        arguments: {
-          'id': courseId,
-          'title': detail.coursesModel?.title ?? '',
-          if (moduleId != null && moduleId.isNotEmpty) 'moduleId': moduleId,
-        },
-      );
-    });
+      },
+      (detail) {
+        if (!mounted) return;
+        final preset =
+            detail.coursesModel?.institute?.themePreset ??
+            InstituteThemed.presetOf(context);
+        final subscribed = detail.coursesModel?.isSubscribed == true;
+        if (!subscribed) {
+          CustomNavigator.pushNamed(
+            DetailCoursePage.routeName,
+            arguments: courseDetailArgs(courseId, themePreset: preset),
+          );
+          return;
+        }
+        CustomNavigator.pushNamed(
+          OutlinePage.routeName,
+          arguments: withThemePreset({
+            'id': courseId,
+            'title': detail.coursesModel?.title ?? '',
+            if (moduleId != null && moduleId.isNotEmpty) 'moduleId': moduleId,
+          }, preset),
+        );
+      },
+    );
   }
+
+  void _back() =>
+      goBack(context, fallback: '/i/${widget.instituteId}/announcements');
 
   @override
   Widget build(BuildContext context) {
@@ -100,82 +117,51 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
       },
       builder: (context, state) {
         return state.when(
-          loading: (_) => const SkeletonList(count: 3, itemHeight: 80),
-          error: (_, message) => Center(child: CustomText(message)),
+          loading: (_) => MasirPage.detail(
+            title: 'اطلاعیه',
+            onBack: _back,
+            body: const StateView.loading(variant: SkeletonVariant.detail),
+          ),
+          error: (_, message) => MasirPage.detail(
+            title: 'اطلاعیه',
+            onBack: _back,
+            body: StateView.error(message: message),
+          ),
           success: (_, data) {
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            return MasirPage.detail(
+              title: 'اطلاعیه',
+              onBack: _back,
               children: [
-                CustomText(
-                  data.title ?? '',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 24,
-                ),
-                8.h,
-                CustomText(
+                CustomText.title(data.title ?? ''),
+                const SizedBox(height: MasirSpace.sm),
+                CustomText.caption(
                   formatRelativeFa(data.publishedAt),
-                  fontSize: 12,
                   color: context.colors.inkMuted,
                 ),
-                if (data.courseTitle != null && data.courseTitle!.isNotEmpty) ...[
-                  12.h,
+                if (data.courseTitle != null &&
+                    data.courseTitle!.isNotEmpty) ...[
+                  const SizedBox(height: MasirSpace.md),
                   Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.colors.primaryTint,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: CustomText(
-                        data.courseTitle!,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: context.colors.primary,
-                      ),
+                    alignment: AlignmentDirectional.centerStart,
+                    child: PillChip(
+                      data.courseTitle!,
+                      icon: Icons.menu_book_rounded,
                     ),
                   ),
                 ],
                 if (data.body != null && data.body!.isNotEmpty) ...[
-                  16.h,
-                  Html(
-                    data: data.body!,
-                    style: {
-                      'body': Style(
-                        margin: Margins.zero,
-                        padding: HtmlPaddings.zero,
-                        fontSize: FontSize(16),
-                        fontFamily: 'Masir',
-                        lineHeight: const LineHeight(1.7),
-                        color: context.colors.ink,
-                        textAlign: TextAlign.right,
-                        direction: TextDirection.rtl,
-                      ),
-                    },
-                  ),
+                  const SizedBox(height: MasirSpace.lg),
+                  MasirHtml(data.body!),
                 ],
                 if (data.moduleId != null &&
                     data.moduleId!.isNotEmpty &&
                     data.courseId != null) ...[
-                  24.h,
+                  const SizedBox(height: MasirSpace.xl),
                   CustomButton(
                     title: 'رفتن به فصل',
                     onTap: () => _goToModule(data.courseId!, data.moduleId),
                   ),
                 ],
-                16.h,
-                OnClick(
-                  onTap: () =>
-                      context.go('/i/${widget.instituteId}/announcements'),
-                  child: CustomText(
-                    'همه‌ی اطلاعیه‌ها',
-                    color: context.colors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
               ],
             );
           },

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'custom_text.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 class TitleModal extends StatelessWidget {
   final String txt;
@@ -10,14 +11,14 @@ class TitleModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return          Container(
+    return Container(
       height: 45,
       width: context.appSize.width,
       decoration: BoxDecoration(
         color: context.colors.borderF9,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(MasirRadius.row),
       ),
-      child: Center(child: CustomText(txt, fontWeight: FontWeight.w800)),
+      child: Center(child: CustomText.bodyStrong(txt)),
     );
   }
 }

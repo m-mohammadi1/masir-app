@@ -1,48 +1,26 @@
+import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import '/widgets/custom_text.dart';
 
-class NotFoundPage extends StatefulWidget {
-  final String route;
-  static const String routeName = "notFoundPage";
+import '/features/main/presentation/page/main_page.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/state_view.dart';
 
-  const NotFoundPage({super.key, required this.route});
-
-  @override
-  State<NotFoundPage> createState() => _NotFoundPageState();
-}
-
-class _NotFoundPageState extends State<NotFoundPage> {
-  @override
-  void initState() {
-    super.initState();
-  }
+/// Shown when a route does not exist.
+class NotFoundPage extends StatelessWidget {
+  const NotFoundPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CustomText("404", fontWeight: FontWeight.w500, fontSize: 25),
+    return MasirPage.detail(
+      title: 'مسیر پیدا نشد',
+      onBack: () => CustomNavigator.go(MainPage.routeName),
+      body: StateView.empty(
+        text: 'این صفحه پیدا نشد',
+        description: 'شاید آدرس عوض شده یا دیگر وجود ندارد.',
+        icon: Icons.explore_off_rounded,
+        actionLabel: 'برگشت به خانه',
+        onAction: () => CustomNavigator.go(MainPage.routeName),
       ),
     );
-  }
-}
-
-class ClosePage extends StatefulWidget {
-  const ClosePage({super.key});
-
-  @override
-  State<ClosePage> createState() => _ClosePageState();
-}
-
-class _ClosePageState extends State<ClosePage> {
-  @override
-  void initState() {
-    Navigator.pop(context);
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
   }
 }

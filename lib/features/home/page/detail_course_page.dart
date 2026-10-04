@@ -1,7 +1,8 @@
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_html/flutter_html.dart';
+import '/widgets/masir_html.dart';
+import 'package:mohammad/core/helper/route_args.dart';
 import 'package:mohammad/core/services/service_locator.dart';
 import 'package:mohammad/features/main/data/models/course_detail_model.dart';
 import 'package:mohammad/features/main/data/models/request_course_detail_model.dart';
@@ -9,28 +10,32 @@ import 'package:mohammad/features/main/data/models/request_subscribe_course_mode
 import 'package:mohammad/features/main/presentation/bloc/my_subscriptions/my_subscriptions_bloc.dart';
 import 'package:mohammad/features/main/presentation/bloc/subscribe_course/subscribe_course_bloc.dart';
 import 'package:mohammad/features/main/presentation/page/outline_page.dart';
-import 'package:mohammad/widgets/base_screen.dart';
-import 'package:mohammad/widgets/back_button.dart';
 import 'package:mohammad/widgets/brand_media.dart';
-import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/pill_chip.dart';
 import '/core/theme/masir_style.dart';
-import '/features/main/presentation/page/outline/roadmap/paper_theme.dart'
-    show persianDigits;
-import 'package:mohammad/widgets/custom_app_bar.dart';
 import 'package:mohammad/widgets/custom_button.dart';
+import '/core/helper/jalali_format.dart';
+import '/core/theme/institute_themed.dart';
+import '/widgets/masir_card.dart';
+import '/widgets/masir_page.dart';
+import '/widgets/section_header.dart';
+import '/widgets/state_view.dart';
+import '/widgets/stat_tile.dart';
+import '/features/main/data/models/courses_model.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '../../main/data/models/my_subscriptions_model.dart';
 import '../../main/presentation/bloc/course_detail/course_detail_bloc.dart';
 import '/core/theme/theme_context.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
-import '/widgets/custom_error.dart';
 
 class DetailCoursePage extends StatefulWidget {
   final String id;
+
+  /// Institute theme carried over from the screen that opened this course.
+  final String? themePreset;
   static const String routeName = "/detail-course";
 
-  const DetailCoursePage({super.key, required this.id});
+  const DetailCoursePage({super.key, required this.id, this.themePreset});
 
   @override
   State<DetailCoursePage> createState() => _DetailCoursePageState();
@@ -79,442 +84,355 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
   void _openOutline(CourseDetailModel data) {
     CustomNavigator.pushNamed(
       OutlinePage.routeName,
-      arguments: {
+      arguments: withThemePreset({
         'id': data.coursesModel?.id ?? widget.id,
         'title': data.coursesModel?.title ?? '',
+      }, data.coursesModel?.institute?.themePreset ?? widget.themePreset),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CourseDetailBloc, CourseDetailState>(
+      bloc: coursesBloc,
+      builder: (context, state) {
+        final loadedPreset = state.whenOrNull(
+          success: (_, data) => data.coursesModel?.institute?.themePreset,
+        );
+        return InstituteThemed(
+          preset: loadedPreset ?? widget.themePreset,
+          child: Builder(builder: (context) => _buildPage(context, state)),
+        );
       },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return BaseScreen(
-      body: BlocBuilder<CourseDetailBloc, CourseDetailState>(
-        bloc: coursesBloc,
-        builder: (context, state) {
-          return state.when(
-            loading: (_) => Column(
-              children: [
-                CustomAppBar(title: 'دوره'),
-                const Expanded(child: Center(child: CustomLoading())),
-              ],
+  Widget _buildPage(BuildContext context, CourseDetailState state) {
+    return state.when(
+      loading: (_) => const MasirPage.detail(
+        title: 'دوره',
+        body: StateView.loading(variant: SkeletonVariant.detail),
+      ),
+      error: (_, message) => MasirPage.detail(
+        title: 'دوره',
+        body: StateView.error(
+          message: message,
+          retry: () => coursesBloc.add(
+            CourseDetailEvent.courseDetail(
+              params: RequestCourseDetailModel(id: widget.id),
             ),
-            error: (_, message) => Column(
-              children: [
-                CustomAppBar(title: 'دوره'),
-                Expanded(child: CustomError(message: message)),
-              ],
-            ),
-            success: (isLoading, data) {
-              dataModel = data;
-              final course = data.coursesModel;
-              final coverUrl =
-                  (course?.coverUrl != null && course!.coverUrl!.isNotEmpty)
-                  ? course.coverUrl
-                  : course?.institute?.coverUrl;
-              final isFree = course?.price == null || course?.price == 0;
-              final outcomes = course?.outcomes ?? const <String>[];
-              final requirements = course?.requirements ?? const <String>[];
-              final intro = course?.intro?.trim() ?? '';
-              final levelLabel = _levelLabel(course?.level);
-              final topicName = course?.topic?.name;
-              final duration = _formatDuration(course?.totalDurationSeconds);
-              final previewCount = course?.previewUnitCount ?? 0;
-              final isSubscribed =
-                  course?.isSubscribed == true ||
-                  mySubsBloc.values.any((e) => e.courseId == widget.id);
+          ),
+        ),
+      ),
+      success: (isLoading, data) {
+        dataModel = data;
+        final c = context.colors;
+        final course = data.coursesModel;
+        final coverUrl =
+            (course?.coverUrl != null && course!.coverUrl!.isNotEmpty)
+            ? course.coverUrl
+            : course?.institute?.coverUrl;
+        final outcomes = course?.outcomes ?? const <String>[];
+        final requirements = course?.requirements ?? const <String>[];
+        final intro = course?.intro?.trim() ?? '';
+        final levelLabel = _levelLabel(course?.level);
+        final topicName = course?.topic?.name;
+        final duration = _formatDuration(course?.totalDurationSeconds);
+        final previewCount = course?.previewUnitCount ?? 0;
+        final isSubscribed =
+            course?.isSubscribed == true ||
+            mySubsBloc.values.any((e) => e.courseId == widget.id);
 
-              return Column(
-                children: [
+        return MasirPage.detail(
+          title: 'دوره',
+          stickyBottom: _buildCta(
+            course: course,
+            isLoading: isLoading,
+            isSubscribed: isSubscribed,
+            previewCount: previewCount,
+          ),
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(MasirRadius.hero),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 10,
+                    child: CoverImage(url: coverUrl, fallback: c.primary),
+                  ),
+                ),
+                PositionedDirectional(
+                  bottom: MasirSpace.md,
+                  start: MasirSpace.md,
+                  end: MasirSpace.md,
+                  child: Wrap(
+                    spacing: MasirSpace.sm,
+                    runSpacing: MasirSpace.xs,
+                    children: [
+                      if (levelLabel != null)
+                        PillChip(
+                          levelLabel,
+                          icon: Icons.signal_cellular_alt_rounded,
+                          tone: PillTone.onDark,
+                        ),
+                      if (topicName != null)
+                        PillChip(topicName, tone: PillTone.onDark),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: MasirSpace.lg),
+            CustomText.display(course?.title ?? '', color: c.ink),
+            if (course?.institute?.name != null &&
+                course!.institute!.name!.isNotEmpty) ...[
+              const SizedBox(height: MasirSpace.xs),
+              CustomText.bodyStrong(course.institute!.name!, color: c.primary),
+            ],
+            if (data.teachers.isNotEmpty) ...[
+              const SizedBox(height: MasirSpace.md),
+              CourseTeacherRow(
+                teachers: data.teachers,
+                compact: false,
+                showHeadlines: true,
+              ),
+            ],
+            const SizedBox(height: MasirSpace.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: StatTile(
+                    icon: Icons.folder_rounded,
+                    value: faDigits(data.moduleCount ?? 0),
+                    label: 'فصل',
+                  ),
+                ),
+                const SizedBox(width: MasirSpace.sm),
+                Expanded(
+                  child: StatTile(
+                    icon: Icons.play_lesson_rounded,
+                    value: faDigits(data.unitCount ?? 0),
+                    label: 'واحد',
+                  ),
+                ),
+                if (duration.isNotEmpty) ...[
+                  const SizedBox(width: MasirSpace.sm),
                   Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      children: [
-                        Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                MasirRadius.sheet,
-                              ),
-                              child: AspectRatio(
-                                aspectRatio: 16 / 10,
-                                child: CoverImage(
-                                  url: coverUrl,
-                                  fallback: context.colors.primary,
-                                ),
-                              ),
-                            ),
-                            PositionedDirectional(
-                              top: 12,
-                              start: 12,
-                              child: CustomBackButton(),
-                            ),
-                            PositionedDirectional(
-                              bottom: 12,
-                              start: 12,
-                              end: 12,
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 6,
-                                children: [
-                                  if (levelLabel != null)
-                                    PillChip(
-                                      levelLabel,
-                                      icon: Icons.signal_cellular_alt_rounded,
-                                      tone: PillTone.onDark,
-                                    ),
-                                  if (topicName != null)
-                                    PillChip(topicName, tone: PillTone.onDark),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        20.h,
-                        CustomText(
-                          course?.title ?? '',
-                          fontSize: MasirText.displaySize,
-                          fontWeight: FontWeight.w800,
-                          color: context.colors.ink,
-                          textAlign: TextAlign.right,
-                        ),
-                        if (course?.institute?.name != null &&
-                            course!.institute!.name!.isNotEmpty) ...[
-                          6.h,
-                          CustomText(
-                            course.institute!.name!,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: context.colors.primary,
-                            textAlign: TextAlign.right,
-                          ),
-                        ],
-                        if (data.teachers.isNotEmpty) ...[
-                          14.h,
-                          CourseTeacherRow(
-                            teachers: data.teachers,
-                            compact: false,
-                            showHeadlines: true,
-                          ),
-                        ],
-                        16.h,
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _StatTile(
-                                icon: Icons.folder_open_rounded,
-                                value: persianDigits(data.moduleCount ?? 0),
-                                label: 'فصل',
-                              ),
-                            ),
-                            10.w,
-                            Expanded(
-                              child: _StatTile(
-                                icon: Icons.play_lesson_rounded,
-                                value: persianDigits(data.unitCount ?? 0),
-                                label: 'واحد',
-                              ),
-                            ),
-                            if (duration.isNotEmpty) ...[
-                              10.w,
-                              Expanded(
-                                flex: 2,
-                                child: _StatTile(
-                                  icon: Icons.schedule_rounded,
-                                  value: duration,
-                                  label: 'مدت',
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        if (!isSubscribed && previewCount > 0) ...[
-                          16.h,
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.colors.sunSoft,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.card_giftcard_rounded,
-                                  color: context.colors.sunEdge,
-                                ),
-                                10.w,
-                                Expanded(
-                                  child: CustomText(
-                                    '${persianDigits(previewCount)} واحد اول رایگان است',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: context.colors.sunEdge,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        if (outcomes.isNotEmpty) ...[
-                          24.h,
-                          CustomText(
-                            'در این دوره چه یاد می‌گیرید؟',
-                            fontSize: MasirText.titleSize,
-                            fontWeight: FontWeight.w800,
-                            color: context.colors.ink,
-                          ),
-                          12.h,
-                          ChunkyBox(
-                            fill: context.colors.surface,
-                            edge: context.colors.lip,
-                            borderColor: context.colors.border,
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                for (final item in outcomes)
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: item == outcomes.last ? 0 : 12,
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          width: 22,
-                                          height: 22,
-                                          decoration: BoxDecoration(
-                                            color: context.colors.green,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            Icons.check_rounded,
-                                            size: 15,
-                                            color: context.colors.onPrimary,
-                                          ),
-                                        ),
-                                        12.w,
-                                        Expanded(
-                                          child: CustomText(
-                                            item,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: context.colors.ink,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        if (intro.isNotEmpty) ...[
-                          24.h,
-                          Html(
-                            data: intro,
-                            style: {
-                              'body': Style(
-                                margin: Margins.zero,
-                                padding: HtmlPaddings.zero,
-                                fontSize: FontSize(16),
-                                fontFamily: 'Masir',
-                                lineHeight: LineHeight.number(1.7),
-                                color: context.colors.ink,
-                                textAlign: TextAlign.right,
-                                direction: TextDirection.rtl,
-                              ),
-                            },
-                          ),
-                        ],
-                        if (requirements.isNotEmpty) ...[
-                          24.h,
-                          CustomText(
-                            'پیش‌نیازها',
-                            fontSize: MasirText.titleSize,
-                            fontWeight: FontWeight.w800,
-                            color: context.colors.ink,
-                          ),
-                          12.h,
-                          ...requirements.map(
-                            (item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: context.colors.primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                  12.w,
-                                  Expanded(
-                                    child: CustomText(
-                                      item,
-                                      fontSize: 15,
-                                      color: context.colors.ink,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                    flex: 2,
+                    child: StatTile(
+                      icon: Icons.schedule_rounded,
+                      value: duration,
+                      label: 'مدت',
                     ),
                   ),
-                  BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(
-                    bloc: mySubsBloc,
-                    builder: (context, subState) {
-                      return BlocConsumer<
-                        SubscribeCourseBloc,
-                        SubscribeCourseState
-                      >(
-                        bloc: subscribeCourseBloc,
-                        listener: (context, sub) {
-                          sub.whenOrNull(
-                            error: (isLoading, message) {
-                              CustomToast.toast(context, message);
-                            },
-                            success: (isLoading, value) {
-                              mySubsBloc.values.add(
-                                MySubscriptionsModel(courseId: widget.id),
-                              );
-                              setState(() {});
-                            },
-                          );
-                        },
-                        builder: (context, sub) {
-                          final subscribed =
-                              isSubscribed ||
-                              mySubsBloc.values.any(
-                                (element) => element.courseId == widget.id,
-                              );
-                          final title = subscribed
-                              ? 'شروع یادگیری'
-                              : (previewCount > 0
-                                    ? 'شروع رایگان'
-                                    : 'ثبت نام دوره');
-                          return Container(
-                            padding: const EdgeInsets.fromLTRB(0, 12, 0, 16),
-                            decoration: BoxDecoration(
-                              color: context.colors.surface,
-                              border: Border(
-                                top: BorderSide(
-                                  color: context.colors.border,
-                                  width: Chunky.border,
-                                ),
+                ],
+              ],
+            ),
+            if (!isSubscribed && previewCount > 0) ...[
+              const SizedBox(height: MasirSpace.lg),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: MasirSpace.lg,
+                  vertical: MasirSpace.md,
+                ),
+                decoration: BoxDecoration(
+                  color: c.sunSoft,
+                  borderRadius: BorderRadius.circular(MasirRadius.row),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.card_giftcard_rounded, color: c.sunEdge),
+                    const SizedBox(width: MasirSpace.sm),
+                    Expanded(
+                      child: CustomText.bodyStrong(
+                        '${faDigits(previewCount)} واحد اول رایگان است',
+                        color: c.sunEdge,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (outcomes.isNotEmpty) ...[
+              const SizedBox(height: MasirSpace.section),
+              const SectionHeader('توی این دوره چی یاد می‌گیری؟'),
+              MasirCard(
+                child: Column(
+                  children: [
+                    for (var i = 0; i < outcomes.length; i++)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: i == outcomes.length - 1 ? 0 : MasirSpace.md,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: c.green,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check_rounded,
+                                size: MasirIconSize.sm,
+                                color: c.onPrimary,
                               ),
                             ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                if (!subscribed) ...[
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      CustomText(
-                                        'قیمت',
-                                        fontSize: 12,
-                                        color: context.colors.inkMuted,
-                                      ),
-                                      CustomText(
-                                        isFree
-                                            ? 'رایگان'
-                                            : '${course?.price ?? 0} تومان',
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w800,
-                                        color: context.colors.primary,
-                                      ),
-                                    ],
+                            const SizedBox(width: MasirSpace.md),
+                            Expanded(
+                              child: CustomText.body(outcomes[i], color: c.ink),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+            if (intro.isNotEmpty) ...[
+              const SizedBox(height: MasirSpace.section),
+              MasirHtml(intro),
+            ],
+            if (requirements.isNotEmpty) ...[
+              const SizedBox(height: MasirSpace.section),
+              const SectionHeader('پیش‌نیازها'),
+              for (final item in requirements)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: MasirSpace.sm),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: MasirSpace.sm),
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: c.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: MasirSpace.md),
+                      Expanded(child: CustomText.body(item, color: c.ink)),
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCta({
+    required CoursesModel? course,
+    required bool isLoading,
+    required bool isSubscribed,
+    required int previewCount,
+  }) {
+    final isFree = course?.price == null || course?.price == 0;
+    return BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(
+      bloc: mySubsBloc,
+      builder: (context, subState) {
+        final c = context.colors;
+        return BlocConsumer<SubscribeCourseBloc, SubscribeCourseState>(
+          bloc: subscribeCourseBloc,
+          listener: (context, sub) {
+            sub.whenOrNull(
+              error: (isLoading, message) {
+                CustomToast.toast(context, message);
+              },
+              success: (isLoading, value) {
+                mySubsBloc.values.add(
+                  MySubscriptionsModel(courseId: widget.id),
+                );
+                CustomToast.toast(context, 'عضو دوره شدی! بزن بریم');
+                setState(() {});
+              },
+            );
+          },
+          builder: (context, sub) {
+            final subscribed =
+                isSubscribed ||
+                mySubsBloc.values.any((e) => e.courseId == widget.id);
+            final title = subscribed ? 'شروع یادگیری' : 'شروع رایگان';
+            final busy = isLoading || subState.isLoading || sub.isLoading;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (!subscribed) ...[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CustomText.caption('قیمت', color: c.inkMuted),
+                          CustomText.headline(
+                            isFree
+                                ? 'رایگان'
+                                : formatPrice(
+                                    course?.price ?? 0,
+                                    unit: 'تومان',
                                   ),
-                                  16.w,
-                                ],
-                                Expanded(
-                                  child: CustomButton(
-                                    title: title,
-                                    loading:
-                                        isLoading ||
-                                        subState.isLoading ||
-                                        sub.isLoading,
-                                    enable: !isLoading && !subState.isLoading,
-                                    onTap: () {
-                                      if (subscribed || previewCount > 0) {
-                                        _openOutline(dataModel);
-                                        return;
-                                      }
-                                      subscribeCourseBloc.add(
-                                        SubscribeCourseEvent.subscribeCourse(
-                                          params: RequestSubscribeCourseModel(
-                                            id: widget.id,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
+                            color: c.primary,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: MasirSpace.lg),
+                    ],
+                    Expanded(
+                      child: CustomButton(
+                        title: title,
+                        loading: busy,
+                        enable: !isLoading && !subState.isLoading,
+                        onTap: () {
+                          if (subscribed) {
+                            _openOutline(dataModel);
+                            return;
+                          }
+                          // Payment is not wired yet, so every course can be
+                          // joined for free for now.
+                          subscribeCourseBloc.add(
+                            SubscribeCourseEvent.subscribeCourse(
+                              params: RequestSubscribeCourseModel(
+                                id: widget.id,
+                              ),
                             ),
                           );
                         },
-                      );
-                    },
+                      ),
+                    ),
+                  ],
+                ),
+                if (!subscribed && previewCount > 0) ...[
+                  const SizedBox(height: MasirSpace.sm),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _openOutline(dataModel),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: MasirSpace.xs,
+                      ),
+                      child: CustomText.bodyStrong(
+                        'اول پیش‌نمایش رایگان رو ببین',
+                        color: c.primary,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ),
                 ],
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-
-  const _StatTile({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return ChunkyBox(
-      fill: c.surface,
-      edge: c.lip,
-      borderColor: c.border,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      child: Column(
-        children: [
-          Icon(icon, color: c.primary, size: 22),
-          6.h,
-          CustomText(
-            value,
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: c.ink,
-            maxLines: 1,
-          ),
-          CustomText(label, fontSize: 12, color: c.inkMuted),
-        ],
-      ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

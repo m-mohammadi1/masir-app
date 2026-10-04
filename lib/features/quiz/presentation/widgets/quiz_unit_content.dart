@@ -6,11 +6,12 @@ import 'package:mohammad/features/quiz/presentation/page/quiz_layout_helper.dart
 import 'package:mohammad/features/quiz/presentation/widgets/unit_action_buttons.dart';
 import 'package:mohammad/widgets/chunky_box.dart';
 import 'package:mohammad/widgets/pill_chip.dart';
-import '/features/quiz/presentation/widgets/unit_top_bar.dart';
-import '/features/main/presentation/page/outline/roadmap/paper_theme.dart' show persianDigits;
+import '/core/helper/jalali_format.dart';
+import '/widgets/masir_page.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/theme/theme_context.dart';
 import '/features/teacher/presentation/widgets/course_teacher_row.dart';
+import '/core/theme/masir_style.dart';
 
 class QuizUnitContent extends StatefulWidget {
   final UnitsModel data;
@@ -99,7 +100,8 @@ class QuizUnitContentState extends State<QuizUnitContent> {
     var n = 0;
     for (final question in _questions) {
       final id = question.id ?? '';
-      if (_trueFalseAnswers[id] != null || _multiChoiceAnswers.containsKey(id)) {
+      if (_trueFalseAnswers[id] != null ||
+          _multiChoiceAnswers.containsKey(id)) {
         n++;
       }
     }
@@ -108,7 +110,7 @@ class QuizUnitContentState extends State<QuizUnitContent> {
 
   void _handleSubmit() {
     if (!_allAnswered) {
-      CustomToast.toast(context, 'لطفاً به همه سوالات پاسخ دهید');
+      CustomToast.toast(context, 'به همه سوال‌ها جواب بده');
       return;
     }
     widget.onSubmit?.call(buildAnswers());
@@ -118,78 +120,71 @@ class QuizUnitContentState extends State<QuizUnitContent> {
   Widget build(BuildContext context) {
     final title = widget.data.title ?? '';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return MasirPage.focus(
+      title: title,
+      onClose: widget.onBack,
+      progress: widget.isCompleted || _questions.isEmpty
+          ? (widget.isCompleted ? 100 : 0)
+          : _answeredCount / _questions.length * 100,
+      trailing: unitTeacherHeaderIcon(widget.data.teachers),
       children: [
-        UnitTopBar(
-          title: title,
-          onClose: widget.onBack,
-          progress: widget.isCompleted || _questions.isEmpty
-              ? (widget.isCompleted ? 100 : 0)
-              : _answeredCount / _questions.length * 100,
-          trailing: unitTeacherHeaderIcon(widget.data.teachers),
-        ),
-        14.h,
         Row(
           children: [
             PillChip(unitTypeLabel(widget.data.type ?? 'quiz')),
             if (widget.isCompleted) ...[
-              8.w,
+              const SizedBox(width: MasirSpace.sm),
               const PillChip(
                 'تکمیل شده',
                 icon: Icons.check_circle_rounded,
                 tone: PillTone.success,
               ),
             ] else if (_questions.isNotEmpty) ...[
-              8.w,
+              const SizedBox(width: MasirSpace.sm),
               PillChip(
-                '${persianDigits(_answeredCount)} از ${persianDigits(_questions.length)}',
+                '${faDigits(_answeredCount)} از ${faDigits(_questions.length)}',
                 tone: PillTone.neutral,
               ),
             ],
           ],
         ),
-        if (widget.banner != null) ...[12.h, widget.banner!],
+        if (widget.banner != null) ...[
+          const SizedBox(height: MasirSpace.md),
+          widget.banner!,
+        ],
         if (_passThreshold != null) ...[
-          12.h,
-          CustomText(
-            'حد نصاب: $_passThreshold٪',
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+          const SizedBox(height: MasirSpace.md),
+          CustomText.body(
+            'حد نصاب: ${faDigits(_passThreshold)}٪',
             color: context.colors.inkMuted,
           ),
         ],
-        16.h,
-        Expanded(
-          child: ListView.separated(
-            padding: EdgeInsets.zero,
-            itemCount: _questions.length,
-            separatorBuilder: (_, __) => 12.h,
-            itemBuilder: (context, index) {
-              final question = _questions[index];
-              return _QuizQuestionCard(
-                index: index + 1,
-                question: question,
-                readOnly: widget.isCompleted,
-                trueFalseValue: _trueFalseAnswers[question.id ?? ''],
-                multiChoiceValue: _multiChoiceAnswers[question.id ?? ''],
-                onTrueFalseChanged: (value) =>
-                    _setTrueFalseAnswer(question.id ?? '', value),
-                onMultiChoiceChanged: (value) =>
-                    _setMultiChoiceAnswer(question.id ?? '', value),
-              );
-            },
+        const SizedBox(height: MasirSpace.lg),
+        for (var index = 0; index < _questions.length; index++) ...[
+          if (index > 0) const SizedBox(height: MasirSpace.md),
+          _QuizQuestionCard(
+            index: index + 1,
+            question: _questions[index],
+            readOnly: widget.isCompleted,
+            trueFalseValue: _trueFalseAnswers[_questions[index].id ?? ''],
+            multiChoiceValue: _multiChoiceAnswers[_questions[index].id ?? ''],
+            onTrueFalseChanged: (value) =>
+                _setTrueFalseAnswer(_questions[index].id ?? '', value),
+            onMultiChoiceChanged: (value) =>
+                _setMultiChoiceAnswer(_questions[index].id ?? '', value),
           ),
-        ),
-        if (widget.footer != null) ...[12.h, widget.footer!],
-        UnitActionButtons(
-          showPrimary: !widget.isCompleted,
-          primaryTitle: 'ارسال پاسخ',
-          isSubmitting: widget.isSubmitting,
-          onPrimary: _handleSubmit,
-          onBack: widget.onBack,
-        ),
+        ],
+        if (widget.footer != null) ...[
+          const SizedBox(height: MasirSpace.lg),
+          widget.footer!,
+        ],
       ],
+      stickyBottom: UnitActionButtons(
+        showPrimary: !widget.isCompleted,
+        primaryTitle: 'ارسال پاسخ',
+        isSubmitting: widget.isSubmitting,
+        onPrimary: _handleSubmit,
+        onBack: widget.onBack,
+      ),
     );
   }
 }
@@ -222,14 +217,12 @@ class _QuizQuestionCard extends StatelessWidget {
       fill: c.surface,
       edge: c.lip,
       borderColor: c.border,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CustomText(
-            '${persianDigits(index)}. ${question.text ?? ''}',
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
+          CustomText.headline(
+            '${faDigits(index)}. ${question.text ?? ''}',
             color: context.colors.ink,
           ),
           16.h,
@@ -317,19 +310,22 @@ class _MultiChoiceOptions extends StatelessWidget {
           child: OnClick(
             onTap: readOnly ? null : () => onChanged(optionNumber),
             child: ChunkyBox(
-              fill: isSelected ? context.colors.primaryTint : context.colors.surface,
-              edge: isSelected ? context.colors.primaryEdge : context.colors.lip,
-              borderColor:
-                  isSelected ? context.colors.primary : context.colors.border,
-              radius: 16,
+              fill: isSelected
+                  ? context.colors.primaryTint
+                  : context.colors.surface,
+              edge: isSelected
+                  ? context.colors.primaryEdge
+                  : context.colors.lip,
+              borderColor: isSelected
+                  ? context.colors.primary
+                  : context.colors.border,
+              radius: MasirRadius.row,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   Expanded(
-                    child: CustomText(
+                    child: CustomText.bodyStrong(
                       options[index],
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
                       color: isSelected
                           ? context.colors.primary
                           : context.colors.ink,
@@ -393,12 +389,7 @@ class _QuizOutlineButton extends StatelessWidget {
         height: 56,
         alignment: Alignment.center,
         onTap: readOnly ? null : onTap,
-        child: CustomText(
-          title,
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-          color: selected ? c.primary : c.ink,
-        ),
+        child: CustomText.headline(title, color: selected ? c.primary : c.ink),
       ),
     );
   }

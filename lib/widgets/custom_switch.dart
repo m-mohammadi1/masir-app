@@ -3,7 +3,6 @@ import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/core/theme/theme_context.dart';
 
-
 class CustomSwitch extends StatefulWidget {
   final bool active;
   final bool isLoading;
@@ -86,7 +85,7 @@ class _CustomSwitchState extends State<CustomSwitch> {
                 ),
               ),
         8.w,
-        CustomText(widget.title, fontSize: 13, fontWeight: FontWeight.w600),
+        CustomText.caption(widget.title),
       ],
     );
   }

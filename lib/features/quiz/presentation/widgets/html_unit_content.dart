@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+import '/widgets/masir_html.dart';
 import 'package:mohammad/features/main/data/models/units_model.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/unit_content_framework.dart';
 import '/core/theme/theme_context.dart';
@@ -45,34 +45,8 @@ class HtmlUnitContent extends StatelessWidget {
         fill: context.colors.surface,
         edge: context.colors.lip,
         borderColor: context.colors.border,
-        padding: const EdgeInsets.all(18),
-        child: Html(
-          data: _body,
-          style: {
-            'body': Style(
-              margin: Margins.zero,
-              padding: HtmlPaddings.zero,
-              fontSize: FontSize(16),
-              fontFamily: 'Masir',
-              color: context.colors.ink,
-              textAlign: TextAlign.right,
-              direction: TextDirection.rtl,
-              lineHeight: LineHeight.number(1.7),
-            ),
-            'p': Style(color: context.colors.ink, fontSize: FontSize(16)),
-            'h2': Style(
-              color: context.colors.ink,
-              fontSize: FontSize(20),
-              fontWeight: FontWeight.w800,
-            ),
-            'h3': Style(
-              color: context.colors.ink,
-              fontSize: FontSize(18),
-              fontWeight: FontWeight.w800,
-            ),
-            'a': Style(color: context.colors.primary),
-          },
-        ),
+        padding: const EdgeInsets.all(16),
+        child: MasirHtml(_body),
       ),
     );
   }

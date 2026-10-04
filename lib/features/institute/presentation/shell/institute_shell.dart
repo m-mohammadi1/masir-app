@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
 import '/core/theme/institute_presets.dart';
+import '/core/theme/institute_themed.dart';
+import '/widgets/masir_page.dart';
 import '/core/theme/masir_style.dart';
 import '/widgets/brand_media.dart';
 import '/core/theme/theme_context.dart';
@@ -129,68 +131,63 @@ class _InstituteShellState extends State<InstituteShell> {
           );
         },
         child: BlocBuilder<InstituteDetailBloc, InstituteDetailState>(
-        builder: (context, state) {
-          final presetKey = state.whenOrNull(
-            success: (_, data) => data.themePreset,
-          );
-          final base = Theme.of(context);
-          return Theme(
-            data: base.copyWith(
-              extensions: [
-                instituteColors(presetKey, base.brightness),
-              ],
-            ),
-            child: Builder(
-              builder: (context) {
-                final scaffold = Scaffold(
-                  backgroundColor: context.colors.background,
-                  body: Column(
-                    children: [
-                      _Header(
-                        instituteId: widget.instituteId,
-                        state: state,
-                      ),
-                      Expanded(
-                        child: state.maybeWhen(
-                          error: (_, message) => CustomError(
-                            message: message,
-                            retry: () => _detailBloc.add(
-                              InstituteDetailEvent.load(
-                                params: RequestInstituteIdModel(
-                                  id: widget.instituteId,
+          builder: (context, state) {
+            final presetKey = state.whenOrNull(
+              success: (_, data) => data.themePreset,
+            );
+            return InstituteThemed(
+              preset: presetKey ?? kDefaultPreset,
+              child: Builder(
+                builder: (context) {
+                  final scaffold = Scaffold(
+                    backgroundColor: context.colors.background,
+                    body: Column(
+                      children: [
+                        _Header(instituteId: widget.instituteId, state: state),
+                        Expanded(
+                          child: state.maybeWhen(
+                            error: (_, message) => CustomError(
+                              message: message,
+                              retry: () => _detailBloc.add(
+                                InstituteDetailEvent.load(
+                                  params: RequestInstituteIdModel(
+                                    id: widget.instituteId,
+                                  ),
                                 ),
                               ),
                             ),
+                            orElse: () => MasirPageScope(
+                              embedded: true,
+                              child: widget.child,
+                            ),
                           ),
-                          orElse: () => widget.child,
                         ),
-                      ),
-                      MasirBottomBar(
-                        currentIndex: _tabFor(path),
-                        onTap: _onTab,
-                        items: masirInstituteTabs(),
-                      ),
+                        MasirBottomBar(
+                          currentIndex: _tabFor(path),
+                          onTap: _onTab,
+                          items: masirInstituteTabs(),
+                        ),
+                      ],
+                    ),
+                  );
+                  final loaded = state.whenOrNull(success: (_, data) => data);
+                  return Stack(
+                    children: [
+                      scaffold,
+                      if (loaded != null)
+                        _BrandWash(
+                          key: const ValueKey('brand-wash'),
+                          preset: presetFor(loaded.themePreset),
+                          logoUrl: loaded.logoUrl,
+                          name: loaded.name ?? '',
+                        ),
                     ],
-                  ),
-                );
-                final loaded = state.whenOrNull(success: (_, data) => data);
-                return Stack(
-                  children: [
-                    scaffold,
-                    if (loaded != null)
-                      _BrandWash(
-                        key: const ValueKey('brand-wash'),
-                        preset: presetFor(loaded.themePreset),
-                        logoUrl: loaded.logoUrl,
-                        name: loaded.name ?? '',
-                      ),
-                  ],
-                );
-              },
-            ),
-          );
-        },
-      ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -200,31 +197,41 @@ class _Header extends StatelessWidget {
   final String instituteId;
   final InstituteDetailState state;
 
-  const _Header({
-    required this.instituteId,
-    required this.state,
-  });
+  const _Header({required this.instituteId, required this.state});
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final top = MediaQuery.paddingOf(context).top + MasirSpace.md;
     return state.when(
-      loading: (_) => const Padding(
-        padding: EdgeInsets.fromLTRB(16, 48, 16, 8),
-        child: SkeletonBox(height: 64, radius: 24),
+      loading: (_) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          MasirSpace.gutter,
+          top,
+          MasirSpace.gutter,
+          MasirSpace.sm,
+        ),
+        child: const SkeletonBox(height: 64, radius: MasirRadius.hero),
       ),
-      error: (_, _) => const SizedBox(height: 24),
+      error: (_, _) => SizedBox(height: top),
       success: (_, data) {
         final preset = presetFor(data.themePreset);
         final on = c.onPrimary;
         return Container(
-          padding: const EdgeInsets.fromLTRB(16, 48, 16, 14),
+          padding: EdgeInsets.fromLTRB(
+            MasirSpace.gutter,
+            top,
+            MasirSpace.gutter,
+            MasirSpace.lg,
+          ),
           decoration: BoxDecoration(
             color: c.primary,
             borderRadius: const BorderRadius.vertical(
               bottom: Radius.circular(MasirRadius.sheet),
             ),
-            border: Border(bottom: BorderSide(color: c.primaryEdge, width: 4)),
+            border: Border(
+              bottom: BorderSide(color: c.primaryEdge, width: Chunky.lip),
+            ),
           ),
           child: Row(
             children: [
@@ -251,19 +258,17 @@ class _Header extends StatelessWidget {
                   size: 44,
                 ),
               ),
-              10.w,
+              8.w,
               Expanded(
-                child: CustomText(
+                child: CustomText.headline(
                   data.name ?? '',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
                   color: on,
                   maxLines: 1,
                 ),
               ),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => context.go('/i/$instituteId/inbox'),
+                onTap: () => context.push('/i/$instituteId/inbox'),
                 child: Container(
                   width: 40,
                   height: 40,
@@ -308,7 +313,8 @@ class _BrandWash extends StatelessWidget {
             if (t >= 1) return const SizedBox.shrink();
             // Hold fully covered for the first 35%, then fade out.
             final opacity = t < 0.35 ? 1.0 : 1 - ((t - 0.35) / 0.65);
-            final logoScale = 0.8 + 0.4 * Curves.easeOutBack.transform(t.clamp(0, 1));
+            final logoScale =
+                0.8 + 0.4 * Curves.easeOutBack.transform(t.clamp(0, 1));
             return Opacity(
               opacity: opacity.clamp(0.0, 1.0),
               child: ColoredBox(

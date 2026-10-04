@@ -8,6 +8,7 @@ import 'package:mohammad/widgets/custom_text.dart';
 import '../bloc/audio/audio_state.dart';
 import '../bloc/audio/audio_view_model.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 late AudioViewModel viewModel;
 
@@ -64,14 +65,12 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               children: [
-                CustomText(
+                CustomText.caption(
                   elapsedLabel,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
                   color: context.colors.inkMuted,
                 ),
                 const Spacer(),
-                CustomText(totalLabel, fontSize: 12, fontWeight: FontWeight.w700, color: context.colors.inkMuted),
+                CustomText.caption(totalLabel, color: context.colors.inkMuted),
               ],
             ),
           ),
@@ -105,9 +104,8 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
           bloc: viewModel,
           builder: (context, state) {
             if (state is AudioErrorState) {
-              return CustomText(
+              return CustomText.caption(
                 state.message,
-                fontSize: 13,
                 color: context.colors.primary,
               );
             }
@@ -144,7 +142,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
             );
           },
         ),
-        const SizedBox(height: 21),
+        const SizedBox(height: 24),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -184,7 +182,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
               builder: (context, state) => ChunkyBox(
                 fill: context.colors.primary,
                 edge: context.colors.primaryEdge,
-                radius: 40,
+                radius: MasirRadius.hero,
                 width: 80,
                 height: 84,
                 alignment: Alignment.center,
@@ -228,7 +226,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer>
             ),
           ],
         ),
-        20.h,
+        16.h,
         SpeedWidget(
           color: context.colors.primary,
           onChanged: (value) {
@@ -263,12 +261,7 @@ class _SkipButton extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             Icon(icon, size: 44, color: c.primary),
-            CustomText(
-              label,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: c.primary,
-            ),
+            CustomText.micro(label, color: c.primary),
           ],
         ),
       ),

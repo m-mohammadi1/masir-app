@@ -35,7 +35,7 @@ class AuthAppBar extends StatelessWidget {
         //     ),
         //   ),
         // ),
-        CustomText(title, fontSize: 18, fontWeight: FontWeight.w700),
+        CustomText.headline(title),
         // 44.w,
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/core/theme/theme_context.dart';
+import '/core/theme/masir_style.dart';
 
 Future showCustomModal({
   required BuildContext context,
@@ -20,7 +21,9 @@ Future showCustomModal({
         child: Container(
           decoration: BoxDecoration(
             color: context.colors.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(MasirRadius.hero),
+            ),
             border: Border(
               top: BorderSide(color: context.colors.border, width: 2),
               left: BorderSide(color: context.colors.border, width: 2),
@@ -35,7 +38,7 @@ Future showCustomModal({
               Center(
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(19),
+                    borderRadius: BorderRadius.circular(MasirRadius.card),
                     color: context.colors.border,
                   ),
                   height: 5,

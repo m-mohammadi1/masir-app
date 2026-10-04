@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '/core/helper/jalali_format.dart';
+import '/core/helper/route_args.dart';
 import '/core/theme/institute_presets.dart';
 import '/features/institute/data/models/wallet_card_model.dart';
 import '/features/institute/presentation/bloc/wallet/wallet_bloc.dart';
@@ -11,6 +12,7 @@ import '/widgets/brand_media.dart';
 import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/progress_pill.dart';
+import '/core/theme/masir_style.dart';
 
 /// The one thing to do next: a large card in the institute's colour that
 /// jumps straight into the student's current course.
@@ -34,7 +36,12 @@ class ContinueHero extends StatelessWidget {
         );
         if (card == null) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            MasirSpace.gutter,
+            0,
+            MasirSpace.gutter,
+            MasirSpace.xl,
+          ),
           child: _Hero(card: card),
         );
       },
@@ -54,7 +61,7 @@ class _Hero extends StatelessWidget {
     return ChunkyBox(
       fill: preset.primary,
       edge: preset.edge,
-      radius: 24,
+      radius: MasirRadius.hero,
       padding: const EdgeInsets.all(16),
       onTap: () => _open(action.courseId!, action.courseTitle ?? ''),
       child: Column(
@@ -72,40 +79,33 @@ class _Hero extends StatelessWidget {
               ),
               8.w,
               Expanded(
-                child: CustomText(
+                child: CustomText.caption(
                   card.name ?? '',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
                   color: on.withValues(alpha: 0.9),
                   maxLines: 1,
                 ),
               ),
-              CustomText(
+              CustomText.headline(
                 formatProgressPercent(action.progressPercent),
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
                 color: on,
               ),
             ],
           ),
           12.h,
-          CustomText(
+          CustomText.title(
             action.unitTitle ?? action.courseTitle ?? 'ادامه یادگیری',
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
             color: on,
             maxLines: 2,
           ),
           if (action.moduleTitle != null) ...[
-            2.h,
-            CustomText(
+            4.h,
+            CustomText.caption(
               action.moduleTitle!,
-              fontSize: 13,
               color: on.withValues(alpha: 0.8),
               maxLines: 1,
             ),
           ],
-          14.h,
+          12.h,
           ProgressPill(
             value: action.progressPercent,
             height: 10,
@@ -118,14 +118,9 @@ class _Hero extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: on,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(MasirRadius.row),
             ),
-            child: CustomText(
-              'ادامه یادگیری',
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: preset.edge,
-            ),
+            child: CustomText.bodyStrong('ادامه یادگیری', color: preset.edge),
           ),
         ],
       ),
@@ -135,7 +130,10 @@ class _Hero extends StatelessWidget {
   void _open(String courseId, String title) {
     CustomNavigator.pushNamed(
       OutlinePage.routeName,
-      arguments: {'id': courseId, 'title': title},
+      arguments: withThemePreset({
+        'id': courseId,
+        'title': title,
+      }, card.themePreset),
     );
   }
 }

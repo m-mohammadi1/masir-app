@@ -33,26 +33,37 @@ class InstituteLogo extends StatelessWidget {
         ),
       ),
     );
+    // Ring and image are separate layers: the image is clipped to its own
+    // circle, so a square logo can never poke its corners over the ring.
+    final ringWidth = ring ? (size >= 48 ? 4.0 : 3.0) : 0.0;
+    final inner = size - ringWidth * 2;
+    final hasLogo = logoUrl != null && logoUrl!.isNotEmpty;
     return Container(
       width: size,
       height: size,
+      padding: EdgeInsets.all(ringWidth),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: preset.primary,
-        border: ring
-            ? Border.all(color: context.colors.surface, width: size >= 48 ? 4 : 3)
-            : null,
+        color: ring ? context.colors.surface : preset.primary,
       ),
-      clipBehavior: Clip.antiAlias,
-      child: logoUrl != null && logoUrl!.isNotEmpty
-          ? Image.network(
-              logoUrl!,
-              fit: BoxFit.cover,
-              width: size,
-              height: size,
-              errorBuilder: (_, _, _) => initial,
-            )
-          : initial,
+      child: ClipOval(
+        child: SizedBox(
+          width: inner,
+          height: inner,
+          child: ColoredBox(
+            color: preset.primary,
+            child: hasLogo
+                ? Image.network(
+                    logoUrl!,
+                    fit: BoxFit.cover,
+                    width: inner,
+                    height: inner,
+                    errorBuilder: (_, _, _) => initial,
+                  )
+                : initial,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -74,7 +85,10 @@ class CoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fill = ColoredBox(color: fallback, child: SizedBox(width: width, height: height));
+    final fill = ColoredBox(
+      color: fallback,
+      child: SizedBox(width: width, height: height),
+    );
     if (url == null || url!.isEmpty) return fill;
     return Image.network(
       url!,

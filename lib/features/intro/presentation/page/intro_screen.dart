@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '/features/auth/presentation/page/auth_screen.dart';
 import '/features/intro/presentation/widget/intro_widget.dart';
-import '/widgets/base_screen.dart';
+import '/widgets/masir_page.dart';
 import '/widgets/custom_button.dart';
 import '/core/theme/masir_style.dart';
 import '/widgets/custom_text.dart';
@@ -66,26 +66,17 @@ class _IntroScreenState extends State<IntroScreen> {
       ),
     ];
 
-    return BaseScreen(
+    return MasirPage.plain(
       body: Column(
         children: [
           24.h,
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              CustomText(
-                "مسیر",
-                fontSize: MasirText.titleSize,
-                fontWeight: FontWeight.w800,
-                color: c.primary,
-              ),
+              CustomText.title("مسیر", color: c.primary),
               OnClick(
                 onTap: () => CustomNavigator.pushNamed(AuthScreen.routeName),
-                child: CustomText(
-                  "رد کردن",
-                  fontWeight: FontWeight.w800,
-                  color: c.inkMuted,
-                ),
+                child: CustomText.bodyStrong("رد کردن", color: c.inkMuted),
               ),
             ],
           ),
@@ -113,7 +104,7 @@ class _IntroScreenState extends State<IntroScreen> {
                         width: state.state == i ? 28 : 10,
                         margin: const EdgeInsets.symmetric(horizontal: 3),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(MasirRadius.chip),
                           color: state.state == i ? c.primary : c.border,
                         ),
                       ),
@@ -122,9 +113,9 @@ class _IntroScreenState extends State<IntroScreen> {
               },
             ),
           ),
-          28.h,
+          24.h,
           CustomButton(title: "ادامه", height: 54, onTap: _next),
-          28.h,
+          24.h,
         ],
       ),
     );

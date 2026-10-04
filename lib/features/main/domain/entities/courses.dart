@@ -14,8 +14,14 @@ class CourseInstituteSummary {
   final String? id;
   final String? name;
   final String? coverUrl;
+  final String? themePreset;
 
-  const CourseInstituteSummary({this.id, this.name, this.coverUrl});
+  const CourseInstituteSummary({
+    this.id,
+    this.name,
+    this.coverUrl,
+    this.themePreset,
+  });
 }
 
 abstract class CoursesEntity extends BaseResult {
@@ -61,23 +67,23 @@ abstract class CoursesEntity extends BaseResult {
 
   @override
   List<Object?> get props => [
-        id,
-        instituteId,
-        title,
-        description,
-        coverUrl,
-        price,
-        publishedAt,
-        teachers,
-        intro,
-        level,
-        outcomes,
-        requirements,
-        previewUnitCount,
-        topic,
-        totalDurationSeconds,
-        enrolledCount,
-        isSubscribed,
-        institute,
-      ];
+    id,
+    instituteId,
+    title,
+    description,
+    coverUrl,
+    price,
+    publishedAt,
+    teachers,
+    intro,
+    level,
+    outcomes,
+    requirements,
+    previewUnitCount,
+    topic,
+    totalDurationSeconds,
+    enrolledCount,
+    isSubscribed,
+    institute,
+  ];
 }

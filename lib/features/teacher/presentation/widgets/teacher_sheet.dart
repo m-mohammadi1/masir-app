@@ -1,6 +1,6 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+import '/widgets/masir_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '/core/theme/theme_context.dart';
@@ -34,15 +34,9 @@ Future<void> showInstituteTeacherSheet({
                 ),
               ),
               12.h,
-              Center(
-                child: CustomText(
-                  teacher.name ?? '',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
+              Center(child: CustomText.headline(teacher.name ?? '')),
               if (teacher.headline?.isNotEmpty == true) ...[
-                6.h,
+                4.h,
                 Center(
                   child: CustomText(
                     teacher.headline!,
@@ -53,19 +47,7 @@ Future<void> showInstituteTeacherSheet({
               ],
               if (teacher.bio?.isNotEmpty == true) ...[
                 16.h,
-                Html(
-                  data: teacher.bio!,
-                  style: {
-                    'body': Style(
-                      margin: Margins.zero,
-                      padding: HtmlPaddings.zero,
-                      fontSize: FontSize(15),
-                      color: context.colors.ink,
-                      textAlign: TextAlign.right,
-                      direction: TextDirection.rtl,
-                    ),
-                  },
-                ),
+                MasirHtml(teacher.bio!),
               ],
               if (teacher.links.isNotEmpty) ...[
                 16.h,
@@ -77,10 +59,9 @@ Future<void> showInstituteTeacherSheet({
                       if (link.url != null && link.url!.isNotEmpty)
                         OnClick(
                           onTap: () => launchUrl(Uri.parse(link.url!)),
-                          child: CustomText(
+                          child: CustomText.caption(
                             link.url!,
                             color: context.colors.primary,
-                            fontSize: 13,
                           ),
                         ),
                   ],
@@ -88,7 +69,7 @@ Future<void> showInstituteTeacherSheet({
               ],
               if (teacher.courses.isNotEmpty) ...[
                 16.h,
-                CustomText('دوره‌ها در این مؤسسه', fontWeight: FontWeight.w600),
+                CustomText.body('دوره‌ها در این مؤسسه'),
                 8.h,
                 for (final course in teacher.courses)
                   Padding(

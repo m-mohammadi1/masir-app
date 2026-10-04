@@ -1,8 +1,10 @@
 import 'package:easy_helper/easy_helper.dart';
 import 'package:flutter/material.dart';
 import '/core/helper/assets.dart';
+import '/core/helper/go_back.dart';
 import '/core/theme/theme_context.dart';
 import '/widgets/chunky_box.dart';
+import '/core/theme/masir_style.dart';
 
 class CustomBackButton extends StatelessWidget {
   final Function? backAction;
@@ -17,7 +19,7 @@ class CustomBackButton extends StatelessWidget {
       child: ChunkyBox(
         width: 40,
         height: 40,
-        radius: 14,
+        radius: MasirRadius.row,
         fill: c.surface,
         edge: c.lip,
         borderColor: c.border,
@@ -26,7 +28,7 @@ class CustomBackButton extends StatelessWidget {
           if (backAction != null) {
             backAction!();
           } else {
-            Navigator.pop(context);
+            goBack(context);
           }
         },
         child: SizedBox(
