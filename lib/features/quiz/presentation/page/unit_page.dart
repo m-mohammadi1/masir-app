@@ -65,8 +65,13 @@ class UnitPage extends StatefulWidget {
 class _UnitPageState extends State<UnitPage> {
   final UnitsBloc _unitsBloc = inject<UnitsBloc>();
   final QuizSubmitBloc _quizSubmitBloc = inject<QuizSubmitBloc>();
-  final GlobalKey<QuizUnitContentState> _quizContentKey =
-      GlobalKey<QuizUnitContentState>();
+
+  /// One key per quiz unit. While moving on, the finished unit and the next
+  /// one are on screen together; two quiz units must never share a key.
+  final Map<String, GlobalKey<QuizUnitContentState>> _quizKeys = {};
+
+  GlobalKey<QuizUnitContentState> get _quizContentKey =>
+      _quizKeys.putIfAbsent(_unitId, GlobalKey<QuizUnitContentState>.new);
 
   // The unit on screen. It starts as the one the roadmap opened and changes
   // in place when the student moves on to the next unit of the path.
@@ -372,26 +377,27 @@ class _UnitPageState extends State<UnitPage> {
               },
             ),
           ],
-          child: _withTransition(
-            BlocBuilder<UnitsBloc, UnitsState>(
-              bloc: _unitsBloc,
-              builder: (context, state) {
-                return state.when(
-                  loading: (isLoading) {
-                    if (isLoading || _unitData == null) return _loadingPage();
-                    return _buildContent();
-                  },
-                  error: (_, message) => MasirPage.focus(
-                    title: _unitTitle,
-                    onClose: _handleBack,
-                    body: StateView.error(message: message, retry: _fetchUnit),
-                  ),
-                  success: (_, data) {
-                    if (_unitData == null) return _loadingPage();
-                    return _buildContent();
-                  },
-                );
-              },
+          // The page for the current unit is built here, outside the
+          // switcher, so the unit sliding out keeps the content it had
+          // instead of re-rendering the next unit.
+          child: BlocBuilder<UnitsBloc, UnitsState>(
+            bloc: _unitsBloc,
+            builder: (context, state) => _withTransition(
+              state.when(
+                loading: (isLoading) {
+                  if (isLoading || _unitData == null) return _loadingPage();
+                  return _buildContent();
+                },
+                error: (_, message) => MasirPage.focus(
+                  title: _unitTitle,
+                  onClose: _handleBack,
+                  body: StateView.error(message: message, retry: _fetchUnit),
+                ),
+                success: (_, data) {
+                  if (_unitData == null) return _loadingPage();
+                  return _buildContent();
+                },
+              ),
             ),
           ),
         ),
