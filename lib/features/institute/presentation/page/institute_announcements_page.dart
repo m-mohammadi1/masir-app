@@ -31,7 +31,12 @@ class InstituteAnnouncementsPage extends StatelessWidget {
           error: (_, message) => MasirPage.detail(
             title: 'اطلاعیه‌ها',
             onBack: () => _back(context),
-            body: StateView.error(message: message),
+            body: StateView.error(
+              message: message,
+              retry: () => context.read<AnnouncementsBloc>().add(
+                AnnouncementsEvent.load(instituteId: instituteId),
+              ),
+            ),
           ),
           success: (_, items, hasMore, loadingMore) {
             if (items.isEmpty) {

@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:easy_helper/easy_helper.dart';
 import '../../../domain/usecases/courses_usecase.dart';
 import '/features/main/data/models/courses_model.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -27,7 +26,6 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
         data.fold(
           (failure) {
             emit(CoursesState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (data) {
             emit(CoursesState.success(false, data.cast<CoursesModel>()));

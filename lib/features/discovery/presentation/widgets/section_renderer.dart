@@ -17,6 +17,7 @@ import '/widgets/pill_chip.dart';
 import '/widgets/section_header.dart';
 import '/widgets/skeleton.dart';
 import '/core/theme/masir_style.dart';
+import '/core/helper/open_institute.dart';
 
 class SectionRenderer extends StatelessWidget {
   final MainFeedSectionEntity section;
@@ -173,7 +174,7 @@ class _InstituteCarousel extends StatelessWidget {
 
 void _openInstitute(FeedInstituteItem item) {
   if (item.id != null) {
-    CustomNavigator.pushNamed('/i/${item.id}/home');
+    openInstitute(item.id!);
   }
 }
 

@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:dartz/dartz.dart';
-import 'package:easy_helper/easy_helper.dart';
 import '../../domain/usecases/about_us_usecase.dart';
 import '/features/about_us/data/models/about_us_model.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -28,7 +27,6 @@ class AboutUsBloc extends Bloc<AboutUsEvent, AboutUsState> {
         data.fold(
           (failure) {
             emit(AboutUsState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (data) {
             emit(AboutUsState.success(false, cast<AboutUsModel>(data)));

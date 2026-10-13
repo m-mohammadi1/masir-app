@@ -96,6 +96,8 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _otpForm.close();
+    bloc.close();
     super.dispose();
   }
 

@@ -25,6 +25,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final bloc = inject<SubmitUsernameBloc>();
 
   @override
+  void dispose() {
+    bloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MasirPage.plain(
       body: Column(

@@ -37,6 +37,12 @@ class _InstituteTeachersPageState extends State<InstituteTeachersPage> {
   }
 
   @override
+  void dispose() {
+    bloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<InstituteTeachersBloc, InstituteTeachersState>(
       bloc: bloc,
@@ -48,7 +54,20 @@ class _InstituteTeachersPageState extends State<InstituteTeachersPage> {
           ),
           error: (_, message) => MasirPage.tab(
             title: 'استادها',
-            body: StateView.error(message: message),
+            body: StateView.error(
+              message: message,
+              retry: () => bloc.add(
+                InstituteTeachersEvent.load(
+                  params: RequestInstituteIdModel(
+                    id:
+                        GoRouterState.of(
+                          context,
+                        ).pathParameters['instituteId'] ??
+                        '',
+                  ),
+                ),
+              ),
+            ),
           ),
           success: (_, data) {
             if (data.isEmpty) {

@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:easy_helper/easy_helper.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../data/models/app_notification_model.dart';
@@ -38,16 +37,17 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
         data.fold(
           (failure) {
             emit(NotificationsState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (items) {
             final models = items.cast<AppNotificationModel>();
-            emit(NotificationsState.success(
-              false,
-              models,
-              models.length >= _perPage,
-              false,
-            ));
+            emit(
+              NotificationsState.success(
+                false,
+                models,
+                models.length >= _perPage,
+                false,
+              ),
+            );
           },
         );
       },
@@ -65,16 +65,19 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
         );
         data.fold(
           (failure) {
+            _page -= 1;
             emit(NotificationsState.success(false, list, true, false));
           },
           (items) {
             final models = items.cast<AppNotificationModel>();
-            emit(NotificationsState.success(
-              false,
-              [...list, ...models],
-              models.length >= _perPage,
-              false,
-            ));
+            emit(
+              NotificationsState.success(
+                false,
+                [...list, ...models],
+                models.length >= _perPage,
+                false,
+              ),
+            );
           },
         );
       },

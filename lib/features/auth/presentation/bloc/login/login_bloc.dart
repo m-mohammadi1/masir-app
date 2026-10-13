@@ -16,23 +16,25 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final LoginUseCase loginUseCase;
 
   LoginBloc({required this.loginUseCase})
-      : super(const LoginState.loading(false)) {
+    : super(const LoginState.loading(false)) {
     on<LoginEvent>(_onLoginEvent);
   }
 
   void _onLoginEvent(LoginEvent event, emit) async {
     await event.when(
-      login: (params) async{
-       emit(const LoginState.loading(true));
-       var data = await loginUseCase(params: params);
-       data.fold(
-         (failure) {
-           emit(LoginState.error(false, failure.message));
-           GEasyHelper.retry(failure.message, () => add(event));
-         },
-         (data) {
-           emit(LoginState.success(false, cast<LoginModel>(data)));
-         },
+      login: (params) async {
+        emit(const LoginState.loading(true));
+        var data = await loginUseCase(params: params);
+        data.fold(
+          (failure) {
+            emit(LoginState.error(false, failure.message));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
+          },
+          (data) {
+            emit(LoginState.success(false, cast<LoginModel>(data)));
+          },
         );
       },
     );

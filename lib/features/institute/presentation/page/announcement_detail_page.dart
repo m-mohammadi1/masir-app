@@ -125,7 +125,15 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
           error: (_, message) => MasirPage.detail(
             title: 'اطلاعیه',
             onBack: _back,
-            body: StateView.error(message: message),
+            body: StateView.error(
+              message: message,
+              retry: () => _bloc.add(
+                AnnouncementDetailEvent.load(
+                  instituteId: widget.instituteId,
+                  announcementId: widget.announcementId,
+                ),
+              ),
+            ),
           ),
           success: (_, data) {
             return MasirPage.detail(

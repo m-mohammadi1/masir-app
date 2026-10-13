@@ -92,9 +92,10 @@ const _fixture = OutlineCourseModel(
   ],
 );
 
-// Heights of the flat waypoint list, unchanged by the restyle:
-// chapter 76, path 118, unit 118.
-const _unitPitch = 118.0;
+// Heights of the flat waypoint list: chapter 76, path 118, unit 136. A unit
+// slot is exactly its node (36 halo + 64 pin + 36 halo) so the whole node,
+// caption pill included, sits inside it and takes taps.
+const _unitPitch = 136.0;
 const _pinFaceRadius = 32.0;
 
 Offset _faceCenter(WidgetTester tester, String unitId) {

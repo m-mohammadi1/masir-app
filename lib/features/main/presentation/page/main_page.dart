@@ -6,6 +6,7 @@ import 'package:mohammad/features/institute/presentation/page/main_feed_page.dar
 import 'package:mohammad/features/institute/presentation/page/wallet_page.dart';
 import 'package:mohammad/features/main/presentation/bloc/main_bloc.dart';
 import 'package:mohammad/features/profile/presentation/page/profile_page.dart';
+import '/widgets/main_tab_scope.dart';
 import '/widgets/masir_bottom_bar.dart';
 import '/core/theme/theme_context.dart';
 
@@ -36,6 +37,10 @@ class _MainPageState extends State<MainPage> {
   int index = _vitrineIndex;
   DateTime? _lastBack;
 
+  /// Tabs opened so far. A tab is built the first time it is shown and then
+  /// kept, so switching back keeps its scroll position and data.
+  final Set<int> _opened = {_vitrineIndex};
+
   final bloc = inject<MainBloc>();
 
   @override
@@ -51,7 +56,7 @@ class _MainPageState extends State<MainPage> {
   /// ویترین it needs a second press to leave, so a stray swipe never exits.
   void _onBack() {
     if (index != _vitrineIndex) {
-      setState(() => index = _vitrineIndex);
+      _select(_vitrineIndex);
       return;
     }
     final now = DateTime.now();
@@ -62,6 +67,19 @@ class _MainPageState extends State<MainPage> {
     }
     _lastBack = now;
     CustomToast.toast(context, 'برای خروج دوباره بزن', type: Type.info);
+  }
+
+  @override
+  void dispose() {
+    bloc.close();
+    super.dispose();
+  }
+
+  void _select(int value) {
+    setState(() {
+      index = value;
+      _opened.add(value);
+    });
   }
 
   @override
@@ -79,10 +97,27 @@ class _MainPageState extends State<MainPage> {
         backgroundColor: context.colors.background,
         body: Column(
           children: [
-            Expanded(child: pages[index]),
+            Expanded(
+              child: IndexedStack(
+                index: index,
+                children: [
+                  for (var i = 0; i < pages.length; i++)
+                    // Hidden tabs keep their state but stop animating.
+                    TickerMode(
+                      enabled: i == index,
+                      child: MainTabScope(
+                        active: i == index,
+                        child: _opened.contains(i)
+                            ? pages[i]
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+                ],
+              ),
+            ),
             MasirBottomBar(
               currentIndex: index,
-              onTap: (value) => setState(() => index = value),
+              onTap: _select,
               items: masirGlobalTabs(),
             ),
           ],

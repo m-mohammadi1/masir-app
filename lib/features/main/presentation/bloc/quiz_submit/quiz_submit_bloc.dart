@@ -16,7 +16,7 @@ class QuizSubmitBloc extends Bloc<QuizSubmitEvent, QuizSubmitState> {
   final QuizSubmitUseCase quizSubmitUseCase;
 
   QuizSubmitBloc({required this.quizSubmitUseCase})
-      : super(const QuizSubmitState.loading(false)) {
+    : super(const QuizSubmitState.loading(false)) {
     on<QuizSubmitEvent>(_onQuizSubmitEvent);
   }
 
@@ -28,7 +28,9 @@ class QuizSubmitBloc extends Bloc<QuizSubmitEvent, QuizSubmitState> {
         data.fold(
           (failure) {
             emit(QuizSubmitState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
           },
           (data) {
             emit(

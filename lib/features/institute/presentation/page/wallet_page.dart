@@ -15,6 +15,8 @@ import '/widgets/masir_motion.dart';
 import '/widgets/masir_page.dart';
 import '/widgets/state_view.dart';
 import '/core/theme/masir_style.dart';
+import '/widgets/main_tab_scope.dart';
+import '/core/helper/open_institute.dart';
 
 /// One list, most useful first: the current institute, then institutes with
 /// something to continue, then the ones not started yet. Ties keep the order
@@ -43,7 +45,7 @@ class WalletPage extends StatefulWidget {
   State<WalletPage> createState() => _WalletPageState();
 }
 
-class _WalletPageState extends State<WalletPage> {
+class _WalletPageState extends State<WalletPage> with MainTabRefresh {
   final bloc = inject<WalletBloc>();
 
   @override
@@ -53,12 +55,34 @@ class _WalletPageState extends State<WalletPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (tabBecameActive()) bloc.add(const WalletEvent.wallet());
+  }
+
+  @override
+  void dispose() {
+    bloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MasirPage.tab(
       title: 'مؤسسه‌های من',
       subtitle: 'هر جا عضوی، از همین‌جا ادامه بده',
       body: BlocBuilder<WalletBloc, WalletState>(
         bloc: bloc,
+        buildWhen: (prev, curr) => keepContentWhileReloading(
+          previousHasContent: prev.maybeWhen(
+            success: (_, _) => true,
+            orElse: () => false,
+          ),
+          currentIsLoading: curr.maybeWhen(
+            loading: (_) => true,
+            orElse: () => false,
+          ),
+        ),
         builder: (context, state) {
           return state.when(
             loading: (_) => const StateView.loading(
@@ -145,7 +169,7 @@ class _CardList extends StatelessWidget {
                   : null,
               onTap: () {
                 if (card.instituteId != null) {
-                  CustomNavigator.pushNamed('/i/${card.instituteId}/home');
+                  openInstitute(card.instituteId!);
                 }
               },
             ),

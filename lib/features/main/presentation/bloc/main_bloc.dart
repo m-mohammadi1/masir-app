@@ -28,7 +28,9 @@ class MainBloc extends Bloc<MainEvent, MainState> {
         data.fold(
           (failure) {
             emit(MainState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
           },
           (data) {
             emit(MainState.success(false, cast<MainModel>(data)));

@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:easy_helper/easy_helper.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../data/models/institute_detail_model.dart';
@@ -30,14 +29,10 @@ class InstituteDetailBloc
         data.fold(
           (failure) {
             emit(InstituteDetailState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (data) {
             emit(
-              InstituteDetailState.success(
-                false,
-                data as InstituteDetailModel,
-              ),
+              InstituteDetailState.success(false, data as InstituteDetailModel),
             );
           },
         );

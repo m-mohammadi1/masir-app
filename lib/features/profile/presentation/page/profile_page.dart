@@ -82,8 +82,10 @@ class _ProfilePageState extends State<ProfilePage> {
             callBack: (_) {},
             child: ExitModal(
               text: 'می‌خوای از حسابت خارج بشی؟',
-              exitAction: () {
-                HiveService.logout();
+              exitAction: () async {
+                // Clear the session before leaving, so nothing on the way out
+                // sends the old token.
+                await HiveService.logout();
                 CustomNavigator.go(AuthScreen.routeName);
               },
             ),

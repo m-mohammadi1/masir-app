@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:easy_helper/easy_helper.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../data/models/announcement_model.dart';
@@ -38,7 +37,6 @@ class AnnouncementDetailBloc
         await data.fold(
           (failure) async {
             emit(AnnouncementDetailState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (item) async {
             final model = item as AnnouncementModel;

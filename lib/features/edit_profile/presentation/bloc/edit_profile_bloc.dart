@@ -16,7 +16,7 @@ class EditProfileBloc extends Bloc<EditProfileEvent, EditProfileState> {
   final EditProfileUseCase editProfileUseCase;
 
   EditProfileBloc({required this.editProfileUseCase})
-      : super(const EditProfileState.loading(false)) {
+    : super(const EditProfileState.loading(false)) {
     on<EditProfileEvent>(_onEditProfileEvent);
   }
 
@@ -28,7 +28,9 @@ class EditProfileBloc extends Bloc<EditProfileEvent, EditProfileState> {
         data.fold(
           (failure) {
             emit(EditProfileState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
           },
           (data) {
             emit(EditProfileState.success(false, cast<EditProfileModel>(data)));

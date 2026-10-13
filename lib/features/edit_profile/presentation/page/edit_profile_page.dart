@@ -57,6 +57,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
+    editProfileBloc.close();
+    editPasswordBloc.close();
     super.dispose();
   }
 
@@ -188,11 +190,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     );
                   }
-                  CustomToast.toast(
-                    context,
-                    "ذخیره شد!",
-                    type: Type.success,
-                  );
+                  CustomToast.toast(context, "ذخیره شد!", type: Type.success);
                 },
               );
             },
@@ -267,11 +265,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 },
                 success: (isLoading, data) {
                   _clearPasswordFields();
-                  CustomToast.toast(
-                    context,
-                    "رمزت عوض شد",
-                    type: Type.success,
-                  );
+                  CustomToast.toast(context, "رمزت عوض شد", type: Type.success);
                 },
               );
             },

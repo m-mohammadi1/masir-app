@@ -64,10 +64,10 @@ const double _kCanvasInset = 12;
 double _unitSlotWidth(double canvasWidth) =>
     (canvasWidth * 0.44).clamp(80.0, 130.0);
 
-// Fixed vertical space reserved for each waypoint type. Generous on
-// purpose — text is always capped with `maxLines` + ellipsis, so these are
-// safe upper bounds, not tight fits, and there's no risk of the guessed
-// height ever being too small for the actual content.
+// Fixed vertical space reserved for each waypoint type. Text is capped with
+// `maxLines` + ellipsis, so these hold the tallest content. A node must fit
+// inside its slot: anything drawn past the slot edge is still painted (the
+// slots use OverflowBox / Clip.none) but does not receive taps.
 //
 // Chapters are plain full-width title plates, not trail markers — they sit
 // on the timeline (so the trail still flows from one chapter into the
@@ -75,7 +75,9 @@ double _unitSlotWidth(double canvasWidth) =>
 // waypoints, which are paths and units.
 const double _kChapterNodeHeight = 76;
 const double _kPathNodeHeight = 118;
-const double _kUnitNodeHeight = 118;
+
+/// Exactly a unit node: the bubble halo, the pin, and the caption halo.
+const double _kUnitNodeHeight = _RoadUnitNode._halo * 2 + _kRoadNodeSize;
 const double _kTrophyNodeHeight = 112;
 const double _kCourseFinishHeight = 150;
 
@@ -332,6 +334,8 @@ class _OutlinePageState extends State<OutlinePage>
   void dispose() {
     _entranceController.dispose();
     _scrollController.dispose();
+    bloc.close();
+    subscribeBloc.close();
     super.dispose();
   }
 
@@ -421,9 +425,11 @@ class _OutlinePageState extends State<OutlinePage>
   /// Opens a unit. The unit page itself carries the student on to the next
   /// unit of the path, so we only get control back when they leave: either by
   /// backing out, or at the end of a path / before a locked unit. The page
-  /// hands back the id of the last unit completed during the visit.
+  /// hands back a [UnitPageResult] with the last unit completed during the
+  /// visit, and whether the student asked to join from the free preview.
+  /// Leaving by the browser or system back hands back nothing.
   Future<void> _openUnit(OutlineUnitEntity unit) async {
-    final result = await CustomNavigator.pushNamed(
+    final popped = await CustomNavigator.pushNamed(
       UnitPage.routeName,
       arguments: UnitPageArgs(
         unitId: unit.id ?? '',
@@ -434,11 +440,22 @@ class _OutlinePageState extends State<OutlinePage>
       ).toMap(),
     );
     if (!mounted) return;
+    final outcome = popped is UnitPageResult ? popped : const UnitPageResult();
 
     // Re-enable auto-scroll to the current unit once we are back.
     _hasScrolledToCurrent = false;
     final fresh = await _reload();
-    if (!mounted || result is! String || fresh == null) return;
+    if (!mounted) return;
+
+    if (outcome.join) {
+      if (!((fresh?.isSubscribed ?? false) || _justSubscribed)) {
+        _promptSubscribe();
+      }
+      return;
+    }
+
+    final result = outcome.lastCompletedId;
+    if (result == null || fresh == null) return;
 
     setState(() => _justCompletedId = result);
     final spot = _locate(fresh.modules ?? [], result);
@@ -478,7 +495,10 @@ class _OutlinePageState extends State<OutlinePage>
     );
     try {
       final state = await settled;
-      return state.maybeWhen(success: (_, data) => data, orElse: () => null);
+      return state.maybeWhen<OutlineCourseEntity?>(
+        success: (_, data) => data,
+        orElse: () => null,
+      );
     } catch (_) {
       return null;
     }

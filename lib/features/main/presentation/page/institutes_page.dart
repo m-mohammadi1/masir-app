@@ -1,4 +1,3 @@
-import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mohammad/core/services/service_locator.dart';
@@ -16,6 +15,7 @@ import '/widgets/chunky_box.dart';
 import '/widgets/pill_chip.dart';
 import '/widgets/masir_page.dart';
 import '/widgets/state_view.dart';
+import '/core/helper/open_institute.dart';
 
 class InstitutesPage extends StatefulWidget {
   static const String routeName = "/institutes";
@@ -46,7 +46,14 @@ class _InstitutesPageState extends State<InstitutesPage> {
   void _openInstitute(InstitutesModel institute) {
     final id = institute.id ?? '';
     if (id.isEmpty) return;
-    CustomNavigator.pushNamed('/i/$id/home');
+    openInstitute(id);
+  }
+
+  @override
+  void dispose() {
+    bloc.close();
+    topicsBloc.close();
+    super.dispose();
   }
 
   @override
@@ -82,7 +89,8 @@ class _InstitutesPageState extends State<InstitutesPage> {
                     if (data.isEmpty) {
                       return const StateView.empty(
                         text: 'مؤسسه‌ای پیدا نکردیم',
-                        description: 'فعلاً مؤسسه‌ای اینجا نیست، به‌زودی پر می‌شه.',
+                        description:
+                            'فعلاً مؤسسه‌ای اینجا نیست، به‌زودی پر می‌شه.',
                         icon: Icons.school_rounded,
                       );
                     }

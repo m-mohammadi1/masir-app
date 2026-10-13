@@ -64,6 +64,13 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
   }
 
   @override
+  void dispose() {
+    coursesBloc.close();
+    subscriptionsBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<MySubscriptionsBloc, MySubscriptionsState>(
       bloc: subscriptionsBloc,

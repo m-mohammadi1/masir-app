@@ -12,27 +12,35 @@ part 'subscribe_course_state.dart';
 part 'subscribe_course_bloc.freezed.dart';
 
 @injectable
-class SubscribeCourseBloc extends Bloc<SubscribeCourseEvent, SubscribeCourseState> {
+class SubscribeCourseBloc
+    extends Bloc<SubscribeCourseEvent, SubscribeCourseState> {
   final SubscribeCourseUseCase subscribeCourseUseCase;
 
   SubscribeCourseBloc({required this.subscribeCourseUseCase})
-      : super(const SubscribeCourseState.loading(false)) {
+    : super(const SubscribeCourseState.loading(false)) {
     on<SubscribeCourseEvent>(_onSubscribeCourseEvent);
   }
 
   void _onSubscribeCourseEvent(SubscribeCourseEvent event, emit) async {
     await event.when(
-      subscribeCourse: (params) async{
-       emit(const SubscribeCourseState.loading(true));
-       var data = await subscribeCourseUseCase(params: params);
-       data.fold(
-         (failure) {
-           emit(SubscribeCourseState.error(false, failure.message));
-           GEasyHelper.retry(failure.message, () => add(event));
-         },
-         (data) {
-           emit(SubscribeCourseState.success(false, cast<SubscribeCourseModel>(data)));
-         },
+      subscribeCourse: (params) async {
+        emit(const SubscribeCourseState.loading(true));
+        var data = await subscribeCourseUseCase(params: params);
+        data.fold(
+          (failure) {
+            emit(SubscribeCourseState.error(false, failure.message));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
+          },
+          (data) {
+            emit(
+              SubscribeCourseState.success(
+                false,
+                cast<SubscribeCourseModel>(data),
+              ),
+            );
+          },
         );
       },
     );

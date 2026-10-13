@@ -12,27 +12,30 @@ part 'submit_username_state.dart';
 part 'submit_username_bloc.freezed.dart';
 
 @injectable
-class SubmitUsernameBloc extends Bloc<SubmitUsernameEvent, SubmitUsernameState> {
+class SubmitUsernameBloc
+    extends Bloc<SubmitUsernameEvent, SubmitUsernameState> {
   final SubmitUsernameUseCase submitUsernameUseCase;
 
   SubmitUsernameBloc({required this.submitUsernameUseCase})
-      : super(const SubmitUsernameState.loading(false)) {
+    : super(const SubmitUsernameState.loading(false)) {
     on<SubmitUsernameEvent>(_onSubmitUsernameEvent);
   }
 
   void _onSubmitUsernameEvent(SubmitUsernameEvent event, emit) async {
     await event.when(
-      submitUsername: (params) async{
-       emit(const SubmitUsernameState.loading(true));
-       var data = await submitUsernameUseCase(params: params);
-       data.fold(
-         (failure) {
-           emit(SubmitUsernameState.error(false, failure.message));
-           GEasyHelper.retry(failure.message, () => add(event));
-         },
-         (data) {
-           emit(SubmitUsernameState.success(false, cast<UserModel>(data)));
-         },
+      submitUsername: (params) async {
+        emit(const SubmitUsernameState.loading(true));
+        var data = await submitUsernameUseCase(params: params);
+        data.fold(
+          (failure) {
+            emit(SubmitUsernameState.error(false, failure.message));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
+          },
+          (data) {
+            emit(SubmitUsernameState.success(false, cast<UserModel>(data)));
+          },
         );
       },
     );

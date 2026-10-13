@@ -78,6 +78,8 @@ class _AuthScreenState extends State<AuthScreen> {
     _passwordFocus.dispose();
     _inviteCodeFocus.dispose();
     _phoneFocus.dispose();
+    authBloc.close();
+    loginBloc.close();
     super.dispose();
   }
 

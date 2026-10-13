@@ -1,7 +1,5 @@
-import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:easy_helper/easy_helper.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class RetryPage extends StatefulWidget {
@@ -26,48 +24,15 @@ class RetryPage extends StatefulWidget {
 }
 
 class _RetryPageState extends State<RetryPage> {
-  bool _connection = true;
-
+  /// Whether the device has a network to retry on. When the check itself
+  /// fails, assume it does: the retried request reports a real failure.
   Future<bool> _initConnectivity() async {
-    if (kIsWeb) {
-      final result = await Connectivity().checkConnectivity();
-      return !result.contains(ConnectivityResult.none);
-    }
-
     try {
       final result = await Connectivity().checkConnectivity();
-      if (result.contains(ConnectivityResult.none)) {
-        return false;
-      }
-      return true;
+      return !result.contains(ConnectivityResult.none);
     } catch (_) {
-      return false;
+      return true;
     }
-  }
-
-  StreamSubscription<List<ConnectivityResult>>? _connectionSubscription;
-
-  @override
-  void initState() {
-    _initConnectivity();
-
-    _connectionSubscription =
-        Connectivity().onConnectivityChanged.listen((result) async {
-          await _initConnectivity().then((bool isConnected) {
-            if (mounted) {
-              setState(() {
-                _connection = isConnected;
-              });
-            }
-          });
-        });
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _connectionSubscription?.cancel();
-    super.dispose();
   }
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -76,8 +41,12 @@ class _RetryPageState extends State<RetryPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The on-screen back button always leaves this page, so the system back
+    // (Android back button / gesture) does the same, dropping the queue.
     return PopScope(
-      canPop: widget.backAccess,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) GEasyHelper.retries = [];
+      },
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: widget.backgroundColor,
@@ -96,14 +65,16 @@ class _RetryPageState extends State<RetryPage> {
                       children: [
                         Expanded(
                           child: OnClick(
-                            onTap: () {
-                              _initConnectivity();
-                              if (_connection) {
-                                for (var element in GEasyHelper.retries) {
-                                  element();
-                                }
-                                GEasyHelper.retries = [];
-                                Navigator.pop(context);
+                            onTap: () async {
+                              final connected = await _initConnectivity();
+                              if (!mounted || !connected) return;
+                              // Take the queue before running it: a retry that
+                              // fails again re-queues itself for the next visit.
+                              final retries = GEasyHelper.retries;
+                              GEasyHelper.retries = [];
+                              Navigator.pop(context);
+                              for (final retry in retries) {
+                                retry();
                               }
                             },
                             child: widget.retryWidget,
@@ -112,7 +83,12 @@ class _RetryPageState extends State<RetryPage> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: OnClick(
-                            onTap: () => Navigator.pop(context),
+                            onTap: () {
+                              // Leaving without retrying drops the queued
+                              // requests; their pages may already be closed.
+                              GEasyHelper.retries = [];
+                              Navigator.pop(context);
+                            },
                             child: widget.backWidget,
                           ),
                         ),

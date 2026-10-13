@@ -82,14 +82,26 @@ class _DetailCoursePageState extends State<DetailCoursePage> {
     return '$minutes دقیقه';
   }
 
-  void _openOutline(CourseDetailModel data) {
-    CustomNavigator.pushNamed(
+  Future<void> _openOutline(CourseDetailModel data) async {
+    await CustomNavigator.pushNamed(
       OutlinePage.routeName,
       arguments: withThemePreset({
         'id': data.coursesModel?.id ?? widget.id,
         'title': data.coursesModel?.title ?? '',
       }, data.coursesModel?.institute?.themePreset ?? widget.themePreset),
     );
+    // Joining can happen on the roadmap; refresh the membership on return so
+    // the call to action doesn't still offer to join.
+    if (!mounted) return;
+    mySubsBloc.add(MySubscriptionsEvent.mySubscriptions());
+  }
+
+  @override
+  void dispose() {
+    coursesBloc.close();
+    mySubsBloc.close();
+    subscribeCourseBloc.close();
+    super.dispose();
   }
 
   @override

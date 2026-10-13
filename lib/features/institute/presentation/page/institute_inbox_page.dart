@@ -86,7 +86,10 @@ class _InstituteInboxPageState extends State<InstituteInboxPage> {
           error: (_, message) => MasirPage.detail(
             title: 'اطلاع‌رسانی‌ها',
             onBack: _back,
-            body: StateView.error(message: message),
+            body: StateView.error(
+              message: message,
+              retry: () => _bloc.add(const NotificationsEvent.load()),
+            ),
           ),
           success: (_, items, hasMore, loadingMore) {
             final filtered = items

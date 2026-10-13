@@ -29,11 +29,12 @@ class MySubscriptionsBloc
         data.fold(
           (failure) {
             emit(MySubscriptionsState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
           },
           (data) {
             values = data.cast<MySubscriptionsModel>();
-            print("values is : ${values.length}");
             emit(
               MySubscriptionsState.success(
                 false,

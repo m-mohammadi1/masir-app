@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '/not_found_page.dart';
 import 'package:go_router/go_router.dart';
@@ -24,14 +25,21 @@ import 'features/main/presentation/page/main_page.dart';
 import 'features/main/presentation/page/outline_page.dart';
 import 'features/otp/presentation/page/otp_screen.dart';
 import 'features/quiz/presentation/page/unit_page.dart';
+import 'features/quiz/presentation/page/unit_page_args.dart';
 import 'features/register/presentation/page/register_page.dart';
 
 const String initialRoute = SplashScreen.routeName;
 
 String currentRoute = initialRoute;
 
+/// Sends pages that need an `id` argument back to the main page when it is
+/// missing (refresh, browser back/forward, a stale deep link) instead of
+/// building them with nothing to load.
+String? _requireId(BuildContext context, GoRouterState state) =>
+    (routeArgs(state.extra)['id'] ?? '').isEmpty ? MainPage.routeName : null;
+
 final GoRouter router = GoRouter(
-  debugLogDiagnostics: true,
+  debugLogDiagnostics: kDebugMode,
   navigatorKey: CustomNavigator.navigatorKey,
   initialLocation: initialRoute,
   observers: [LifecycleNavigatorHandler()],
@@ -54,10 +62,16 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: OtpScreen.routeName,
+      // Without a phone number there is nothing to verify; start over.
+      redirect: (context, state) =>
+          (routeArgs(state.extra)['phoneNumber'] ?? '').isEmpty
+          ? AuthScreen.routeName
+          : null,
       builder: (context, state) {
+        final args = routeArgs(state.extra);
         return OtpScreen(
-          phoneNumber: (state.extra as Map<String, String>)['phoneNumber']!,
-          inviteCode: (state.extra as Map<String, String>)['inviteCode']!,
+          phoneNumber: args['phoneNumber'] ?? '',
+          inviteCode: args['inviteCode'] ?? '',
         );
       },
     ),
@@ -76,26 +90,25 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: DetailCoursePage.routeName,
+          redirect: _requireId,
           builder: (context, state) {
-            final extra = state.extra;
-            if (extra is Map) {
-              return DetailCoursePage(
-                id: extra['id'] as String,
-                themePreset: extra[kThemePresetArg] as String?,
-              );
-            }
-            return DetailCoursePage(id: extra as String);
+            final args = routeArgs(state.extra);
+            return DetailCoursePage(
+              id: args['id']!,
+              themePreset: args[kThemePresetArg],
+            );
           },
         ),
         GoRoute(
           path: OutlinePage.routeName,
+          redirect: _requireId,
           builder: (context, state) {
-            final extra = state.extra as Map<String, String>;
+            final args = routeArgs(state.extra);
             return OutlinePage(
-              id: extra['id']!,
-              title: extra['title']!,
-              moduleId: extra['moduleId'],
-              themePreset: extra[kThemePresetArg],
+              id: args['id']!,
+              title: args['title'] ?? '',
+              moduleId: args['moduleId'],
+              themePreset: args[kThemePresetArg],
             );
           },
         ),
@@ -103,20 +116,21 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: UnitPage.routeName,
+      redirect: _requireId,
       // Opening a node feels like zooming into it, and closing it zooms back
       // out to the roadmap.
       pageBuilder: (context, state) {
-        final extra = state.extra as Map<String, String>?;
+        final args = UnitPageArgs.fromMap(routeArgs(state.extra));
         return CustomTransitionPage<Object?>(
           key: state.pageKey,
           transitionDuration: const Duration(milliseconds: 420),
           reverseTransitionDuration: const Duration(milliseconds: 300),
           child: UnitPage(
-            unitId: extra?['id'] ?? '',
-            unitType: extra?['type'] ?? '',
-            unitTitle: extra?['title'] ?? '',
-            status: extra?['status'] ?? '',
-            themePreset: extra?[kThemePresetArg],
+            unitId: args.unitId,
+            unitType: args.unitType,
+            unitTitle: args.unitTitle,
+            status: args.status,
+            themePreset: args.themePreset,
           ),
           transitionsBuilder: (context, animation, secondary, child) {
             final curved = CurvedAnimation(
@@ -155,11 +169,15 @@ final GoRouter router = GoRouter(
     ),
     ShellRoute(
       pageBuilder: (context, state, child) {
+        final instituteId = state.pathParameters['instituteId'] ?? '';
         return thresholdPage(
           context,
           state,
+          // Keyed per institute: switching institutes reuses the page but
+          // starts a fresh shell (its blocs load the new institute).
           InstituteShell(
-            instituteId: state.pathParameters['instituteId'] ?? '',
+            key: ValueKey('institute-$instituteId'),
+            instituteId: instituteId,
             child: child,
           ),
         );
@@ -204,15 +222,4 @@ final GoRouter router = GoRouter(
     ),
   ],
   errorBuilder: (context, state) => const NotFoundPage(),
-  redirect: (context, state) {
-    //   if (state.matchedLocation.contains("/protected")) {
-    //     if (authService.state.status) {
-    //       return state.path;
-    //     } else {
-    //       return AuthPage.routeName;
-    //     }
-    //   }
-    //
-    //   return null;
-  },
 );

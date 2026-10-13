@@ -28,7 +28,9 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
         data.fold(
           (failure) {
             emit(RegisterState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
           },
           (data) {
             emit(RegisterState.success(false, cast<RegisterModel>(data)));

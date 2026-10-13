@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dartz/dartz.dart';
+import 'package:dartz/dartz.dart' hide State;
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mohammad/widgets/main_tab_scope.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mohammad/core/helper/custom_themes.dart';
 import 'package:mohammad/core/services/hive_service.dart';
@@ -224,5 +225,65 @@ void main() {
 
       await tester.pump(const Duration(seconds: 10));
     });
+
+    testWidgets('a tab keeps its state when you switch away and back, and '
+        'hears that it is visible again', (tester) async {
+      _ProbeTab.refreshes = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: light,
+          locale: const Locale('fa'),
+          builder: (context, c) =>
+              Directionality(textDirection: TextDirection.rtl, child: c!),
+          home: MainPage(
+            onExit: () {},
+            pagesOverride: const [
+              Text('page-profile'),
+              Text('page-wallet'),
+              _ProbeTab(),
+            ],
+          ),
+        ),
+      );
+      await tester.tap(find.text('taps 0'));
+      await tester.pump();
+      expect(find.text('taps 1'), findsOneWidget);
+
+      await tester.tap(find.text('پروفایل'));
+      await tester.pump();
+      expect(find.text('page-profile'), findsOneWidget);
+      expect(_ProbeTab.refreshes, 0);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(find.text('taps 1'), findsOneWidget);
+      expect(_ProbeTab.refreshes, 1);
+    });
   });
+}
+
+/// A tab with its own state that counts how often it was shown again.
+class _ProbeTab extends StatefulWidget {
+  const _ProbeTab();
+
+  static int refreshes = 0;
+
+  @override
+  State<_ProbeTab> createState() => _ProbeTabState();
+}
+
+class _ProbeTabState extends State<_ProbeTab> with MainTabRefresh {
+  int taps = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (tabBecameActive()) _ProbeTab.refreshes++;
+  }
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: () => setState(() => taps++),
+    child: Text('taps $taps'),
+  );
 }

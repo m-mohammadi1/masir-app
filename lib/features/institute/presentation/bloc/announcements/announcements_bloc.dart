@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:easy_helper/easy_helper.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../data/models/announcement_model.dart';
@@ -16,7 +15,7 @@ class AnnouncementsBloc extends Bloc<AnnouncementsEvent, AnnouncementsState> {
   final GetAnnouncementsUseCase getAnnouncementsUseCase;
 
   AnnouncementsBloc({required this.getAnnouncementsUseCase})
-      : super(const AnnouncementsState.loading(false)) {
+    : super(const AnnouncementsState.loading(false)) {
     on<AnnouncementsEvent>(_onEvent);
   }
 
@@ -40,23 +39,25 @@ class AnnouncementsBloc extends Bloc<AnnouncementsEvent, AnnouncementsState> {
         data.fold(
           (failure) {
             emit(AnnouncementsState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (items) {
             final models = items.cast<AnnouncementModel>();
-            emit(AnnouncementsState.success(
-              false,
-              models,
-              models.length >= (perPage ?? _perPage),
-              false,
-            ));
+            emit(
+              AnnouncementsState.success(
+                false,
+                models,
+                models.length >= (perPage ?? _perPage),
+                false,
+              ),
+            );
           },
         );
       },
       loadMore: () async {
         final current = state;
         final list = current.maybeWhen(
-          success: (_, items, hasMore, loadingMore) => hasMore && !loadingMore ? items : null,
+          success: (_, items, hasMore, loadingMore) =>
+              hasMore && !loadingMore ? items : null,
           orElse: () => null,
         );
         if (list == null || _instituteId == null) return;
@@ -71,17 +72,19 @@ class AnnouncementsBloc extends Bloc<AnnouncementsEvent, AnnouncementsState> {
         );
         data.fold(
           (failure) {
+            _page -= 1;
             emit(AnnouncementsState.success(false, list, true, false));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (items) {
             final models = items.cast<AnnouncementModel>();
-            emit(AnnouncementsState.success(
-              false,
-              [...list, ...models],
-              models.length >= _perPage,
-              false,
-            ));
+            emit(
+              AnnouncementsState.success(
+                false,
+                [...list, ...models],
+                models.length >= _perPage,
+                false,
+              ),
+            );
           },
         );
       },

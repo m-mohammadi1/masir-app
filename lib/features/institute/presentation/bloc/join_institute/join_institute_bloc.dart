@@ -27,7 +27,9 @@ class JoinInstituteBloc extends Bloc<JoinInstituteEvent, JoinInstituteState> {
         data.fold(
           (failure) {
             emit(JoinInstituteState.error(failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
           },
           (_) {
             emit(const JoinInstituteState.success());

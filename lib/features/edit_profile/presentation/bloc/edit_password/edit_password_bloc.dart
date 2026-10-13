@@ -16,23 +16,27 @@ class EditPasswordBloc extends Bloc<EditPasswordEvent, EditPasswordState> {
   final EditPasswordUseCase editPasswordUseCase;
 
   EditPasswordBloc({required this.editPasswordUseCase})
-      : super(const EditPasswordState.loading(false)) {
+    : super(const EditPasswordState.loading(false)) {
     on<EditPasswordEvent>(_onEditPasswordEvent);
   }
 
   void _onEditPasswordEvent(EditPasswordEvent event, emit) async {
     await event.when(
-      editPassword: (params) async{
-       emit(const EditPasswordState.loading(true));
-       var data = await editPasswordUseCase(params: params);
-       data.fold(
-         (failure) {
-           emit(EditPasswordState.error(false, failure.message));
-           GEasyHelper.retry(failure.message, () => add(event));
-         },
-         (data) {
-           emit(EditPasswordState.success(false, cast<EditPasswordModel>(data)));
-         },
+      editPassword: (params) async {
+        emit(const EditPasswordState.loading(true));
+        var data = await editPasswordUseCase(params: params);
+        data.fold(
+          (failure) {
+            emit(EditPasswordState.error(false, failure.message));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
+          },
+          (data) {
+            emit(
+              EditPasswordState.success(false, cast<EditPasswordModel>(data)),
+            );
+          },
         );
       },
     );

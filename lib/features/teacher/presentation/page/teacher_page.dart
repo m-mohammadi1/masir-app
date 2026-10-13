@@ -18,6 +18,7 @@ import '/widgets/masir_page.dart';
 import '/widgets/section_header.dart';
 import '/widgets/state_view.dart';
 import '/core/theme/masir_style.dart';
+import '/core/helper/open_institute.dart';
 
 class TeacherPage extends StatefulWidget {
   const TeacherPage({super.key});
@@ -42,6 +43,12 @@ class _TeacherPageState extends State<TeacherPage> {
   }
 
   @override
+  void dispose() {
+    bloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MasirPage.detail(
       title: 'استاد',
@@ -51,7 +58,18 @@ class _TeacherPageState extends State<TeacherPage> {
           return state.when(
             loading: (_) =>
                 const StateView.loading(variant: SkeletonVariant.detail),
-            error: (_, message) => StateView.error(message: message),
+            error: (_, message) => StateView.error(
+              message: message,
+              retry: () => bloc.add(
+                TeacherDetailEvent.load(
+                  params: RequestTeacherIdModel(
+                    userId:
+                        GoRouterState.of(context).pathParameters['userId'] ??
+                        '',
+                  ),
+                ),
+              ),
+            ),
             success: (_, data) {
               final c = context.colors;
               return ListView(
@@ -119,7 +137,7 @@ class _TeacherPageState extends State<TeacherPage> {
                           title: institute.name ?? '',
                           onTap: institute.id == null
                               ? null
-                              : () => context.go('/i/${institute.id}/home'),
+                              : () => openInstitute(institute.id!),
                         ),
                       ),
                   ],

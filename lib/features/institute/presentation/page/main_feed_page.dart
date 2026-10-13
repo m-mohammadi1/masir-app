@@ -1,5 +1,4 @@
 import '/core/copy/masir_copy.dart';
-import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,6 +14,8 @@ import '/widgets/custom_text.dart';
 import '/widgets/masir_page.dart';
 import '/widgets/state_view.dart';
 import '/core/theme/masir_style.dart';
+import '/widgets/main_tab_scope.dart';
+import '/core/helper/open_institute.dart';
 
 class MainFeedPage extends StatefulWidget {
   const MainFeedPage({super.key});
@@ -23,7 +24,7 @@ class MainFeedPage extends StatefulWidget {
   State<MainFeedPage> createState() => _MainFeedPageState();
 }
 
-class _MainFeedPageState extends State<MainFeedPage> {
+class _MainFeedPageState extends State<MainFeedPage> with MainTabRefresh {
   final walletBloc = inject<WalletBloc>();
   final feedBloc = inject<MainFeedBloc>();
 
@@ -46,6 +47,22 @@ class _MainFeedPageState extends State<MainFeedPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (tabBecameActive()) {
+      walletBloc.add(const WalletEvent.wallet());
+      feedBloc.add(const MainFeedEvent.load());
+    }
+  }
+
+  @override
+  void dispose() {
+    walletBloc.close();
+    feedBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final name = _name;
     return MasirPage.tab(
@@ -62,12 +79,22 @@ class _MainFeedPageState extends State<MainFeedPage> {
           currentInstituteId: HiveService.currentInstituteId,
           onTap: (card) {
             if (card.instituteId != null) {
-              CustomNavigator.pushNamed('/i/${card.instituteId}/home');
+              openInstitute(card.instituteId!);
             }
           },
         ),
         BlocBuilder<MainFeedBloc, MainFeedState>(
           bloc: feedBloc,
+          buildWhen: (prev, curr) => keepContentWhileReloading(
+            previousHasContent: prev.maybeWhen(
+              success: (_, _) => true,
+              orElse: () => false,
+            ),
+            currentIsLoading: curr.maybeWhen(
+              loading: (_) => true,
+              orElse: () => false,
+            ),
+          ),
           builder: (context, state) {
             return state.when(
               loading: (_) => const Column(

@@ -10,7 +10,9 @@ class ExitModal extends StatelessWidget {
   final String text;
   final String? description;
   final String? deleteText;
-  final Function? exitAction;
+
+  /// What confirming does; it is responsible for closing the sheet too.
+  final VoidCallback exitAction;
 
   /// Confirm button colour; red unless the action is harmless.
   final Color? confirmColor;
@@ -18,7 +20,7 @@ class ExitModal extends StatelessWidget {
   const ExitModal({
     super.key,
     required this.text,
-    this.exitAction,
+    required this.exitAction,
     this.description,
     this.deleteText,
     this.confirmColor,
@@ -66,14 +68,7 @@ class ExitModal extends StatelessWidget {
               Expanded(
                 child: CustomButton(
                   title: deleteText ?? "آره، برو",
-                  onTap: () {
-                    if (exitAction != null) {
-                      exitAction!();
-                    } else {
-                      CustomNavigator.pop();
-                      CustomNavigator.pop();
-                    }
-                  },
+                  onTap: exitAction,
                   backgroundColor: confirmColor ?? context.colors.error,
                 ),
               ),

@@ -34,3 +34,14 @@ class UnitPageArgs {
     );
   }
 }
+
+/// What the unit page hands back to the roadmap when it closes.
+class UnitPageResult {
+  /// The last unit completed during the visit, if any.
+  final String? lastCompletedId;
+
+  /// The student asked to join the course (from the end of the free preview).
+  final bool join;
+
+  const UnitPageResult({this.lastCompletedId, this.join = false});
+}

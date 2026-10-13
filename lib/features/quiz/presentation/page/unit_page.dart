@@ -24,8 +24,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '/widgets/list_row.dart';
 import '/widgets/icon_tile.dart';
 import 'package:mohammad/features/quiz/presentation/widgets/video_unit_content.dart';
-import 'package:mohammad/core/helper/route_args.dart';
-import 'package:mohammad/features/home/page/detail_course_page.dart';
+import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
 import 'package:mohammad/widgets/custom_button.dart';
 import 'package:mohammad/widgets/custom_text.dart';
 import '/core/helper/go_back.dart';
@@ -131,7 +130,17 @@ class _UnitPageState extends State<UnitPage> {
     return type == 'video';
   }
 
-  void _handleBack() => goBack(context, result: _lastCompletedId);
+  void _handleBack() => goBack(
+    context,
+    result: UnitPageResult(lastCompletedId: _lastCompletedId),
+  );
+
+  /// Back to the roadmap, which shows its join prompt. Opening the course page
+  /// from here would stack a second roadmap on top of this one.
+  void _askToJoin() => goBack(
+    context,
+    result: UnitPageResult(lastCompletedId: _lastCompletedId, join: true),
+  );
 
   Widget? _previewBanner(UnitsModel data) {
     if (data.isPreview != true) return null;
@@ -164,7 +173,6 @@ class _UnitPageState extends State<UnitPage> {
 
   Widget? _previewFooter(UnitsModel data) {
     if (data.isLastPreview != true) return null;
-    final courseId = data.courseId;
     return Builder(
       builder: (context) => ChunkyBox(
         fill: context.colors.surface,
@@ -186,19 +194,7 @@ class _UnitPageState extends State<UnitPage> {
               textAlign: TextAlign.center,
             ),
             12.h,
-            CustomButton(
-              title: 'ثبت‌نام',
-              onTap: () {
-                if (courseId == null || courseId.isEmpty) return;
-                CustomNavigator.pushNamed(
-                  DetailCoursePage.routeName,
-                  arguments: courseDetailArgs(
-                    courseId,
-                    themePreset: widget.themePreset,
-                  ),
-                );
-              },
-            ),
+            CustomButton(title: 'ثبت‌نام', onTap: _askToJoin),
           ],
         ),
       ),
@@ -342,6 +338,18 @@ class _UnitPageState extends State<UnitPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The system back (Android button / gesture) leaves like the close
+    // button, handing the completed unit back so the roadmap can celebrate.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack();
+      },
+      child: _buildPage(context),
+    );
+  }
+
+  Widget _buildPage(BuildContext context) {
     return InstituteThemed(
       preset: widget.themePreset,
       child: Directionality(

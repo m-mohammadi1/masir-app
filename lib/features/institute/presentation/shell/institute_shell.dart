@@ -300,7 +300,7 @@ class _Header extends StatelessWidget {
               Expanded(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => showInstituteSwitcher(context, replace: true),
+                  onTap: () => showInstituteSwitcher(context),
                   child: Row(
                     children: [
                       Hero(

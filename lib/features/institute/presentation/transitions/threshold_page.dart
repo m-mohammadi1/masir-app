@@ -3,34 +3,39 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+/// The page every institute screen sits in.
+///
+/// Its key is the same for every institute. The shell's nested navigator has
+/// one GlobalKey, so two shell pages must never be on screen together; with a
+/// shared key, going from one institute to another reuses this page (the
+/// shell inside is keyed per institute and starts fresh) instead of overlapping
+/// two pages during the transition.
 class ThresholdPage extends CustomTransitionPage<void> {
-  ThresholdPage({
-    required super.child,
-    required String instituteId,
-  }) : super(
-         key: ValueKey('institute-shell-$instituteId'),
-         transitionDuration: const Duration(milliseconds: 450),
-         reverseTransitionDuration: const Duration(milliseconds: 400),
-         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-           if (MediaQuery.disableAnimationsOf(context)) {
-             return FadeTransition(opacity: animation, child: child);
-           }
-           final curved = CurvedAnimation(
-             parent: animation,
-             curve: Curves.easeInOutCubic,
-             reverseCurve: Curves.easeInOutCubic,
-           );
-           return AnimatedBuilder(
-             animation: curved,
-             builder: (context, _) {
-               return ClipPath(
-                 clipper: CircleRevealClipper(curved.value),
-                 child: FadeTransition(opacity: curved, child: child),
-               );
-             },
-           );
-         },
-       );
+  ThresholdPage({required super.child})
+    : super(
+        key: const ValueKey('institute-shell'),
+        transitionDuration: const Duration(milliseconds: 450),
+        reverseTransitionDuration: const Duration(milliseconds: 400),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          if (MediaQuery.disableAnimationsOf(context)) {
+            return FadeTransition(opacity: animation, child: child);
+          }
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOutCubic,
+            reverseCurve: Curves.easeInOutCubic,
+          );
+          return AnimatedBuilder(
+            animation: curved,
+            builder: (context, _) {
+              return ClipPath(
+                clipper: CircleRevealClipper(curved.value),
+                child: FadeTransition(opacity: curved, child: child),
+              );
+            },
+          );
+        },
+      );
 }
 
 class CircleRevealClipper extends CustomClipper<Path> {
@@ -58,7 +63,4 @@ Page<void> thresholdPage(
   BuildContext context,
   GoRouterState state,
   Widget child,
-) {
-  final instituteId = state.pathParameters['instituteId'] ?? '';
-  return ThresholdPage(instituteId: instituteId, child: child);
-}
+) => ThresholdPage(child: child);

@@ -1,6 +1,6 @@
+import 'package:easy_helper/easy_helper.dart';
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:easy_helper/easy_helper.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../domain/entities/main_feed.dart';
@@ -15,7 +15,7 @@ class MainFeedBloc extends Bloc<MainFeedEvent, MainFeedState> {
   final GetMainFeedUseCase getMainFeedUseCase;
 
   MainFeedBloc({required this.getMainFeedUseCase})
-      : super(const MainFeedState.loading(false)) {
+    : super(const MainFeedState.loading(false)) {
     on<MainFeedEvent>(_onEvent);
   }
 
@@ -27,7 +27,6 @@ class MainFeedBloc extends Bloc<MainFeedEvent, MainFeedState> {
         data.fold(
           (failure) {
             emit(MainFeedState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (feed) {
             emit(MainFeedState.success(false, feed.sections));

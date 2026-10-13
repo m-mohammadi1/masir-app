@@ -38,7 +38,9 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
                 message: failure.message,
               ),
             );
-            GEasyHelper.retry(failure.message, () => add(event));
+            GEasyHelper.retry(failure.message, () {
+              if (!isClosed) add(event);
+            });
           },
           (data) {
             emit(
@@ -53,7 +55,9 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
       },
       changeStep: (value) {
         emit(QuizState.loading(isLoading: state.isLoading, step: state.step));
-        emit(QuizState.changeIndex(isLoading: state.isLoading, step: state.step));
+        emit(
+          QuizState.changeIndex(isLoading: state.isLoading, step: state.step),
+        );
       },
     );
   }

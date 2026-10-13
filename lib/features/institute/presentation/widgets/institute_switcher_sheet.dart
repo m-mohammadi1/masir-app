@@ -16,30 +16,25 @@ import '/widgets/icon_tile.dart';
 import '/widgets/list_row.dart';
 import '/widgets/masir_motion.dart';
 import '/widgets/state_view.dart';
+import '/core/helper/open_institute.dart';
 
 /// Opens the shared institute switcher.
 ///
-/// Choosing an institute makes it the current one and opens its home. Pass
-/// [replace] when already inside an institute, so the stack is swapped
-/// instead of piled up.
-Future<void> showInstituteSwitcher(
-  BuildContext context, {
-  bool replace = false,
-}) {
+/// Choosing an institute makes it the current one and opens its home
+/// ([openInstitute] swaps the stack when an institute is already open).
+Future<void> showInstituteSwitcher(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     sheetAnimationStyle: MasirMotion.sheet,
     showDragHandle: true,
     backgroundColor: context.colors.background,
-    builder: (_) => _SwitcherSheet(replace: replace),
+    builder: (_) => const _SwitcherSheet(),
   );
 }
 
 class _SwitcherSheet extends StatefulWidget {
-  final bool replace;
-
-  const _SwitcherSheet({required this.replace});
+  const _SwitcherSheet();
 
   @override
   State<_SwitcherSheet> createState() => _SwitcherSheetState();
@@ -71,11 +66,7 @@ class _SwitcherSheetState extends State<_SwitcherSheet> {
       themePreset: card.themePreset,
     );
     Navigator.of(context).pop();
-    if (widget.replace) {
-      CustomNavigator.go('/i/$id/home');
-    } else {
-      CustomNavigator.pushNamed('/i/$id/home');
-    }
+    openInstitute(id);
   }
 
   @override

@@ -59,6 +59,12 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
   }
 
   @override
+  void dispose() {
+    coursesBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocListener<JoinInstituteBloc, JoinInstituteState>(
       listener: (context, state) {
@@ -226,6 +232,13 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
                 ],
               );
             },
+            error: (_, message) => StateView.error(
+              message: message,
+              retry: () {
+                _coursesLoaded = false;
+                _loadCourses(detail.id ?? '');
+              },
+            ),
             orElse: () => const SizedBox.shrink(),
           );
         },

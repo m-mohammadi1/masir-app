@@ -14,6 +14,7 @@ import '/widgets/paper_card.dart';
 import '/widgets/section_header.dart';
 import '/widgets/skeleton.dart';
 import '/core/theme/masir_style.dart';
+import '/widgets/main_tab_scope.dart';
 
 /// Horizontal strip of collectible membership cards. A single membership
 /// collapses to one full-width card, so a student with one club never learns
@@ -37,6 +38,16 @@ class MembershipCardStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<WalletBloc, WalletState>(
       bloc: bloc,
+      buildWhen: (prev, curr) => keepContentWhileReloading(
+        previousHasContent: prev.maybeWhen(
+          success: (_, _) => true,
+          orElse: () => false,
+        ),
+        currentIsLoading: curr.maybeWhen(
+          loading: (_) => true,
+          orElse: () => false,
+        ),
+      ),
       builder: (context, state) {
         return state.when(
           loading: (_) => const Padding(

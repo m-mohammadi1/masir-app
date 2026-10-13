@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:easy_helper/easy_helper.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../data/models/request_teacher_id_model.dart';
@@ -28,12 +27,9 @@ class TeacherDetailBloc extends Bloc<TeacherDetailEvent, TeacherDetailState> {
         data.fold(
           (failure) {
             emit(TeacherDetailState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (data) {
-            emit(
-              TeacherDetailState.success(false, data as TeacherPageModel),
-            );
+            emit(TeacherDetailState.success(false, data as TeacherPageModel));
           },
         );
       },

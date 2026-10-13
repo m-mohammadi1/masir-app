@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:easy_helper/easy_helper.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../data/models/request_wallet_model.dart';
@@ -28,7 +27,6 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
         data.fold(
           (failure) {
             emit(WalletState.error(false, failure.message));
-            GEasyHelper.retry(failure.message, () => add(event));
           },
           (data) {
             emit(WalletState.success(false, data.cast<WalletCardModel>()));

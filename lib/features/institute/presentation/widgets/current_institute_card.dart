@@ -17,6 +17,8 @@ import '/widgets/chunky_box.dart';
 import '/widgets/custom_text.dart';
 import '/widgets/progress_pill.dart';
 import '/widgets/skeleton.dart';
+import '/widgets/main_tab_scope.dart';
+import '/core/helper/open_institute.dart';
 
 /// The student's current institute, pinned at the top of ویترین.
 ///
@@ -52,6 +54,16 @@ class CurrentInstituteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<WalletBloc, WalletState>(
       bloc: bloc,
+      buildWhen: (prev, curr) => keepContentWhileReloading(
+        previousHasContent: prev.maybeWhen(
+          success: (_, _) => true,
+          orElse: () => false,
+        ),
+        currentIsLoading: curr.maybeWhen(
+          loading: (_) => true,
+          orElse: () => false,
+        ),
+      ),
       builder: (context, state) {
         final stored = HiveService.hasCurrentInstitute
             ? WalletCardModel(
@@ -98,7 +110,7 @@ class _Card extends StatelessWidget {
   void _enter() {
     final id = card.instituteId;
     if (id == null || id.isEmpty) return;
-    CustomNavigator.pushNamed('/i/$id/home');
+    openInstitute(id);
   }
 
   void _continue(WalletNextAction action) {

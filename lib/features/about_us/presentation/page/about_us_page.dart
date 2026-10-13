@@ -40,7 +40,10 @@ class _AboutUsPageState extends State<AboutUsPage> {
         builder: (context, state) {
           return state.when(
             loading: (_) => const StateView.loading(count: 4),
-            error: (_, message) => StateView.error(message: message),
+            error: (_, message) => StateView.error(
+              message: message,
+              retry: () => bloc.add(AboutUsEvent.aboutUs()),
+            ),
             success: (isLoading, data) {
               return SingleChildScrollView(
                 padding: const EdgeInsets.only(
