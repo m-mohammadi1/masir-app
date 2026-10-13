@@ -1,4 +1,5 @@
 import 'package:easy_helper/easy_helper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'hive_service.dart';
@@ -12,7 +13,20 @@ T inject<T extends Object>({String? instanceName}) =>
 @InjectableInit(initializerName: 'initial', preferRelativeImports: true)
 Future<void> setup() async => _getIt.initial();
 
-const String _baseUrl = "http://127.0.0.1:9393/v1/app/";
+/// The API the app talks to. Builds for a real server pass it in:
+/// `--dart-define=API_BASE_URL=https://api.getmasir.com/v1/app/` (or a
+/// machine's LAN address when testing on a physical phone).
+///
+/// Without it the app uses the local backend on port 9393. The Android
+/// emulator reaches the host machine at 10.0.2.2, not 127.0.0.1.
+final String _baseUrl = _resolveBaseUrl();
+
+String _resolveBaseUrl() {
+  const configured = String.fromEnvironment('API_BASE_URL');
+  if (configured.isNotEmpty) return configured;
+  final isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  return 'http://${isAndroid ? '10.0.2.2' : '127.0.0.1'}:9393/v1/app/';
+}
 
 bool _haveFormData = false;
 

@@ -10,7 +10,7 @@ Flutter mobile client for the **Masir** education platform (student app). It tal
 | **Package name** (`pubspec`) | `mohammad` (UI title: **Masir**) |
 | **Entry** | `lib/main.dart` |
 | **Routing** | `lib/routes.dart` (`GoRouter`) |
-| **API base** | `https://api.getmasir.com/v1/app/` (`lib/core/services/service_locator.dart`) |
+| **API base** | `--dart-define=API_BASE_URL=…` (e.g. `https://api.getmasir.com/v1/app/`); defaults to the local backend, `10.0.2.2:9393` on the Android emulator (`lib/core/services/service_locator.dart`) |
 | **Local path package** | `packages/easy_helper` — HTTP, navigation, failures, shared UI helpers |
 
 For backend contracts, domain language, and MVP flows, see sibling docs when available: `../product/product.md`, `../product/domain/entities.md`, `../product/flows/`. For server architecture and local API dev, see `../AGENTS.md` (backend on port 9393 uses `/v1`, not `/v1/app/` — do not point the app at localhost without matching route prefixes).
