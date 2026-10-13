@@ -25,7 +25,6 @@ import 'features/main/presentation/page/main_page.dart';
 import 'features/main/presentation/page/outline_page.dart';
 import 'features/otp/presentation/page/otp_screen.dart';
 import 'features/quiz/presentation/page/unit_page.dart';
-import 'features/quiz/presentation/page/unit_origin.dart';
 import 'features/quiz/presentation/page/unit_page_args.dart';
 import 'features/register/presentation/page/register_page.dart';
 
@@ -118,15 +117,14 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: UnitPage.routeName,
       redirect: _requireId,
-      // Opening a unit grows it out of the roadmap pin that was tapped, and
-      // closing shrinks it back into the pin.
+      // Opening a node feels like zooming into it, and closing it zooms back
+      // out to the roadmap.
       pageBuilder: (context, state) {
         final args = UnitPageArgs.fromMap(routeArgs(state.extra));
-        final origin = UnitOrigin.forPage(state.pageKey);
         return CustomTransitionPage<Object?>(
           key: state.pageKey,
-          transitionDuration: const Duration(milliseconds: 460),
-          reverseTransitionDuration: const Duration(milliseconds: 380),
+          transitionDuration: const Duration(milliseconds: 420),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
           child: UnitPage(
             unitId: args.unitId,
             unitType: args.unitType,
@@ -135,26 +133,23 @@ final GoRouter router = GoRouter(
             themePreset: args.themePreset,
           ),
           transitionsBuilder: (context, animation, secondary, child) {
-            if (MediaQuery.disableAnimationsOf(context)) {
-              return FadeTransition(opacity: animation, child: child);
-            }
-            final reveal = CurvedAnimation(
+            final curved = CurvedAnimation(
               parent: animation,
-              curve: Curves.easeInOutCubic,
-              reverseCurve: Curves.easeInOutCubic,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
             );
-            // The content fades in early so the growing circle isn't empty.
-            final fade = CurvedAnimation(
-              parent: animation,
-              curve: const Interval(0, 0.45, curve: Curves.easeOut),
-            );
-            return AnimatedBuilder(
-              animation: reveal,
-              builder: (context, child) => ClipPath(
-                clipper: CircleRevealClipper(reveal.value, center: origin),
-                child: child,
+            return FadeTransition(
+              opacity: curved,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.06),
+                  end: Offset.zero,
+                ).animate(curved),
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.94, end: 1).animate(curved),
+                  child: child,
+                ),
               ),
-              child: FadeTransition(opacity: fade, child: child),
             );
           },
         );
