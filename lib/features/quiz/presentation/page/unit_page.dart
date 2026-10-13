@@ -408,33 +408,36 @@ class _UnitPageState extends State<UnitPage> {
   /// Fades between units when the student moves on. The "well done" notice is
   /// shown by [_advance] through the shared toast.
   Widget _withTransition(Widget child) {
+    final reduce = MediaQuery.disableAnimationsOf(context);
     return Stack(
       children: [
         Positioned.fill(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 460),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            // The next unit glides in from the leading side while the one just
-            // finished slides away the other way (the page is right-to-left,
-            // so "next" arrives from the left).
+            duration: Duration(milliseconds: reduce ? 0 : 320),
+            // Shared-axis motion: the finished unit fades out fast while
+            // drifting toward the trailing side, then the next one fades in
+            // from the leading side (right-to-left page: "next" comes from
+            // the left). Both run on the switcher's own animation, which
+            // counts down for the outgoing unit.
             transitionBuilder: (child, animation) {
               final incoming = child.key == ValueKey(_unitId);
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: Offset(incoming ? -0.35 : 0.35, 0),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: ScaleTransition(
-                    scale: Tween<double>(
-                      begin: 0.96,
-                      end: 1,
-                    ).animate(animation),
+              final fade = CurvedAnimation(
+                parent: animation,
+                curve: incoming
+                    ? const Interval(0.35, 1, curve: Curves.easeOut)
+                    : const Interval(0.65, 1, curve: Curves.easeIn),
+              );
+              return AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  final t = Curves.easeOutCubic.transform(animation.value);
+                  final dx = (1 - t) * 30 * (incoming ? -1 : 1);
+                  return Transform.translate(
+                    offset: Offset(dx, 0),
                     child: child,
-                  ),
-                ),
+                  );
+                },
+                child: FadeTransition(opacity: fade, child: child),
               );
             },
             child: KeyedSubtree(key: ValueKey(_unitId), child: child),

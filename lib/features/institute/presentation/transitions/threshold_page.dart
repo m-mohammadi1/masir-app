@@ -38,24 +38,31 @@ class ThresholdPage extends CustomTransitionPage<void> {
       );
 }
 
+/// A circle growing from [center] (default: upper middle) until it covers
+/// the whole box at [progress] 1.
 class CircleRevealClipper extends CustomClipper<Path> {
   final double progress;
+  final Offset? center;
 
-  CircleRevealClipper(this.progress);
+  CircleRevealClipper(this.progress, {this.center});
 
   @override
   Path getClip(Size size) {
-    final center = Offset(size.width / 2, size.height * 0.28);
-    final maxRadius = math.sqrt(
-      size.width * size.width + size.height * size.height,
-    );
+    final c = center ?? Offset(size.width / 2, size.height * 0.28);
+    // Far enough to reach the farthest corner from the centre.
+    final maxRadius = [
+      Offset.zero,
+      Offset(size.width, 0),
+      Offset(0, size.height),
+      Offset(size.width, size.height),
+    ].map((corner) => (corner - c).distance).reduce(math.max);
     return Path()
-      ..addOval(Rect.fromCircle(center: center, radius: maxRadius * progress));
+      ..addOval(Rect.fromCircle(center: c, radius: maxRadius * progress));
   }
 
   @override
   bool shouldReclip(covariant CircleRevealClipper oldClipper) {
-    return oldClipper.progress != progress;
+    return oldClipper.progress != progress || oldClipper.center != center;
   }
 }
 

@@ -2,6 +2,9 @@ import 'package:dartz/dartz.dart';
 import 'package:easy_helper/easy_helper.dart' hide CustomError;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mohammad/features/quiz/presentation/page/unit_page_args.dart';
+import 'package:mohammad/features/quiz/presentation/page/unit_page.dart';
+import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mohammad/core/helper/custom_themes.dart';
 import 'package:mohammad/features/main/data/models/outline_course_model.dart';
@@ -15,6 +18,7 @@ import 'package:mohammad/features/main/domain/entities/outline_course.dart';
 import 'package:mohammad/features/main/domain/usecases/outline_course_usecase.dart';
 import 'package:mohammad/features/main/presentation/bloc/outline_course/outline_course_bloc.dart';
 import 'package:mohammad/features/main/presentation/page/outline_page.dart';
+import 'package:mohammad/features/main/presentation/page/outline/roadmap/roadmap_nodes.dart';
 
 class _FakeOutlineUseCase implements OutlineCourseUseCase {
   @override
@@ -92,10 +96,6 @@ const _fixture = OutlineCourseModel(
   ],
 );
 
-// Heights of the flat waypoint list: chapter 76, path 118, unit 136. A unit
-// slot is exactly its node (36 halo + 64 pin + 36 halo) so the whole node,
-// caption pill included, sits inside it and takes taps.
-const _unitPitch = 136.0;
 const _pinFaceRadius = 32.0;
 
 Offset _faceCenter(WidgetTester tester, String unitId) {
@@ -152,24 +152,43 @@ void main() {
         final u2 = _faceCenter(tester, 'u2');
         final u3 = _faceCenter(tester, 'u3');
 
-        // Same vertical pitch between consecutive waypoints as before.
-        expect(u2.dy - u1.dy, closeTo(_unitPitch, 0.5));
-        expect(u3.dy - u2.dy, closeTo(_unitPitch, 0.5));
+        // One unit stop per row.
+        expect(u2.dy - u1.dy, closeTo(kUnitStopHeight, 0.5));
+        expect(u3.dy - u2.dy, closeTo(kUnitStopHeight, 0.5));
 
-        // Units alternate sides of the trail (path is left, u1 right ...).
         const canvasWidth = 390 - 2 * 12.0;
         const inset = 12.0;
-        // The finish medallion sits on the trail's centre line.
+        const centre = inset + canvasWidth / 2;
+
+        // The finish and the path signpost sit on the trail's centre line.
         expect(
           tester.getCenter(find.byKey(const ValueKey('roadmap-finish'))).dx,
-          closeTo(inset + canvasWidth / 2, 0.5),
+          closeTo(centre, 0.5),
+        );
+        expect(
+          tester.getCenter(find.byType(RoadmapPathSign)).dx,
+          closeTo(centre, 0.5),
         );
 
-        expect(u1.dx, greaterThan(inset + canvasWidth * 0.60));
-        expect(u2.dx, lessThan(inset + canvasWidth * 0.40));
-        expect(u3.dx, greaterThan(inset + canvasWidth * 0.60));
-        expect(u1.dx, closeTo(inset + canvasWidth * 0.70, canvasWidth * 0.06));
-        expect(u2.dx, closeTo(inset + canvasWidth * 0.30, canvasWidth * 0.06));
+        // Units weave out from the centre and back, all on the canvas.
+        for (final pin in [u1, u2, u3]) {
+          expect(pin.dx - _pinFaceRadius, greaterThanOrEqualTo(inset));
+          expect(
+            pin.dx + _pinFaceRadius,
+            lessThanOrEqualTo(inset + canvasWidth),
+          );
+        }
+        final out1 = (u1.dx - centre).abs();
+        final out2 = (u2.dx - centre).abs();
+        final out3 = (u3.dx - centre).abs();
+        expect(out1, greaterThan(canvasWidth * 0.1));
+        expect(out2, greaterThan(out1 - canvasWidth * 0.04));
+        expect(out2, greaterThan(out3 - canvasWidth * 0.04));
+        expect((u1.dx - centre).sign, (u2.dx - centre).sign);
+
+        // Titles are in the tap card, not hanging on the trail.
+        expect(find.text('درس اول'), findsNothing);
+        expect(find.text('ویدیو'), findsNothing);
       });
     }
   }
@@ -353,5 +372,176 @@ void main() {
 
     expect(find.text('ثبت‌نام'), findsOneWidget);
     expect(find.text('برای شروع این دوره ثبت‌نام کن'), findsOneWidget);
+  });
+
+  Future<void> pumpRoadmap(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: light,
+        locale: const Locale('fa'),
+        builder: (context, c) =>
+            Directionality(textDirection: TextDirection.rtl, child: c!),
+        home: const OutlinePage(title: 'دوره', id: 'course-1'),
+      ),
+    );
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  Future<void> settle(WidgetTester tester) async {
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  testWidgets('tapping a unit opens its card; outside closes it', (
+    tester,
+  ) async {
+    await pumpRoadmap(tester);
+    await tester.tap(find.byKey(const ValueKey('roadmap-pin-u2')));
+    await settle(tester);
+    // Title and type label: this unit is titled after its type.
+    expect(find.text('ویدیو'), findsNWidgets(2));
+    expect(find.text('پیش‌نمایش رایگان'), findsOneWidget);
+    // The card's button, plus the bubble on the current pin underneath.
+    expect(find.text('شروع'), findsNWidgets(2));
+
+    await tester.tapAt(const Offset(10, 420));
+    await settle(tester);
+    expect(find.text('ویدیو'), findsNothing);
+  });
+
+  testWidgets('the system back closes the card before the page', (
+    tester,
+  ) async {
+    await pumpRoadmap(tester);
+    await tester.tap(find.byKey(const ValueKey('roadmap-pin-u1')));
+    await settle(tester);
+    expect(find.text('درس اول'), findsOneWidget);
+    expect(find.text('مرور'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await settle(tester);
+    expect(find.text('درس اول'), findsNothing);
+    expect(find.byType(OutlinePage), findsOneWidget);
+  });
+
+  testWidgets("a locked unit's card offers to join, and joining works", (
+    tester,
+  ) async {
+    await pumpRoadmap(tester);
+    await tester.tap(find.byKey(const ValueKey('roadmap-pin-u3')));
+    await settle(tester);
+    expect(find.text('آزمون'), findsNWidgets(2));
+    expect(find.text('برای ادامه ثبت‌نام کن'), findsOneWidget);
+
+    await tester.tap(find.text('ثبت‌نام').last);
+    await settle(tester);
+    expect(_FakeSubscribeUseCase.subscribed, ['course-1']);
+
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('coming back from a finished unit walks the trail on, then the '
+      'next unit becomes current', (tester) async {
+    OutlineCourseModel course(String done) => OutlineCourseModel(
+      id: 'course-1',
+      title: 'دوره',
+      isSubscribed: true,
+      modules: [
+        OutlineModuleModel(
+          id: 'm1',
+          title: 'فصل اول',
+          paths: [
+            OutlinePathModel(
+              id: 'p1',
+              title: 'مسیر اول',
+              units: [
+                for (final id in ['u1', 'u2', 'u3'])
+                  OutlineUnitModel(
+                    id: id,
+                    title: 'واحد $id',
+                    type: 'html',
+                    status: done.contains(id) ? 'completed' : 'not_started',
+                    locked: false,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+    _FakeOutlineUseCase.fixture = course('u1');
+
+    final router = GoRouter(
+      navigatorKey: CustomNavigator.navigatorKey,
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (c, s) => const OutlinePage(title: 'دوره', id: 'course-1'),
+        ),
+        GoRoute(
+          path: UnitPage.routeName,
+          builder: (c, s) => Scaffold(
+            body: TextButton(
+              onPressed: () =>
+                  c.pop(const UnitPageResult(lastCompletedId: 'u2')),
+              child: const Text('finish'),
+            ),
+          ),
+        ),
+      ],
+    );
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp.router(
+        theme: light,
+        locale: const Locale('fa'),
+        builder: (context, c) =>
+            Directionality(textDirection: TextDirection.rtl, child: c!),
+        routerConfig: router,
+      ),
+    );
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    bool isCurrent(String id) =>
+        find
+            .ancestor(
+              of: find.byKey(ValueKey('roadmap-pin-$id')),
+              matching: find.byType(RoadmapUnitPin),
+            )
+            .evaluate()
+            .map((e) => (e.widget as RoadmapUnitPin).isCurrent)
+            .firstOrNull ??
+        false;
+    expect(isCurrent('u2'), isTrue);
+
+    await tester.tap(find.text('ادامه یادگیری'));
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    _FakeOutlineUseCase.fixture = course('u1 u2');
+    await tester.tap(find.text('finish'));
+    // Back on the roadmap: the fresh data is in, but u3 waits until the
+    // trail reaches it.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byType(OutlinePage), findsOneWidget);
+    expect(isCurrent('u3'), isFalse);
+    expect(isCurrent('u2'), isFalse);
+
+    for (var i = 0; i < 15; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(tester.takeException(), isNull);
+    expect(isCurrent('u3'), isTrue);
   });
 }
