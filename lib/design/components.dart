@@ -304,14 +304,16 @@ class BackSquare extends StatelessWidget {
   final VoidCallback? onTap;
   final MI icon;
   final String label;
+  final Color? lipColor;
 
-  const BackSquare({super.key, this.onTap, this.icon = MI.back, this.label = 'برگشت'});
+  const BackSquare({super.key, this.onTap, this.icon = MI.back, this.label = 'برگشت', this.lipColor});
 
   @override
   Widget build(BuildContext context) => Lip(
     onTap: onTap ?? () => Navigator.of(context).maybePop(),
     radius: R.tile,
     lipHeight: 3,
+    lipColor: lipColor,
     semanticLabel: label,
     child: SizedBox.square(dimension: 40, child: Center(child: MIcon(icon, size: 22, strokeWidth: 2.4))),
   );

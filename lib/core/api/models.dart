@@ -592,7 +592,7 @@ class InstituteMe {
   final bool notifyTeacherMessages;
   final int progressPercent;
   final int completedUnits;
-  final List<({String courseTitle, String moduleTitle, int moduleOrder})> trophies;
+  final List<({String courseTitle, String moduleTitle, int moduleOrder, bool earned})> trophies;
   final List<CourseCard> courses;
 
   const InstituteMe({required this.member, this.memberSince, required this.notifyAnnouncements, required this.notifyTeacherMessages, required this.progressPercent, required this.completedUnits, required this.trophies, required this.courses});
@@ -601,7 +601,7 @@ class InstituteMe {
     member: toBool(j['member']), memberSince: date(j['member_since']),
     notifyAnnouncements: toBool(j['notify_announcements']), notifyTeacherMessages: toBool(j['notify_teacher_messages']),
     progressPercent: toInt(j['progress_percent']), completedUnits: toInt(j['completed_units']),
-    trophies: asList(j['trophies']).map((t) => (courseTitle: str(t['course_title']), moduleTitle: str(t['module_title']), moduleOrder: toInt(t['module_order']))).toList(),
+    trophies: asList(j['trophies']).map((t) => (courseTitle: str(t['course_title']), moduleTitle: str(t['module_title']), moduleOrder: toInt(t['module_order']), earned: toBool(t['earned'] ?? true))).toList(),
     courses: asList(j['courses']).map(CourseCard.fromJson).toList(),
   );
 }
@@ -613,10 +613,12 @@ class Teacher {
   final String headline;
   final String bio;
   final List<({String id, String title})> courses;
-  const Teacher({required this.userId, required this.name, required this.photoUrl, required this.headline, required this.bio, required this.courses});
+  final List<({String kind, String url})> links;
+  const Teacher({required this.userId, required this.name, required this.photoUrl, required this.headline, required this.bio, required this.courses, this.links = const []});
   factory Teacher.fromJson(J j) => Teacher(
     userId: str(j['user_id']), name: str(j['name']), photoUrl: str(j['photo_url']), headline: str(j['headline']),
     bio: str(j['bio']), courses: asList(j['courses']).map((c) => (id: str(c['id']), title: str(c['title']))).toList(),
+    links: asList(j['links']).map((l) => (kind: str(l['kind']), url: str(l['url']))).toList(),
   );
 }
 

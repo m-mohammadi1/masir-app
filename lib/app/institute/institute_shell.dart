@@ -268,3 +268,33 @@ class _CircleClip extends CustomClipper<Path> {
   @override
   bool shouldReclip(_CircleClip old) => old.radius != radius || old.center != center;
 }
+
+/// Paints a page outside the shell (announcements) in its institute's
+/// colours, loading the institute when it isn't cached yet (deep links).
+class InstituteBrand extends StatefulWidget {
+  final String instituteId;
+  final Widget child;
+  const InstituteBrand({super.key, required this.instituteId, required this.child});
+
+  @override
+  State<InstituteBrand> createState() => _InstituteBrandState();
+}
+
+class _InstituteBrandState extends State<InstituteBrand> {
+  InstituteDetail? _d;
+
+  @override
+  void initState() {
+    super.initState();
+    _d = InstituteCache.peek(widget.instituteId);
+    if (_d == null) {
+      InstituteCache.load(widget.instituteId).then((r) => r.fold((_) {}, (d) {
+        if (mounted) setState(() => _d = d);
+      }));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _d == null ? widget.child : BrandScope(brand: _d!.brand, child: widget.child);
+}

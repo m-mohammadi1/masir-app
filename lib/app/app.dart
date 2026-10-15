@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '/app/router.dart';
 import '/app/routes.dart';
+import '/app/state/session.dart';
 import '/design/design.dart';
 
 ThemeData masirTheme() {
@@ -75,7 +76,15 @@ class _MasirAppState extends State<MasirApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       routerConfig: appRouter,
-      builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child ?? const SizedBox()),
+      builder: (context, child) => Directionality(
+        textDirection: TextDirection.rtl,
+        // Pages outside a space shell (course, unit, teacher) keep the colour
+        // of the space they were opened from.
+        child: ValueListenableBuilder<Brand>(
+          valueListenable: Session.space,
+          builder: (_, brand, _) => BrandScope(brand: brand, child: child ?? const SizedBox()),
+        ),
+      ),
     ),
   );
 }
