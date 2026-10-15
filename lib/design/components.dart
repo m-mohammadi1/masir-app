@@ -62,12 +62,19 @@ class _LipState extends State<Lip> {
       decoration: BoxDecoration(
         color: widget.fill,
         borderRadius: br,
-        border: widget.border == null ? null : Border.all(color: widget.border!, width: 2),
+        border: widget.border == null
+            ? null
+            : Border.all(color: widget.border!, width: 2),
         boxShadow: h > 0 && !pressed ? [lip(widget.lipColor!, h)] : null,
       ),
       child: widget.child,
     );
-    if (widget.onTap == null) return Padding(padding: EdgeInsets.only(bottom: h), child: box);
+    if (widget.onTap == null) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: h),
+        child: box,
+      );
+    }
     return Semantics(
       button: true,
       selected: widget.selected,
@@ -118,11 +125,29 @@ class Btn extends StatelessWidget {
     this.palette,
   });
 
-  const Btn.secondary(this.label, {super.key, this.onPressed, this.icon, this.loading = false, this.height, this.expand = true, this.fontSize = 16, this.palette})
-      : kind = BtnKind.secondary;
+  const Btn.secondary(
+    this.label, {
+    super.key,
+    this.onPressed,
+    this.icon,
+    this.loading = false,
+    this.height,
+    this.expand = true,
+    this.fontSize = 16,
+    this.palette,
+  }) : kind = BtnKind.secondary;
 
-  const Btn.ghost(this.label, {super.key, this.onPressed, this.icon, this.loading = false, this.height, this.expand = true, this.fontSize = 15, this.palette})
-      : kind = BtnKind.ghost;
+  const Btn.ghost(
+    this.label, {
+    super.key,
+    this.onPressed,
+    this.icon,
+    this.loading = false,
+    this.height,
+    this.expand = true,
+    this.fontSize = 15,
+    this.palette,
+  }) : kind = BtnKind.ghost;
 
   @override
   Widget build(BuildContext context) {
@@ -167,17 +192,29 @@ class Btn extends StatelessWidget {
       lipC = null;
       border = null;
     }
-    final h = height ?? (kind == BtnKind.secondary ? Gap.secondaryHeight : Gap.buttonHeight);
+    final h =
+        height ??
+        (kind == BtnKind.secondary ? Gap.secondaryHeight : Gap.buttonHeight);
     final content = loading
-        ? SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.6, color: fg))
+        ? SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.6, color: fg),
+          )
         : Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (icon != null) ...[MIcon(icon!, color: fg, size: 20, strokeWidth: 2.4), const SizedBox(width: 8)],
+              if (icon != null) ...[
+                MIcon(icon!, color: fg, size: 20, strokeWidth: 2.4),
+                const SizedBox(width: 8),
+              ],
               Flexible(
-                child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: T.of(fontSize, FontWeight.w800, fg, 1.2)),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: T.of(fontSize, FontWeight.w800, fg, 1.2),
+                ),
               ),
             ],
           );
@@ -247,11 +284,21 @@ class Tag extends StatelessWidget {
   final MI? icon;
   final EdgeInsetsGeometry padding;
 
-  const Tag(this.text, {super.key, this.bg = C.sand, this.fg = C.body, this.border, this.fontSize = 12, this.icon,
-      this.padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 3)});
+  const Tag(
+    this.text, {
+    super.key,
+    this.bg = C.sand,
+    this.fg = C.body,
+    this.border,
+    this.fontSize = 12,
+    this.icon,
+    this.padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+  });
 
-  factory Tag.free([String text = 'رایگان']) => Tag(text, bg: C.sun, fg: C.sunInk, fontSize: 11);
-  factory Tag.success(String text) => Tag(text, bg: C.greenSoft, fg: C.greenText);
+  factory Tag.free([String text = 'رایگان']) =>
+      Tag(text, bg: C.sun, fg: C.sunInk, fontSize: 11);
+  factory Tag.success(String text) =>
+      Tag(text, bg: C.greenSoft, fg: C.greenText);
   factory Tag.warn(String text) => Tag(text, bg: C.sunSoft, fg: C.sunText);
   factory Tag.error(String text) => Tag(text, bg: C.coralSoft, fg: C.coralText);
 
@@ -263,10 +310,16 @@ class Tag extends StatelessWidget {
       borderRadius: BorderRadius.circular(999),
       border: border == null ? null : Border.all(color: border!, width: 2),
     ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      if (icon != null) ...[MIcon(icon!, size: fontSize + 3, color: fg, strokeWidth: 2.6), const SizedBox(width: 4)],
-      Text(text, style: T.of(fontSize, FontWeight.w800, fg, 1.5)),
-    ]),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          MIcon(icon!, size: fontSize + 3, color: fg, strokeWidth: 2.6),
+          const SizedBox(width: 4),
+        ],
+        Text(text, style: T.of(fontSize, FontWeight.w800, fg, 1.5)),
+      ],
+    ),
   );
 }
 
@@ -277,24 +330,35 @@ class Track extends StatelessWidget {
   final Color background;
   final double height;
 
-  const Track({super.key, required this.value, this.color = C.green, this.background = C.border, this.height = 8});
+  const Track({
+    super.key,
+    required this.value,
+    this.color = C.green,
+    this.background = C.border,
+    this.height = 8,
+  });
 
   @override
   Widget build(BuildContext context) => ClipRRect(
     borderRadius: BorderRadius.circular(999),
     child: SizedBox(
       height: height,
-      child: Stack(children: [
-        Positioned.fill(child: ColoredBox(color: background)),
-        FractionallySizedBox(
-          alignment: AlignmentDirectional.centerStart,
-          widthFactor: value.clamp(0, 1).toDouble(),
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(999)),
-            child: const SizedBox.expand(),
+      child: Stack(
+        children: [
+          Positioned.fill(child: ColoredBox(color: background)),
+          FractionallySizedBox(
+            alignment: AlignmentDirectional.centerStart,
+            widthFactor: value.clamp(0, 1).toDouble(),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const SizedBox.expand(),
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     ),
   );
 }
@@ -306,7 +370,13 @@ class BackSquare extends StatelessWidget {
   final String label;
   final Color? lipColor;
 
-  const BackSquare({super.key, this.onTap, this.icon = MI.back, this.label = 'برگشت', this.lipColor});
+  const BackSquare({
+    super.key,
+    this.onTap,
+    this.icon = MI.back,
+    this.label = 'برگشت',
+    this.lipColor,
+  });
 
   @override
   Widget build(BuildContext context) => Lip(
@@ -315,7 +385,10 @@ class BackSquare extends StatelessWidget {
     lipHeight: 3,
     lipColor: lipColor,
     semanticLabel: label,
-    child: SizedBox.square(dimension: 40, child: Center(child: MIcon(icon, size: 22, strokeWidth: 2.4))),
+    child: SizedBox.square(
+      dimension: 40,
+      child: Center(child: MIcon(icon, size: 22, strokeWidth: 2.4)),
+    ),
   );
 }
 
@@ -328,7 +401,15 @@ class RoundIcon extends StatelessWidget {
   final Color fg;
   final double size;
 
-  const RoundIcon(this.icon, {super.key, this.onTap, required this.label, this.bg = C.sand, this.fg = C.ink, this.size = 44});
+  const RoundIcon(
+    this.icon, {
+    super.key,
+    this.onTap,
+    required this.label,
+    this.bg = C.sand,
+    this.fg = C.ink,
+    this.size = 44,
+  });
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -354,24 +435,40 @@ class SectionTitle extends StatelessWidget {
   final VoidCallback? onAction;
   final String? subtitle;
 
-  const SectionTitle(this.title, {super.key, this.action, this.onAction, this.subtitle});
+  const SectionTitle(
+    this.title, {
+    super.key,
+    this.action,
+    this.onAction,
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
       Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: T.of(19, FontWeight.w800)),
-          if (subtitle != null) Text(subtitle!, style: T.caption()),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: T.of(19, FontWeight.w800)),
+            if (subtitle != null) Text(subtitle!, style: T.caption()),
+          ],
+        ),
       ),
       if (action != null)
         GestureDetector(
           onTap: onAction,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(action!, style: T.of(14, FontWeight.w800, context.pal == masirPalette ? C.violet : context.pal.ink)),
+            child: Text(
+              action!,
+              style: T.of(
+                14,
+                FontWeight.w800,
+                context.pal == masirPalette ? C.violet : context.pal.ink,
+              ),
+            ),
           ),
         ),
     ],
@@ -455,10 +552,10 @@ class _FieldState extends State<Field> {
     final borderColor = hasError
         ? C.coral
         : widget.valid
-            ? C.green
-            : _focus.hasFocus
-                ? (context.pal == masirPalette ? C.violet : context.pal.p)
-                : C.border;
+        ? C.green
+        : _focus.hasFocus
+        ? (context.pal == masirPalette ? C.violet : context.pal.p)
+        : C.border;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -476,35 +573,49 @@ class _FieldState extends State<Field> {
             border: Border.all(color: borderColor, width: 2),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Row(children: [
-            if (widget.prefix != null) ...[widget.prefix!, const SizedBox(width: 8)],
-            Expanded(
-              child: TextField(
-                controller: widget.controller,
-                focusNode: _focus,
-                obscureText: widget.obscure,
-                keyboardType: widget.keyboard,
-                textDirection: widget.direction,
-                textAlign: widget.align,
-                autofocus: widget.autofocus,
-                textInputAction: widget.action,
-                inputFormatters: widget.formatters,
-                maxLength: widget.maxLength,
-                onChanged: widget.onChanged,
-                onSubmitted: widget.onSubmitted,
-                cursorColor: context.pal.p,
-                style: T.of(widget.fontSize, widget.weight).copyWith(letterSpacing: widget.letterSpacing),
-                decoration: InputDecoration(
-                  isCollapsed: true,
-                  border: InputBorder.none,
-                  counterText: '',
-                  hintText: widget.hint,
-                  hintStyle: T.of(widget.fontSize, FontWeight.w500, C.disabledText),
+          child: Row(
+            children: [
+              if (widget.prefix != null) ...[
+                widget.prefix!,
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: _focus,
+                  obscureText: widget.obscure,
+                  keyboardType: widget.keyboard,
+                  textDirection: widget.direction,
+                  textAlign: widget.align,
+                  autofocus: widget.autofocus,
+                  textInputAction: widget.action,
+                  inputFormatters: widget.formatters,
+                  maxLength: widget.maxLength,
+                  onChanged: widget.onChanged,
+                  onSubmitted: widget.onSubmitted,
+                  cursorColor: context.pal.p,
+                  style: T
+                      .of(widget.fontSize, widget.weight)
+                      .copyWith(letterSpacing: widget.letterSpacing),
+                  decoration: InputDecoration(
+                    isCollapsed: true,
+                    border: InputBorder.none,
+                    counterText: '',
+                    hintText: widget.hint,
+                    hintStyle: T.of(
+                      widget.fontSize,
+                      FontWeight.w500,
+                      C.disabledText,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            if (widget.suffix != null) ...[const SizedBox(width: 8), widget.suffix!],
-          ]),
+              if (widget.suffix != null) ...[
+                const SizedBox(width: 8),
+                widget.suffix!,
+              ],
+            ],
+          ),
         ),
         if (hasError) ...[
           const SizedBox(height: 6),
@@ -533,7 +644,10 @@ Future<V?> showMasirSheet<V>(
     enableDrag: dismissible,
     backgroundColor: Colors.transparent,
     barrierColor: C.scrim,
-    sheetAnimationStyle: const AnimationStyle(duration: Motion.sheet, curve: Curves.easeOut),
+    sheetAnimationStyle: const AnimationStyle(
+      duration: Motion.sheet,
+      curve: Curves.easeOut,
+    ),
     builder: (ctx) => BrandScope(
       brand: brand,
       child: Directionality(
@@ -551,7 +665,9 @@ class SheetFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.92),
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.92,
+    ),
     decoration: BoxDecoration(
       color: color,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(R.sheet)),
@@ -559,11 +675,21 @@ class SheetFrame extends StatelessWidget {
     padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
     child: SafeArea(
       top: false,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const SizedBox(height: 10),
-        Container(width: 40, height: 5, decoration: BoxDecoration(color: C.border, borderRadius: BorderRadius.circular(999))),
-        Flexible(child: child),
-      ]),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 10),
+          Container(
+            width: 40,
+            height: 5,
+            decoration: BoxDecoration(
+              color: C.border,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          Flexible(child: child),
+        ],
+      ),
     ),
   );
 }
@@ -580,8 +706,10 @@ class Bone extends StatefulWidget {
 }
 
 class _BoneState extends State<Bone> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
-    ..repeat(reverse: true);
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -626,7 +754,16 @@ class ScoreRing extends StatelessWidget {
   final Color fill;
   final Widget? label;
 
-  const ScoreRing({super.key, required this.percent, this.size = 120, this.stroke = 14, this.color = C.green, this.track = C.border, this.fill = C.surface, this.label});
+  const ScoreRing({
+    super.key,
+    required this.percent,
+    this.size = 120,
+    this.stroke = 14,
+    this.color = C.green,
+    this.track = C.border,
+    this.fill = C.surface,
+    this.label,
+  });
 
   @override
   Widget build(BuildContext context) => SizedBox.square(
@@ -656,14 +793,23 @@ class _RingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = (Offset.zero & size).deflate(stroke / 2);
-    final p = Paint()..style = PaintingStyle.stroke..strokeWidth = stroke;
+    final p = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke;
     canvas.drawArc(rect, 0, 6.2832, false, p..color = track);
     // Conic gradients start at 12 o'clock and run clockwise.
-    canvas.drawArc(rect, -1.5708, 6.2832 * value.clamp(0, 1), false, p..color = color);
+    canvas.drawArc(
+      rect,
+      -1.5708,
+      6.2832 * value.clamp(0, 1),
+      false,
+      p..color = color,
+    );
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.value != value || old.color != color;
+  bool shouldRepaint(_RingPainter old) =>
+      old.value != value || old.color != color;
 }
 
 /// Like CSS `margin-top: -dy`: paints [child] [dy] higher and takes [dy] less
@@ -676,7 +822,8 @@ class ShiftUp extends SingleChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) => RenderShiftUp(dy);
 
   @override
-  void updateRenderObject(BuildContext context, RenderShiftUp renderObject) => renderObject.dy = dy;
+  void updateRenderObject(BuildContext context, RenderShiftUp renderObject) =>
+      renderObject.dy = dy;
 }
 
 class RenderShiftUp extends RenderProxyBox {
@@ -691,19 +838,33 @@ class RenderShiftUp extends RenderProxyBox {
 
   @override
   void performLayout() {
-    child!.layout(constraints.loosen().copyWith(minWidth: constraints.minWidth), parentUsesSize: true);
-    size = constraints.constrain(Size(child!.size.width, (child!.size.height - _dy).clamp(0, double.infinity)));
+    child!.layout(
+      constraints.loosen().copyWith(minWidth: constraints.minWidth),
+      parentUsesSize: true,
+    );
+    size = constraints.constrain(
+      Size(
+        child!.size.width,
+        (child!.size.height - _dy).clamp(0, double.infinity),
+      ),
+    );
   }
 
   @override
-  void paint(PaintingContext context, Offset offset) => context.paintChild(child!, offset.translate(0, -_dy));
+  void paint(PaintingContext context, Offset offset) =>
+      context.paintChild(child!, offset.translate(0, -_dy));
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
-      result.addWithPaintOffset(offset: Offset(0, -_dy), position: position, hitTest: (r, p) => child!.hitTest(r, position: p));
+      result.addWithPaintOffset(
+        offset: Offset(0, -_dy),
+        position: position,
+        hitTest: (r, p) => child!.hitTest(r, position: p),
+      );
 
   @override
-  void applyPaintTransform(RenderBox child, Matrix4 transform) => transform.translateByDouble(0, -_dy, 0, 1);
+  void applyPaintTransform(RenderBox child, Matrix4 transform) =>
+      transform.translateByDouble(0, -_dy, 0, 1);
 }
 
 /// 44x26 switch: violet track when on, white thumb (the boards' checkbox switch).
@@ -711,7 +872,12 @@ class MSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   final String? label;
-  const MSwitch({super.key, required this.value, required this.onChanged, this.label});
+  const MSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -730,11 +896,17 @@ class MSwitch extends StatelessWidget {
             color: value ? on : C.border,
             borderRadius: BorderRadius.circular(999),
           ),
-          alignment: value ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
+          alignment: value
+              ? AlignmentDirectional.centerEnd
+              : AlignmentDirectional.centerStart,
           child: Container(
             width: 22,
             height: 22,
-            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [lip(const Color(0x22000000), 1)]),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [lip(const Color(0x22000000), 1)],
+            ),
           ),
         ),
       ),

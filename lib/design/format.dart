@@ -2,8 +2,29 @@ import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 
 import 'tokens.dart';
 
-const jalaliMonths = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
-const weekdayNames = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
+const jalaliMonths = [
+  'فروردین',
+  'اردیبهشت',
+  'خرداد',
+  'تیر',
+  'مرداد',
+  'شهریور',
+  'مهر',
+  'آبان',
+  'آذر',
+  'دی',
+  'بهمن',
+  'اسفند',
+];
+const weekdayNames = [
+  'شنبه',
+  'یکشنبه',
+  'دوشنبه',
+  'سه‌شنبه',
+  'چهارشنبه',
+  'پنجشنبه',
+  'جمعه',
+];
 const weekdayLetters = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
 
 /// Exact end dates are always written out: «تا ۲۳ دی» (never «۳ ماه دیگه»).
@@ -21,7 +42,9 @@ String jMonthYear(DateTime d) {
 String jWeekdayDay(DateTime d) {
   final local = d.toLocal();
   final j = Jalali.fromDateTime(local);
-  return fa('${weekdayNames[(local.weekday + 1) % 7]} ${j.day} ${jalaliMonths[j.month - 1]}');
+  return fa(
+    '${weekdayNames[(local.weekday + 1) % 7]} ${j.day} ${jalaliMonths[j.month - 1]}',
+  );
 }
 
 /// Toman with Persian thousands separators: «۷۸۰٬۰۰۰».
@@ -39,7 +62,9 @@ String toman(int amount) {
 String shortToman(int amount) {
   if (amount >= 1000000) {
     final m = amount / 1000000;
-    final s = m == m.roundToDouble() ? m.toStringAsFixed(0) : m.toStringAsFixed(1);
+    final s = m == m.roundToDouble()
+        ? m.toStringAsFixed(0)
+        : m.toStringAsFixed(1);
     return fa('${s.replaceAll('.', '٫')} میلیون');
   }
   if (amount >= 1000) return fa('${(amount / 1000).round()} هزار');
@@ -86,19 +111,48 @@ String greeting(DateTime now) {
   return 'شب بخیر';
 }
 
-const planNames = {'m1': 'ماهانه', 'm3': 'سه‌ماهه', 'm6': 'شش‌ماهه', 'm12': 'سالانه'};
-const planEvery = {'m1': 'هر ماه', 'm3': 'هر ۳ ماه', 'm6': 'هر ۶ ماه', 'm12': 'هر سال'};
+const planNames = {
+  'm1': 'ماهانه',
+  'm3': 'سه‌ماهه',
+  'm6': 'شش‌ماهه',
+  'm12': 'سالانه',
+};
+const planEvery = {
+  'm1': 'هر ماه',
+  'm3': 'هر ۳ ماه',
+  'm6': 'هر ۶ ماه',
+  'm12': 'هر سال',
+};
 
-const levelNames = {'beginner': 'مقدماتی', 'intermediate': 'متوسط', 'advanced': 'پیشرفته'};
+const levelNames = {
+  'beginner': 'مقدماتی',
+  'intermediate': 'متوسط',
+  'advanced': 'پیشرفته',
+};
 
-const unitTypeNames = {'html': 'درس', 'video': 'ویدیو', 'audio': 'صوتی', 'practice': 'تمرین', 'quiz': 'آزمون'};
+const unitTypeNames = {
+  'html': 'درس',
+  'video': 'ویدیو',
+  'audio': 'صوتی',
+  'practice': 'تمرین',
+  'quiz': 'آزمون',
+};
 
 /// The big complete button wording per unit type.
-const unitDoneLabels = {'html': 'خوندم', 'video': 'دیدم', 'audio': 'گوش دادم', 'practice': 'انجامش دادم', 'quiz': 'ارسال پاسخ'};
+const unitDoneLabels = {
+  'html': 'خوندم',
+  'video': 'دیدم',
+  'audio': 'گوش دادم',
+  'practice': 'انجامش دادم',
+  'quiz': 'ارسال پاسخ',
+};
 
 const unitRedoLabels = {
-  'html': 'دوباره بخون', 'video': 'دوباره ببین', 'audio': 'دوباره گوش بده',
-  'practice': 'دوباره انجام بده', 'quiz': 'دوباره آزمون بده',
+  'html': 'دوباره بخون',
+  'video': 'دوباره ببین',
+  'audio': 'دوباره گوش بده',
+  'practice': 'دوباره انجام بده',
+  'quiz': 'دوباره آزمون بده',
 };
 
 String unitMeta(String type, int duration, int questions) {
@@ -109,6 +163,9 @@ String unitMeta(String type, int duration, int questions) {
 
 /// Strips HTML for previews.
 String plain(String html, {int max = 160}) {
-  final t = html.replaceAll(RegExp(r'<[^>]*>'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  final t = html
+      .replaceAll(RegExp(r'<[^>]*>'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
   return t.length <= max ? t : '${t.substring(0, max)}…';
 }

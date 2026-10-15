@@ -1,8 +1,9 @@
-import 'package:easy_helper/easy_helper.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '/app/router.dart';
+import '/app/routes.dart';
 import 'core/services/hive_service.dart';
 import 'main.dart';
 
@@ -23,19 +24,19 @@ class FCMManager {
       FirebaseMessaging.instance.requestPermission();
       try {
         await FirebaseMessaging.instance.subscribeToTopic('All');
-      } catch (e) {}
+      } catch (_) {
+        // Topics are a nicety; notifications still work without them.
+      }
     }
 
     FirebaseMessaging.onMessage.listen(showFlutterNotification);
 
+    // A tapped notification opens its institute (or the inbox).
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      final fromPayload = message.data['institute_id']?.toString();
-      final id = (fromPayload != null && fromPayload.isNotEmpty)
-          ? fromPayload
-          : HiveService.currentInstituteId;
-      if (id != null && id.isNotEmpty) {
-        CustomNavigator.go('/i/$id/home');
-      }
+      final id = message.data['institute_id']?.toString();
+      appRouter.go(
+        id != null && id.isNotEmpty ? Routes.threshold(id) : Routes.inbox,
+      );
     });
 
     FirebaseMessaging.instance.onTokenRefresh.listen((event) {
@@ -43,8 +44,9 @@ class FCMManager {
     });
   }
 
-  static const _initializationSettingsAndroid =
-      AndroidInitializationSettings('app_icon');
+  static const _initializationSettingsAndroid = AndroidInitializationSettings(
+    'app_icon',
+  );
   static const _initializationSettingsIOS = DarwinInitializationSettings();
 
   static const _initializationSettings = InitializationSettings(
@@ -65,7 +67,9 @@ class FCMManager {
 
     _flutterLocalNotifications = FlutterLocalNotificationsPlugin();
 
-    await _flutterLocalNotifications.initialize(settings: _initializationSettings);
+    await _flutterLocalNotifications.initialize(
+      settings: _initializationSettings,
+    );
 
     /// Create an Android Notification Channel.
     ///
@@ -73,7 +77,8 @@ class FCMManager {
     /// default FCM channel to enable heads up notifications.
     await _flutterLocalNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(_channel);
 
     /// Update the iOS foreground notification presentation options to allow
@@ -81,10 +86,10 @@ class FCMManager {
 
     await FirebaseMessaging.instance
         .setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+          alert: true,
+          badge: true,
+          sound: true,
+        );
     _isNotificationsInitialized = true;
   }
 
@@ -93,11 +98,10 @@ class FCMManager {
     AndroidNotification? android = message.notification?.android;
     if (notification != null && android != null && !kIsWeb) {
       _flutterLocalNotifications.show(
-        id:notification.hashCode,
+        id: notification.hashCode,
         title: notification.title,
         body: notification.body,
-        notificationDetails:
-        NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _channel.id,
             _channel.name,
@@ -121,7 +125,9 @@ class FCMManager {
         debugPrint("fcm token is : $token");
       });
       return HiveService.fcmToken;
-    } catch (e) {}
+    } catch (e) {
+      return null;
+    }
   }
 
   FCMManager._();

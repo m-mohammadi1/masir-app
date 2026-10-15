@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '/app/router.dart';
 import '/app/routes.dart';
+import '/app/state/offline_queue.dart';
 import '/app/state/session.dart';
 import '/design/design.dart';
 
@@ -59,6 +60,7 @@ class _MasirAppState extends State<MasirApp> {
   @override
   void initState() {
     super.initState();
+    OfflineQueue.flush();
     if (!kIsWeb) {
       // masir://payment?payment_id=…&status=… brings the student back from the bank.
       _links = AppLinks().uriLinkStream.listen((uri) {

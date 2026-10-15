@@ -24,7 +24,12 @@ class MasirMark extends StatelessWidget {
     };
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: SvgPicture.asset('assets/design/logo/$file.svg', width: size, height: size, semanticsLabel: 'مسیر'),
+      child: SvgPicture.asset(
+        'assets/design/logo/$file.svg',
+        width: size,
+        height: size,
+        semanticsLabel: 'مسیر',
+      ),
     );
   }
 }
@@ -37,7 +42,8 @@ class MasirSmallMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hex = '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+    final hex =
+        '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
     return Directionality(
       textDirection: TextDirection.ltr,
       child: SvgPicture.string(
@@ -77,7 +83,12 @@ class SpaceTabBar extends StatelessWidget {
   final int index;
   final ValueChanged<int> onTap;
 
-  const SpaceTabBar({super.key, required this.items, required this.index, required this.onTap});
+  const SpaceTabBar({
+    super.key,
+    required this.items,
+    required this.index,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +100,12 @@ class SpaceTabBar extends StatelessWidget {
         color: C.surface,
         border: Border(top: BorderSide(color: C.border, width: 2)),
       ),
-      padding: EdgeInsets.fromLTRB(8, items.length == 3 ? 10 : 8, 8, 8 + MediaQuery.paddingOf(context).bottom.clamp(10, 34)),
+      padding: EdgeInsets.fromLTRB(
+        8,
+        items.length == 3 ? 10 : 8,
+        8,
+        8 + MediaQuery.paddingOf(context).bottom.clamp(10, 34),
+      ),
       child: Row(
         children: [
           for (var i = 0; i < items.length; i++)
@@ -101,24 +117,36 @@ class SpaceTabBar extends StatelessWidget {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => onTap(i),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: pillWidth,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: i == index ? pal.soft : Colors.transparent,
-                        borderRadius: BorderRadius.circular(999),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: pillWidth,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: i == index ? pal.soft : Colors.transparent,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        alignment: Alignment.center,
+                        child: MIcon(
+                          items[i].icon,
+                          size: 22,
+                          color: i == index ? active : C.muted,
+                        ),
                       ),
-                      alignment: Alignment.center,
-                      child: MIcon(items[i].icon, size: 22, color: i == index ? active : C.muted),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      items[i].label,
-                      style: T.of(12, i == index ? FontWeight.w800 : FontWeight.w700, i == index ? active : C.muted, 1.3),
-                    ),
-                  ]),
+                      const SizedBox(height: 4),
+                      Text(
+                        items[i].label,
+                        style: T.of(
+                          12,
+                          i == index ? FontWeight.w800 : FontWeight.w700,
+                          i == index ? active : C.muted,
+                          1.3,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -136,7 +164,13 @@ class InstituteBar extends StatelessWidget {
   final VoidCallback? onSwitch;
   final Widget? trailing;
 
-  const InstituteBar({super.key, required this.title, required this.onExit, this.onSwitch, this.trailing});
+  const InstituteBar({
+    super.key,
+    required this.title,
+    required this.onExit,
+    this.onSwitch,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -144,32 +178,56 @@ class InstituteBar extends StatelessWidget {
     final pal = brand.palette;
     return Container(
       decoration: BoxDecoration(color: pal.p, boxShadow: [lip(pal.e)]),
-      padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 10, 16, 12),
-      child: Row(children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: onSwitch,
-            behavior: HitTestBehavior.opaque,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
-              child: Row(children: [
-                InstituteLogo(brand: brand, size: 38, inverted: true, fontSize: 18),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.of(17, FontWeight.w800, pal.on)),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.paddingOf(context).top + 10,
+        16,
+        12,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: onSwitch,
+              behavior: HitTestBehavior.opaque,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Row(
+                  children: [
+                    InstituteLogo(
+                      brand: brand,
+                      size: 38,
+                      inverted: true,
+                      fontSize: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: T.of(17, FontWeight.w800, pal.on),
+                      ),
+                    ),
+                    if (onSwitch != null) ...[
+                      const SizedBox(width: 4),
+                      MIcon(
+                        MI.chevronDown,
+                        size: 18,
+                        color: pal.on,
+                        strokeWidth: 2.4,
+                      ),
+                    ],
+                  ],
                 ),
-                if (onSwitch != null) ...[
-                  const SizedBox(width: 4),
-                  MIcon(MI.chevronDown, size: 18, color: pal.on, strokeWidth: 2.4),
-                ],
-              ]),
+              ),
             ),
           ),
-        ),
-        ?trailing,
-        const SizedBox(width: 8),
-        ExitPill(onTap: onExit),
-      ]),
+          ?trailing,
+          const SizedBox(width: 8),
+          ExitPill(onTap: onExit),
+        ],
+      ),
     );
   }
 }
@@ -190,12 +248,18 @@ class ExitPill extends StatelessWidget {
         child: Container(
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(color: on.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(14)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            MasirSmallMark(size: 18, color: on),
-            const SizedBox(width: 6),
-            Text('مسیر', style: T.of(14, FontWeight.w800, on)),
-          ]),
+          decoration: BoxDecoration(
+            color: on.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MasirSmallMark(size: 18, color: on),
+              const SizedBox(width: 6),
+              Text('مسیر', style: T.of(14, FontWeight.w800, on)),
+            ],
+          ),
         ),
       ),
     );
@@ -210,22 +274,50 @@ class PaperHeader extends StatelessWidget {
   final VoidCallback? onBack;
   final bool showBack;
 
-  const PaperHeader({super.key, required this.title, this.subtitle, this.actions = const [], this.onBack, this.showBack = true});
+  const PaperHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.actions = const [],
+    this.onBack,
+    this.showBack = true,
+  });
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 10, 16, 10),
-    child: Row(children: [
-      if (showBack) ...[BackSquare(onTap: onBack), const SizedBox(width: 12)],
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.of(20, FontWeight.w800)),
-          if (subtitle != null)
-            Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.of(13, FontWeight.w600, C.muted)),
-        ]),
-      ),
-      ...actions,
-    ]),
+    padding: EdgeInsets.fromLTRB(
+      16,
+      MediaQuery.paddingOf(context).top + 10,
+      16,
+      10,
+    ),
+    child: Row(
+      children: [
+        if (showBack) ...[BackSquare(onTap: onBack), const SizedBox(width: 12)],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: T.of(20, FontWeight.w800),
+              ),
+              if (subtitle != null)
+                Text(
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: T.of(13, FontWeight.w600, C.muted),
+                ),
+            ],
+          ),
+        ),
+        ...actions,
+      ],
+    ),
   );
 }
 
@@ -235,35 +327,52 @@ class Segments extends StatelessWidget {
   final int index;
   final ValueChanged<int> onChanged;
 
-  const Segments({super.key, required this.labels, required this.index, required this.onChanged});
+  const Segments({
+    super.key,
+    required this.labels,
+    required this.index,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(color: C.sand, borderRadius: BorderRadius.circular(16)),
-    child: Row(children: [
-      for (var i = 0; i < labels.length; i++)
-        Expanded(
-          child: Semantics(
-            selected: i == index,
-            button: true,
-            child: GestureDetector(
-              onTap: () => onChanged(i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                height: 44,
-                decoration: BoxDecoration(
-                  color: i == index ? C.surface : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: i == index ? [lip(C.lip, 2)] : null,
+    decoration: BoxDecoration(
+      color: C.sand,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Row(
+      children: [
+        for (var i = 0; i < labels.length; i++)
+          Expanded(
+            child: Semantics(
+              selected: i == index,
+              button: true,
+              child: GestureDetector(
+                onTap: () => onChanged(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: i == index ? C.surface : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: i == index ? [lip(C.lip, 2)] : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    labels[i],
+                    style: T.of(
+                      15,
+                      i == index ? FontWeight.w800 : FontWeight.w700,
+                      i == index ? C.ink : C.muted,
+                    ),
+                  ),
                 ),
-                alignment: Alignment.center,
-                child: Text(labels[i], style: T.of(15, i == index ? FontWeight.w800 : FontWeight.w700, i == index ? C.ink : C.muted)),
               ),
             ),
           ),
-        ),
-    ]),
+      ],
+    ),
   );
 }
 
@@ -278,7 +387,14 @@ class ChipRow extends StatelessWidget {
   /// border when selected, no lip.
   final bool soft;
 
-  const ChipRow({super.key, required this.labels, required this.index, required this.onChanged, this.padding = const EdgeInsets.symmetric(horizontal: 16), this.soft = false});
+  const ChipRow({
+    super.key,
+    required this.labels,
+    required this.index,
+    required this.onChanged,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16),
+    this.soft = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -286,41 +402,62 @@ class ChipRow extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: padding,
-      child: Row(children: [
-        for (var i = 0; i < labels.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          if (soft)
-            Semantics(
-              selected: i == index,
-              button: true,
-              child: GestureDetector(
-                onTap: () => onChanged(i),
-                child: Container(
-                  height: 38,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: i == index ? pal.soft : C.surface,
-                    border: Border.all(color: i == index ? pal.p : C.border, width: 2),
-                    borderRadius: BorderRadius.circular(999),
+      child: Row(
+        children: [
+          for (var i = 0; i < labels.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            if (soft)
+              Semantics(
+                selected: i == index,
+                button: true,
+                child: GestureDetector(
+                  onTap: () => onChanged(i),
+                  child: Container(
+                    height: 38,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: i == index ? pal.soft : C.surface,
+                      border: Border.all(
+                        color: i == index ? pal.p : C.border,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Center(
+                      widthFactor: 1,
+                      child: Text(
+                        labels[i],
+                        style: T.of(
+                          14,
+                          i == index ? FontWeight.w800 : FontWeight.w700,
+                          i == index ? pal.ink : C.ink,
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Center(widthFactor: 1, child: Text(labels[i], style: T.of(14, i == index ? FontWeight.w800 : FontWeight.w700, i == index ? pal.ink : C.ink))),
+                ),
+              )
+            else
+              Lip(
+                onTap: () => onChanged(i),
+                selected: i == index,
+                fill: i == index ? pal.p : C.surface,
+                border: i == index ? pal.p : C.border,
+                lipColor: i == index ? pal.e : C.lip,
+                lipHeight: 3,
+                radius: 999,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  labels[i],
+                  style: T.of(14, FontWeight.w800, i == index ? pal.on : C.ink),
                 ),
               ),
-            )
-          else
-          Lip(
-            onTap: () => onChanged(i),
-            selected: i == index,
-            fill: i == index ? pal.p : C.surface,
-            border: i == index ? pal.p : C.border,
-            lipColor: i == index ? pal.e : C.lip,
-            lipHeight: 3,
-            radius: 999,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(labels[i], style: T.of(14, FontWeight.w800, i == index ? pal.on : C.ink)),
-          ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 }

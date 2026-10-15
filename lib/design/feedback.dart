@@ -65,14 +65,25 @@ class _ToastView extends StatefulWidget {
   final VoidCallback onAction;
   final VoidCallback onClose;
 
-  const _ToastView({required this.title, this.body, required this.tone, this.action, required this.onAction, required this.onClose});
+  const _ToastView({
+    required this.title,
+    this.body,
+    required this.tone,
+    this.action,
+    required this.onAction,
+    required this.onClose,
+  });
 
   @override
   State<_ToastView> createState() => _ToastViewState();
 }
 
-class _ToastViewState extends State<_ToastView> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 260))..forward();
+class _ToastViewState extends State<_ToastView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  )..forward();
 
   @override
   void dispose() {
@@ -83,9 +94,18 @@ class _ToastViewState extends State<_ToastView> with SingleTickerProviderStateMi
   @override
   Widget build(BuildContext context) {
     final (Color badge, Widget mark) = switch (widget.tone) {
-      ToastTone.success => (C.green, const MIcon(MI.check, size: 18, color: Colors.white, strokeWidth: 3.4)),
-      ToastTone.info => (C.violet, Text('i', style: T.of(16, FontWeight.w900, Colors.white))),
-      ToastTone.error => (C.coral, Text('!', style: T.of(16, FontWeight.w900, Colors.white))),
+      ToastTone.success => (
+        C.green,
+        const MIcon(MI.check, size: 18, color: Colors.white, strokeWidth: 3.4),
+      ),
+      ToastTone.info => (
+        C.violet,
+        Text('i', style: T.of(16, FontWeight.w900, Colors.white)),
+      ),
+      ToastTone.error => (
+        C.coral,
+        Text('!', style: T.of(16, FontWeight.w900, Colors.white)),
+      ),
     };
     final reduced = Motion.reduced(context);
     final anim = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
@@ -98,43 +118,80 @@ class _ToastViewState extends State<_ToastView> with SingleTickerProviderStateMi
         child: FadeTransition(
           opacity: anim,
           child: SlideTransition(
-            position: Tween(begin: Offset(0, reduced ? 0 : -0.4), end: Offset.zero).animate(anim),
+            position: Tween(
+              begin: Offset(0, reduced ? 0 : -0.4),
+              end: Offset.zero,
+            ).animate(anim),
             child: Material(
               color: Colors.transparent,
               child: GestureDetector(
                 onTap: widget.action == null ? widget.onClose : null,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: C.toast,
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [lip(C.darkLip)],
                   ),
-                  child: Row(children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(color: badge, shape: BoxShape.circle),
-                      alignment: Alignment.center,
-                      child: mark,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Semantics(
-                        liveRegion: true,
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                          Text(widget.title, style: T.of(15, FontWeight.w800, Colors.white, 1.5)),
-                          if (widget.body != null) Text(widget.body!, style: T.of(13, FontWeight.w500, C.toastMuted, 1.5)),
-                        ]),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: badge,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: mark,
                       ),
-                    ),
-                    if (widget.action != null)
-                      TextButton(
-                        onPressed: widget.onAction,
-                        style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
-                        child: Text(widget.action!, style: T.of(14, FontWeight.w800, Colors.white)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.title,
+                                style: T.of(
+                                  15,
+                                  FontWeight.w800,
+                                  Colors.white,
+                                  1.5,
+                                ),
+                              ),
+                              if (widget.body != null)
+                                Text(
+                                  widget.body!,
+                                  style: T.of(
+                                    13,
+                                    FontWeight.w500,
+                                    C.toastMuted,
+                                    1.5,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
-                  ]),
+                      if (widget.action != null)
+                        TextButton(
+                          onPressed: widget.onAction,
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(44, 44),
+                          ),
+                          child: Text(
+                            widget.action!,
+                            style: T.of(14, FontWeight.w800, Colors.white),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -169,23 +226,43 @@ class InlineError extends StatelessWidget {
     ),
     child: Semantics(
       liveRegion: true,
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(color: const Color(0xFFFFE9EA), borderRadius: BorderRadius.circular(16)),
-          alignment: Alignment.center,
-          child: Text('!', style: T.of(22, FontWeight.w900, C.coralDark)),
-        ),
-        const SizedBox(height: 10),
-        Text(title, textAlign: TextAlign.center, style: T.of(16, FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text(body, textAlign: TextAlign.center, style: T.of(14, FontWeight.w500, C.muted)),
-        if (onRetry != null) ...[
-          const SizedBox(height: 12),
-          Btn.secondary('دوباره امتحان کن', onPressed: onRetry, expand: false, height: 49, fontSize: 15),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFE9EA),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            alignment: Alignment.center,
+            child: Text('!', style: T.of(22, FontWeight.w900, C.coralDark)),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: T.of(16, FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            body,
+            textAlign: TextAlign.center,
+            style: T.of(14, FontWeight.w500, C.muted),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: 12),
+            Btn.secondary(
+              'دوباره امتحان کن',
+              onPressed: onRetry,
+              expand: false,
+              height: 49,
+              fontSize: 15,
+            ),
+          ],
         ],
-      ]),
+      ),
     ),
   );
 }
@@ -200,28 +277,49 @@ class NoticeBar extends StatelessWidget {
   final Color border;
   final Color fg;
 
-  const NoticeBar(this.text, {super.key, this.icon = MI.warning, this.onClose, this.trailing,
-      this.bg = C.sunSoft, this.border = C.sunBorder, this.fg = C.sunText});
+  const NoticeBar(
+    this.text, {
+    super.key,
+    this.icon = MI.warning,
+    this.onClose,
+    this.trailing,
+    this.bg = C.sunSoft,
+    this.border = C.sunBorder,
+    this.fg = C.sunText,
+  });
 
-  const NoticeBar.error(this.text, {super.key, this.icon = MI.alert, this.onClose, this.trailing})
-      : bg = C.coralSoft, border = C.coralBorder, fg = C.coralText;
+  const NoticeBar.error(
+    this.text, {
+    super.key,
+    this.icon = MI.alert,
+    this.onClose,
+    this.trailing,
+  }) : bg = C.coralSoft,
+       border = C.coralBorder,
+       fg = C.coralText;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-    decoration: BoxDecoration(color: bg, border: Border.all(color: border, width: 2), borderRadius: BorderRadius.circular(16)),
-    child: Row(children: [
-      MIcon(icon, color: fg, size: 20),
-      const SizedBox(width: 10),
-      Expanded(child: Text(text, style: T.of(14, FontWeight.w700, fg, 1.6))),
-      ?trailing,
-      if (onClose != null)
-        IconButton(
-          onPressed: onClose,
-          tooltip: 'بستن',
-          icon: MIcon(MI.close, size: 18, color: fg),
-        ),
-    ]),
+    decoration: BoxDecoration(
+      color: bg,
+      border: Border.all(color: border, width: 2),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Row(
+      children: [
+        MIcon(icon, color: fg, size: 20),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text, style: T.of(14, FontWeight.w700, fg, 1.6))),
+        ?trailing,
+        if (onClose != null)
+          IconButton(
+            onPressed: onClose,
+            tooltip: 'بستن',
+            icon: MIcon(MI.close, size: 18, color: fg),
+          ),
+      ],
+    ),
   );
 }
 
@@ -239,19 +337,36 @@ Future<bool> confirmSheet(
     context,
     builder: (ctx) => Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 22),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(title, style: T.of(19, FontWeight.w800)),
-        const SizedBox(height: 10),
-        Text(body, style: T.of(15, FontWeight.w500, C.body, 1.9)),
-        const SizedBox(height: 16),
-        Row(children: [
-          Expanded(child: Btn(keep, height: 54, fontSize: 16, onPressed: () => Navigator.pop(ctx, false))),
-          const SizedBox(width: 10),
-          Expanded(
-            child: OutlinedDanger(leave, danger: danger, onPressed: () => Navigator.pop(ctx, true)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: T.of(19, FontWeight.w800)),
+          const SizedBox(height: 10),
+          Text(body, style: T.of(15, FontWeight.w500, C.body, 1.9)),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Btn(
+                  keep,
+                  height: 54,
+                  fontSize: 16,
+                  onPressed: () => Navigator.pop(ctx, false),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedDanger(
+                  leave,
+                  danger: danger,
+                  onPressed: () => Navigator.pop(ctx, true),
+                ),
+              ),
+            ],
           ),
-        ]),
-      ]),
+        ],
+      ),
     ),
   );
   return result == true;
@@ -261,7 +376,12 @@ class OutlinedDanger extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final bool danger;
-  const OutlinedDanger(this.label, {super.key, required this.onPressed, this.danger = true});
+  const OutlinedDanger(
+    this.label, {
+    super.key,
+    required this.onPressed,
+    this.danger = true,
+  });
 
   @override
   Widget build(BuildContext context) => Lip(
@@ -271,7 +391,12 @@ class OutlinedDanger extends StatelessWidget {
     radius: 14,
     child: SizedBox(
       height: 50,
-      child: Center(child: Text(label, style: T.of(16, FontWeight.w800, danger ? C.coralText : C.ink))),
+      child: Center(
+        child: Text(
+          label,
+          style: T.of(16, FontWeight.w800, danger ? C.coralText : C.ink),
+        ),
+      ),
     ),
   );
 }
@@ -284,27 +409,201 @@ class EmptyState extends StatelessWidget {
   final String? action;
   final VoidCallback? onAction;
 
-  const EmptyState({super.key, required this.icon, required this.title, required this.body, this.action, this.onAction});
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.body,
+    this.action,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-        width: 120,
-        height: 120,
-        decoration: BoxDecoration(color: context.pal.soft, borderRadius: BorderRadius.circular(36)),
-        alignment: Alignment.center,
-        child: MIcon(icon, size: 56, color: context.pal.p, strokeWidth: 1.8),
-      ),
-      const SizedBox(height: 18),
-      Text(title, textAlign: TextAlign.center, style: T.of(20, FontWeight.w800)),
-      const SizedBox(height: 8),
-      Text(body, textAlign: TextAlign.center, style: T.of(15, FontWeight.w500, C.body, 1.9)),
-      if (action != null) ...[
-        const SizedBox(height: 18),
-        Btn(action!, onPressed: onAction),
+    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // A dashed, empty "slot" waiting to be filled.
+        CustomPaint(
+          foregroundPainter: DashedRRectPainter(color: C.lip, radius: 38),
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: C.sand,
+              borderRadius: BorderRadius.circular(38),
+            ),
+            alignment: Alignment.center,
+            child: MIcon(icon, size: 52, color: C.lockedLip, strokeWidth: 2),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: T.of(20, FontWeight.w800),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          body,
+          textAlign: TextAlign.center,
+          style: T.of(15, FontWeight.w500, C.muted, 1.9),
+        ),
+        if (action != null) ...[
+          const SizedBox(height: 16),
+          Btn(
+            action!,
+            expand: false,
+            height: 52,
+            fontSize: 16,
+            onPressed: onAction,
+          ),
+        ],
       ],
-    ]),
+    ),
   );
+}
+
+/// «به سرور وصل نشدیم!»: full page, only when something the student asked
+/// for couldn't reach the server.
+class OfflineView extends StatelessWidget {
+  final VoidCallback onRetry;
+  final VoidCallback? onBack;
+  const OfflineView({super.key, required this.onRetry, this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    Widget tip(String t) => Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: pal.p, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: Text(t, style: T.of(14, FontWeight.w500, C.ink, 1.8))),
+      ],
+    );
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 132,
+                        height: 132,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFE9EA),
+                          borderRadius: BorderRadius.circular(42),
+                          boxShadow: [lip(C.coralBorder, 6)],
+                        ),
+                        alignment: Alignment.center,
+                        child: const MIcon(
+                          MI.wifi,
+                          size: 60,
+                          color: C.coralDark,
+                          strokeWidth: 2.2,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'به سرور وصل نشدیم!',
+                        textAlign: TextAlign.center,
+                        style: T.of(26, FontWeight.w900, C.ink, 1.4),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'اینترنتت رو یه نگاه بنداز. پیشرفتت امنه و هر وقت وصل شی، همه‌چی سر جاشه.',
+                        textAlign: TextAlign.center,
+                        style: T.of(15, FontWeight.w500, C.body, 1.9),
+                      ),
+                      const SizedBox(height: 18),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: C.surface,
+                          border: Border.all(color: C.border, width: 2),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Column(
+                          children: [
+                            tip('وای‌فای یا داده‌ی موبایل رو چک کن'),
+                            const SizedBox(height: 8),
+                            tip('اگه فیلترشکن روشنه، یه بار خاموشش کن'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Btn(
+              'دوباره امتحان کن',
+              height: 56,
+              fontSize: 17,
+              onPressed: onRetry,
+            ),
+            if (onBack != null) ...[
+              const SizedBox(height: 10),
+              Btn(
+                'برگردیم',
+                kind: BtnKind.ghost,
+                height: 44,
+                fontSize: 15,
+                onPressed: onBack,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Dashed rounded outline (empty slots, locked chapter plates).
+class DashedRRectPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  final double width;
+  const DashedRRectPainter({
+    required this.color,
+    required this.radius,
+    this.width = 2,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = width
+      ..style = PaintingStyle.stroke;
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Offset.zero & size,
+          Radius.circular(radius),
+        ).deflate(width / 2),
+      );
+    for (final m in path.computeMetrics()) {
+      for (double d = 0; d < m.length; d += 10) {
+        canvas.drawPath(m.extractPath(d, (d + 6).clamp(0, m.length)), p);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant DashedRRectPainter old) =>
+      old.color != color || old.radius != radius;
 }

@@ -11,27 +11,47 @@ class CoverImage extends StatelessWidget {
   final BoxFit fit;
   final double patternOpacity;
 
-  const CoverImage({super.key, required this.url, this.brand, this.fit = BoxFit.cover, this.patternOpacity = 0.5});
+  const CoverImage({
+    super.key,
+    required this.url,
+    this.brand,
+    this.fit = BoxFit.cover,
+    this.patternOpacity = 0.5,
+  });
 
   @override
   Widget build(BuildContext context) {
     final b = brand ?? BrandScope.of(context);
-    final placeholder = Stack(fit: StackFit.expand, children: [
-      ColoredBox(color: b.palette.p),
-      PatternFill(pattern: b.pattern, color: b.palette.e, opacity: patternOpacity),
-    ]);
+    final placeholder = Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: b.palette.p),
+        PatternFill(
+          pattern: b.pattern,
+          color: b.palette.e,
+          opacity: patternOpacity,
+        ),
+      ],
+    );
     if (url.isEmpty) return placeholder;
-    return Stack(fit: StackFit.expand, children: [
-      placeholder,
-      Image.network(
-        url,
-        fit: fit,
-        frameBuilder: (context, child, frame, sync) => sync
-            ? child
-            : AnimatedOpacity(opacity: frame == null ? 0 : 1, duration: const Duration(milliseconds: 250), child: child),
-        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-      ),
-    ]);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        placeholder,
+        Image.network(
+          url,
+          fit: fit,
+          frameBuilder: (context, child, frame, sync) => sync
+              ? child
+              : AnimatedOpacity(
+                  opacity: frame == null ? 0 : 1,
+                  duration: const Duration(milliseconds: 250),
+                  child: child,
+                ),
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+        ),
+      ],
+    );
   }
 }
 
@@ -43,12 +63,21 @@ class Avatar extends StatelessWidget {
   final Color? bg;
   final Color? fg;
 
-  const Avatar({super.key, required this.name, this.url = '', this.size = 44, this.bg, this.fg});
+  const Avatar({
+    super.key,
+    required this.name,
+    this.url = '',
+    this.size = 44,
+    this.bg,
+    this.fg,
+  });
 
   @override
   Widget build(BuildContext context) {
     final pal = BrandScope.paletteOf(context);
-    final letter = name.trim().isEmpty ? '' : String.fromCharCode(name.trim().runes.first);
+    final letter = name.trim().isEmpty
+        ? ''
+        : String.fromCharCode(name.trim().runes.first);
     return Container(
       width: size,
       height: size,
@@ -56,9 +85,20 @@ class Avatar extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
       child: url.isNotEmpty
-          ? Image.network(url, width: size, height: size, fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Text(letter, style: T.of(size * .42, FontWeight.w900, fg ?? pal.ink)))
-          : Text(letter, style: T.of(size * .42, FontWeight.w900, fg ?? pal.ink, 1.1)),
+          ? Image.network(
+              url,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Text(
+                letter,
+                style: T.of(size * .42, FontWeight.w900, fg ?? pal.ink),
+              ),
+            )
+          : Text(
+              letter,
+              style: T.of(size * .42, FontWeight.w900, fg ?? pal.ink, 1.1),
+            ),
     );
   }
 }

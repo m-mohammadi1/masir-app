@@ -11,6 +11,7 @@ import '/app/course/roadmap_page.dart' show RoadmapEvents;
 import '/app/course/course_brand.dart';
 import '/app/routes.dart';
 import '/app/state/nav.dart';
+import '/app/state/offline_queue.dart';
 import '/app/unit/quiz_view.dart';
 import '/app/unit/unit_media.dart';
 import '/core/api/endpoints.dart';
@@ -172,15 +173,26 @@ class _UnitPageState extends State<UnitPage> {
     final r = await api.completeUnit(u.id);
     if (!mounted) return;
     setState(() => _busy = false);
-    r.fold(
-      (e) => Toast.show(
+    r.fold((e) {
+      if (e.offline) {
+        // Kept on the phone and sent when the connection is back.
+        OfflineQueue.add(u.id);
+        Toast.show(
+          context,
+          title: 'آفلاین ذخیره شد',
+          body: 'وصل که بشی، تیکش خودش ارسال می‌شه.',
+          tone: ToastTone.info,
+        );
+        _close();
+        return;
+      }
+      Toast.show(
         context,
         title: 'ثبت نشد',
         body: e.friendly,
         tone: ToastTone.error,
-      ),
-      _moveOn,
-    );
+      );
+    }, _moveOn);
   }
 
   /// After a unit counts: celebrate a finished path on the roadmap, show the
@@ -238,7 +250,9 @@ class _UnitPageState extends State<UnitPage> {
       child: Builder(
         builder: (context) {
           final Widget body;
-          if (_error != null) {
+          if (_error != null && _error!.offline) {
+            body = OfflineView(onRetry: _load, onBack: _close);
+          } else if (_error != null) {
             body = SafeArea(
               child: Column(
                 children: [

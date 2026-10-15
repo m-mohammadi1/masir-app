@@ -9,6 +9,7 @@ import '/app/course/plan_sheet.dart';
 import '/app/course/course_brand.dart';
 import '/app/routes.dart';
 import '/app/state/nav.dart';
+import '/app/state/offline_queue.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
 import '/core/api/models.dart';
@@ -107,6 +108,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
   }
 
   Future<void> _load() async {
+    await OfflineQueue.flush();
     final r = await api.outline(widget.courseId);
     if (!mounted) return;
     r.fold(

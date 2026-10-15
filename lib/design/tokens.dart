@@ -69,18 +69,32 @@ class T {
   T._();
 
   static TextStyle _s(double size, FontWeight w, Color c, double h) =>
-      TextStyle(fontFamily: kFont, fontSize: size, fontWeight: w, color: c, height: h);
+      TextStyle(
+        fontFamily: kFont,
+        fontSize: size,
+        fontWeight: w,
+        color: c,
+        height: h,
+      );
 
-  static TextStyle display([Color c = C.ink]) => _s(28, FontWeight.w800, c, 1.4);
+  static TextStyle display([Color c = C.ink]) =>
+      _s(28, FontWeight.w800, c, 1.4);
   static TextStyle title([Color c = C.ink]) => _s(20, FontWeight.w800, c, 1.4);
-  static TextStyle heading([Color c = C.ink]) => _s(17, FontWeight.w700, c, 1.5);
+  static TextStyle heading([Color c = C.ink]) =>
+      _s(17, FontWeight.w700, c, 1.5);
   static TextStyle body([Color c = C.ink]) => _s(15, FontWeight.w500, c, 1.7);
-  static TextStyle caption([Color c = C.muted]) => _s(13, FontWeight.w600, c, 1.6);
-  static TextStyle micro([Color c = C.muted]) => _s(11, FontWeight.w700, c, 1.4);
+  static TextStyle caption([Color c = C.muted]) =>
+      _s(13, FontWeight.w600, c, 1.6);
+  static TextStyle micro([Color c = C.muted]) =>
+      _s(11, FontWeight.w700, c, 1.4);
 
   /// Any size/weight in the design's family.
-  static TextStyle of(double size, FontWeight w, [Color c = C.ink, double h = 1.5]) =>
-      _s(size, w, c, h);
+  static TextStyle of(
+    double size,
+    FontWeight w, [
+    Color c = C.ink,
+    double h = 1.5,
+  ]) => _s(size, w, c, h);
 }
 
 class R {
@@ -115,7 +129,8 @@ class Motion {
   static const emphasized = Cubic(0.2, 0, 0, 1);
 
   /// Reduced motion: fade only, no slide or pulse.
-  static bool reduced(BuildContext context) => MediaQuery.disableAnimationsOf(context);
+  static bool reduced(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context);
 }
 
 /// The "lip": things sit on a solid edge, never a blurred shadow.
@@ -140,5 +155,8 @@ BoxDecoration cardDecoration({
 /// shapes digits, but text from the API or `toString` may carry Latin ones).
 String fa(Object? v) {
   const d = '۰۱۲۳۴۵۶۷۸۹';
-  return v.toString().replaceAllMapped(RegExp(r'[0-9]'), (m) => d[int.parse(m[0]!)]);
+  return v.toString().replaceAllMapped(
+    RegExp(r'[0-9]'),
+    (m) => d[int.parse(m[0]!)],
+  );
 }

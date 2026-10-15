@@ -63,6 +63,21 @@ class _QuizRunnerState extends State<QuizRunner> {
 
   List<QuizQuestion> get qs => widget.questions;
 
+  Future<void> _exit() async {
+    if (_answers.isNotEmpty) {
+      final leave = await confirmSheet(
+        context,
+        title: 'وسط آزمون می‌ری؟',
+        body:
+            'جواب‌های این دفعه پاک می‌شه، ولی هر وقت خواستی می‌تونی از اول بدی.',
+        keep: 'می‌مونم',
+        leave: 'خروج',
+      );
+      if (!leave) return;
+    }
+    widget.onExit();
+  }
+
   Future<void> _submit() async {
     setState(() => _sending = true);
     final r = await inject<MasirApi>().submitQuiz(widget.unitId, [
@@ -97,7 +112,7 @@ class _QuizRunnerState extends State<QuizRunner> {
           padding: EdgeInsets.fromLTRB(16, top + 12, 16, 8),
           child: Row(
             children: [
-              CloseCircle(label: 'خروج از آزمون', onTap: widget.onExit),
+              CloseCircle(label: 'خروج از آزمون', onTap: _exit),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
