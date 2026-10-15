@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '/core/copy/masir_copy.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -5,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import '/app/app.dart';
 import '/routes.dart';
 import '/widgets/custom_button.dart';
 import '/widgets/custom_text.dart';
@@ -43,6 +45,12 @@ void main() async {
 
   await HiveService.init();
   await setup();
+  // Debug web builds accept ?dev_token=… so screenshot tooling can sign in.
+  final devToken = Uri.base.queryParameters['dev_token'];
+  if (kDebugMode && kIsWeb && devToken != null && devToken.isNotEmpty) {
+    HiveService.token = devToken;
+    updateHeader();
+  }
 
   try {
     await Firebase.initializeApp(
@@ -58,7 +66,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(MyApp());
+  runApp(const MasirApp());
 }
 
 class MyApp extends StatefulWidget {

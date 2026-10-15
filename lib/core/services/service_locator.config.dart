@@ -157,6 +157,7 @@ import '../../features/teacher/presentation/bloc/institute_teachers/institute_te
     as _i224;
 import '../../features/teacher/presentation/bloc/teacher_detail/teacher_detail_bloc.dart'
     as _i773;
+import '../api/masir_api.dart' as _i453;
 import 'service_locator.dart' as _i105;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -173,6 +174,7 @@ extension GetItInjectableX on _i174.GetIt {
       signalsReady: true,
       preResolve: true,
     );
+    gh.lazySingleton<_i453.MasirApi>(() => _i453.MasirApi());
     gh.factory<_i335.DiscoveryRemoteDataSource>(
       () => _i335.DiscoveryRemoteDataSourceImpl(
         restfulApi: gh<_i669.IRestfulApi>(),

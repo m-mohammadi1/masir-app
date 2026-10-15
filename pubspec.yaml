@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   easy_helper:
     path: packages/easy_helper
   dio: ^5.9.0
@@ -70,6 +72,8 @@ flutter:
     - assets/png/
     - assets/svg/
     - assets/fonts/
+    - assets/design/patterns/
+    - assets/design/logo/
   #   - images/a_dot_ham.jpeg
 
 
