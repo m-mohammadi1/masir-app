@@ -16,18 +16,32 @@ ThemeData masirTheme() {
     useMaterial3: true,
     fontFamily: kFont,
     scaffoldBackgroundColor: C.paper,
-    colorScheme: ColorScheme.fromSeed(seedColor: C.violet, surface: C.paper, primary: C.violet),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: C.violet,
+      surface: C.paper,
+      primary: C.violet,
+    ),
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
   );
   return base.copyWith(
-    textTheme: base.textTheme.apply(fontFamily: kFont, bodyColor: C.ink, displayColor: C.ink),
-    textSelectionTheme: const TextSelectionThemeData(cursorColor: C.violet, selectionColor: C.violetBorder, selectionHandleColor: C.violet),
+    textTheme: base.textTheme.apply(
+      fontFamily: kFont,
+      bodyColor: C.ink,
+      displayColor: C.ink,
+    ),
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: C.violet,
+      selectionColor: C.violetBorder,
+      selectionHandleColor: C.violet,
+    ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: C.violet),
-    pageTransitionsTheme: const PageTransitionsTheme(builders: {
-      TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-    }),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      },
+    ),
   );
 }
 
@@ -49,7 +63,12 @@ class _MasirAppState extends State<MasirApp> {
       // masir://payment?payment_id=…&status=… brings the student back from the bank.
       _links = AppLinks().uriLinkStream.listen((uri) {
         if (uri.scheme == 'masir' && uri.host == 'payment') {
-          appRouter.go(Uri(path: Routes.payment, queryParameters: uri.queryParameters).toString());
+          appRouter.go(
+            Uri(
+              path: Routes.payment,
+              queryParameters: uri.queryParameters,
+            ).toString(),
+          );
         }
       });
     }
@@ -82,7 +101,8 @@ class _MasirAppState extends State<MasirApp> {
         // of the space they were opened from.
         child: ValueListenableBuilder<Brand>(
           valueListenable: Session.space,
-          builder: (_, brand, _) => BrandScope(brand: brand, child: child ?? const SizedBox()),
+          builder: (_, brand, _) =>
+              BrandScope(brand: brand, child: child ?? const SizedBox()),
         ),
       ),
     ),

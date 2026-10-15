@@ -274,7 +274,11 @@ class ChipRow extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final EdgeInsetsGeometry padding;
 
-  const ChipRow({super.key, required this.labels, required this.index, required this.onChanged, this.padding = const EdgeInsets.symmetric(horizontal: 16)});
+  /// Flat tabs (announcements, answer review): soft fill and a coloured
+  /// border when selected, no lip.
+  final bool soft;
+
+  const ChipRow({super.key, required this.labels, required this.index, required this.onChanged, this.padding = const EdgeInsets.symmetric(horizontal: 16), this.soft = false});
 
   @override
   Widget build(BuildContext context) {
@@ -285,6 +289,25 @@ class ChipRow extends StatelessWidget {
       child: Row(children: [
         for (var i = 0; i < labels.length; i++) ...[
           if (i > 0) const SizedBox(width: 8),
+          if (soft)
+            Semantics(
+              selected: i == index,
+              button: true,
+              child: GestureDetector(
+                onTap: () => onChanged(i),
+                child: Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: i == index ? pal.soft : C.surface,
+                    border: Border.all(color: i == index ? pal.p : C.border, width: 2),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Center(widthFactor: 1, child: Text(labels[i], style: T.of(14, i == index ? FontWeight.w800 : FontWeight.w700, i == index ? pal.ink : C.ink))),
+                ),
+              ),
+            )
+          else
           Lip(
             onTap: () => onChanged(i),
             selected: i == index,

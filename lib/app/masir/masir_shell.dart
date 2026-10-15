@@ -29,7 +29,10 @@ class _MasirShellState extends State<MasirShell> {
       bottomNavigationBar: SpaceTabBar(
         items: masirTabs,
         index: widget.shell.currentIndex,
-        onTap: (i) => widget.shell.goBranch(i, initialLocation: i == widget.shell.currentIndex),
+        onTap: (i) => widget.shell.goBranch(
+          i,
+          initialLocation: i == widget.shell.currentIndex,
+        ),
       ),
     ),
   );

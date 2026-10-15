@@ -46,7 +46,12 @@ class LoadView<D> extends StatelessWidget {
   final Widget? skeleton;
   final String errorTitle;
 
-  const LoadView({super.key, required this.builder, this.skeleton, this.errorTitle = 'بارگذاری نشد'});
+  const LoadView({
+    super.key,
+    required this.builder,
+    this.skeleton,
+    this.errorTitle = 'بارگذاری نشد',
+  });
 
   @override
   Widget build(BuildContext context) => BlocBuilder<LoadCubit<D>, Load<D>>(
@@ -57,7 +62,9 @@ class LoadView<D> extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: InlineError(
             title: s.error!.offline ? 'به سرور وصل نشدیم' : errorTitle,
-            body: s.error!.offline ? 'اینترنتت رو یه نگاه بنداز.' : s.error!.friendly,
+            body: s.error!.offline
+                ? 'اینترنتت رو یه نگاه بنداز.'
+                : s.error!.friendly,
             onRetry: () => context.read<LoadCubit<D>>().load(),
           ),
         );
@@ -75,23 +82,32 @@ class ListSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(16),
-    child: Column(children: [
-      for (var i = 0; i < count; i++) ...[
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: cardDecoration(lipHeight: 0),
-          child: Row(children: [
-            const Bone(width: 52, height: 52, radius: 16),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-              Bone(width: 160, height: 14),
-              SizedBox(height: 10),
-              Bone(width: 110, height: 12),
-            ])),
-          ]),
-        ),
-        const SizedBox(height: 12),
+    child: Column(
+      children: [
+        for (var i = 0; i < count; i++) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: cardDecoration(lipHeight: 0),
+            child: Row(
+              children: [
+                const Bone(width: 52, height: 52, radius: 16),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Bone(width: 160, height: 14),
+                      SizedBox(height: 10),
+                      Bone(width: 110, height: 12),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
       ],
-    ]),
+    ),
   );
 }

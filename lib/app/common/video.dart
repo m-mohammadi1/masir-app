@@ -63,7 +63,10 @@ class _MasirVideoState extends State<MasirVideo> {
     if (!v.isInitialized) return;
     final d = v.duration.inMilliseconds;
     if (d > 0) widget.onProgress?.call(v.position.inMilliseconds / d);
-    if (!_ended && d > 0 && v.position.inMilliseconds >= d - 300 && !v.isPlaying) {
+    if (!_ended &&
+        d > 0 &&
+        v.position.inMilliseconds >= d - 300 &&
+        !v.isPlaying) {
       _ended = true;
       widget.onEnded?.call();
     }
@@ -80,11 +83,14 @@ class _MasirVideoState extends State<MasirVideo> {
   Future<void> _fullscreen() async {
     final c = _c;
     if (c == null) return;
-    await Navigator.of(context, rootNavigator: true).push(PageRouteBuilder(
-      opaque: true,
-      pageBuilder: (_, _, _) => _FullScreen(controller: c),
-      transitionsBuilder: (_, a, _, child) => FadeTransition(opacity: a, child: child),
-    ));
+    await Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        opaque: true,
+        pageBuilder: (_, _, _) => _FullScreen(controller: c),
+        transitionsBuilder: (_, a, _, child) =>
+            FadeTransition(opacity: a, child: child),
+      ),
+    );
     if (mounted) setState(() {});
   }
 
@@ -93,58 +99,111 @@ class _MasirVideoState extends State<MasirVideo> {
     final c = _c;
     final pal = context.pal;
     if (c == null || _failed) {
-      return Stack(fit: StackFit.expand, children: [
-        widget.poster,
-        Center(
-          child: Semantics(
-            button: true,
-            label: _failed ? 'ویدیو پخش نشد، دوباره' : 'پخش ویدیو',
-            child: GestureDetector(
-              onTap: () {
-                if (_failed) {
-                  _c?.dispose();
-                  setState(() {
-                    _c = null;
-                    _failed = false;
-                  });
-                }
-                _start();
-              },
-              child: Container(
-                width: 76,
-                height: 76,
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x40000000), offset: Offset(0, 6))]),
-                alignment: Alignment.center,
-                child: MIcon(_failed ? MI.retry : MI.play, size: 30, color: pal.p),
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          widget.poster,
+          Center(
+            child: Semantics(
+              button: true,
+              label: _failed ? 'ویدیو پخش نشد، دوباره' : 'پخش ویدیو',
+              child: GestureDetector(
+                onTap: () {
+                  if (_failed) {
+                    _c?.dispose();
+                    setState(() {
+                      _c = null;
+                      _failed = false;
+                    });
+                  }
+                  _start();
+                },
+                child: Container(
+                  width: 76,
+                  height: 76,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Color(0x40000000), offset: Offset(0, 6)),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: MIcon(
+                    _failed ? MI.retry : MI.play,
+                    size: 30,
+                    color: pal.p,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-        if (widget.posterLabel.isNotEmpty && !_failed)
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(color: const Color(0xA814101C), borderRadius: BorderRadius.circular(999)),
-              child: Center(widthFactor: 1, child: Text(widget.posterLabel, style: T.of(13, FontWeight.w800, Colors.white))),
+          if (widget.posterLabel.isNotEmpty && !_failed)
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xA814101C),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Center(
+                  widthFactor: 1,
+                  child: Text(
+                    widget.posterLabel,
+                    style: T.of(13, FontWeight.w800, Colors.white),
+                  ),
+                ),
+              ),
             ),
-          ),
-      ]);
+        ],
+      );
     }
     final v = c.value;
-    return Stack(fit: StackFit.expand, children: [
-      const ColoredBox(color: Color(0xFF1A1622)),
-      if (v.isInitialized)
-        Center(child: AspectRatio(aspectRatio: v.aspectRatio, child: VideoPlayer(c)))
-      else
-        Stack(fit: StackFit.expand, children: [
-          ColorFiltered(colorFilter: const ColorFilter.mode(Color(0x73000000), BlendMode.darken), child: widget.poster),
-          const Center(child: SizedBox(width: 36, height: 36, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))),
-        ]),
-      Positioned(left: 12, right: 12, bottom: 12, child: VideoBar(controller: c, onFullscreen: _fullscreen)),
-    ]);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: Color(0xFF1A1622)),
+        if (v.isInitialized)
+          Center(
+            child: AspectRatio(
+              aspectRatio: v.aspectRatio,
+              child: VideoPlayer(c),
+            ),
+          )
+        else
+          Stack(
+            fit: StackFit.expand,
+            children: [
+              ColorFiltered(
+                colorFilter: const ColorFilter.mode(
+                  Color(0x73000000),
+                  BlendMode.darken,
+                ),
+                child: widget.poster,
+              ),
+              const Center(
+                child: SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        Positioned(
+          left: 12,
+          right: 12,
+          bottom: 12,
+          child: VideoBar(controller: c, onFullscreen: _fullscreen),
+        ),
+      ],
+    );
   }
 }
 
@@ -155,12 +214,21 @@ class VideoBar extends StatelessWidget {
   const VideoBar({super.key, required this.controller, this.onFullscreen});
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<VideoPlayerValue>(
+  Widget build(
+    BuildContext context,
+  ) => ValueListenableBuilder<VideoPlayerValue>(
     valueListenable: controller,
     builder: (context, v, _) {
       final total = v.duration.inMilliseconds;
-      final f = total == 0 ? 0.0 : (v.position.inMilliseconds / total).clamp(0.0, 1.0);
-      Widget btn(MI icon, String label, VoidCallback onTap, {bool filled = true}) => Semantics(
+      final f = total == 0
+          ? 0.0
+          : (v.position.inMilliseconds / total).clamp(0.0, 1.0);
+      Widget btn(
+        MI icon,
+        String label,
+        VoidCallback onTap, {
+        bool filled = true,
+      }) => Semantics(
         button: true,
         label: label,
         child: GestureDetector(
@@ -168,7 +236,10 @@ class VideoBar extends StatelessWidget {
           child: Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: const Color(0x2EFFFFFF), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: const Color(0x2EFFFFFF),
+              borderRadius: BorderRadius.circular(12),
+            ),
             alignment: Alignment.center,
             child: MIcon(icon, size: 20, color: Colors.white),
           ),
@@ -176,51 +247,85 @@ class VideoBar extends StatelessWidget {
       );
       return Container(
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        decoration: BoxDecoration(color: const Color(0xB314101C), borderRadius: BorderRadius.circular(18)),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Row(children: [
-            Text(clock(v.position.inSeconds), style: T.of(12, FontWeight.w700, Colors.white)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: LayoutBuilder(builder: (context, box) => GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown: (d) {
-                  if (total == 0) return;
-                  // The track fills right-to-left in RTL.
-                  final x = (box.maxWidth - d.localPosition.dx) / box.maxWidth;
-                  controller.seekTo(Duration(milliseconds: (total * x.clamp(0, 1)).round()));
-                },
-                child: SizedBox(
-                  height: 20,
-                  child: Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: SizedBox(
-                        height: 6,
-                        child: Stack(children: [
-                          const Positioned.fill(child: ColoredBox(color: Color(0x4DFFFFFF))),
-                          FractionallySizedBox(
-                            alignment: AlignmentDirectional.centerStart,
-                            widthFactor: f,
-                            child: const ColoredBox(color: Colors.white),
+        decoration: BoxDecoration(
+          color: const Color(0xB314101C),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Text(
+                  clock(v.position.inSeconds),
+                  style: T.of(12, FontWeight.w700, Colors.white),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, box) => GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (d) {
+                        if (total == 0) return;
+                        // The track fills right-to-left in RTL.
+                        final x =
+                            (box.maxWidth - d.localPosition.dx) / box.maxWidth;
+                        controller.seekTo(
+                          Duration(
+                            milliseconds: (total * x.clamp(0, 1)).round(),
                           ),
-                        ]),
+                        );
+                      },
+                      child: SizedBox(
+                        height: 20,
+                        child: Center(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: SizedBox(
+                              height: 6,
+                              child: Stack(
+                                children: [
+                                  const Positioned.fill(
+                                    child: ColoredBox(color: Color(0x4DFFFFFF)),
+                                  ),
+                                  FractionallySizedBox(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    widthFactor: f,
+                                    child: const ColoredBox(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              )),
+                const SizedBox(width: 10),
+                Text(
+                  clock(v.duration.inSeconds),
+                  style: T.of(12, FontWeight.w700, Colors.white),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-            Text(clock(v.duration.inSeconds), style: T.of(12, FontWeight.w700, Colors.white)),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            btn(v.isPlaying ? MI.pause : MI.play, v.isPlaying ? 'توقف' : 'پخش', () => v.isPlaying ? controller.pause() : controller.play()),
-            const Spacer(),
-            if (onFullscreen != null) btn(MI.fullscreen, 'تمام‌صفحه', onFullscreen!),
-          ]),
-        ]),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                btn(
+                  v.isPlaying ? MI.pause : MI.play,
+                  v.isPlaying ? 'توقف' : 'پخش',
+                  () => v.isPlaying ? controller.pause() : controller.play(),
+                ),
+                const Spacer(),
+                if (onFullscreen != null)
+                  btn(MI.fullscreen, 'تمام‌صفحه', onFullscreen!),
+              ],
+            ),
+          ],
+        ),
       );
     },
   );
@@ -234,16 +339,34 @@ class _FullScreen extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colors.black,
     body: SafeArea(
-      child: Stack(fit: StackFit.expand, children: [
-        Center(child: AspectRatio(aspectRatio: controller.value.aspectRatio, child: VideoPlayer(controller))),
-        Positioned(
-          top: 12,
-          right: 12,
-          child: RoundIcon(MI.close, label: 'بستن', bg: const Color(0x2EFFFFFF), fg: Colors.white, onTap: () => Navigator.of(context).pop()),
-        ),
-        Positioned(left: 12, right: 12, bottom: 12, child: VideoBar(controller: controller)),
-      ]),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Center(
+            child: AspectRatio(
+              aspectRatio: controller.value.aspectRatio,
+              child: VideoPlayer(controller),
+            ),
+          ),
+          Positioned(
+            top: 12,
+            right: 12,
+            child: RoundIcon(
+              MI.close,
+              label: 'بستن',
+              bg: const Color(0x2EFFFFFF),
+              fg: Colors.white,
+              onTap: () => Navigator.of(context).pop(),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 12,
+            child: VideoBar(controller: controller),
+          ),
+        ],
+      ),
     ),
   );
 }
-

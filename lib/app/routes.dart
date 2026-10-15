@@ -24,7 +24,8 @@ class Routes {
   static String instTeachers(String id) => '/i/$id/teachers';
   static String instMe(String id) => '/i/$id/me';
   static String announcements(String id) => '/i/$id/announcements';
-  static String announcement(String id, String announcementId) => '/i/$id/announcements/$announcementId';
+  static String announcement(String id, String announcementId) =>
+      '/i/$id/announcements/$announcementId';
   static String teacher(String userId) => '/teachers/$userId';
 
   // Detail layer.

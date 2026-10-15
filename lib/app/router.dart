@@ -20,7 +20,8 @@ final rootKey = GlobalKey<NavigatorState>();
 const _public = {Routes.splash, Routes.intro, Routes.register, Routes.login};
 
 /// Tabs switch without a slide.
-Page<void> _tab(GoRouterState s, Widget child) => NoTransitionPage(key: s.pageKey, child: child);
+Page<void> _tab(GoRouterState s, Widget child) =>
+    NoTransitionPage(key: s.pageKey, child: child);
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootKey,
@@ -29,7 +30,9 @@ final GoRouter appRouter = GoRouter(
   redirect: (context, state) {
     final path = state.uri.path;
     if (!HiveService.isLogged && !_public.contains(path)) return Routes.intro;
-    if (path == '/' ) return HiveService.isLogged ? Routes.vitrine : Routes.intro;
+    if (path == '/') {
+      return HiveService.isLogged ? Routes.vitrine : Routes.intro;
+    }
     return null;
   },
   routes: [
@@ -54,19 +57,48 @@ final GoRouter appRouter = GoRouter(
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => MasirShell(shell: shell),
       branches: [
-        StatefulShellBranch(routes: [GoRoute(path: Routes.vitrine, builder: (_, _) => const VitrinePage())]),
-        StatefulShellBranch(routes: [GoRoute(path: Routes.myInstitutes, builder: (_, _) => const MyInstitutesPage())]),
-        StatefulShellBranch(routes: [GoRoute(path: Routes.profile, builder: (_, _) => const ProfilePage())]),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Routes.vitrine,
+              builder: (_, _) => const VitrinePage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Routes.myInstitutes,
+              builder: (_, _) => const MyInstitutesPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Routes.profile,
+              builder: (_, _) => const ProfilePage(),
+            ),
+          ],
+        ),
       ],
     ),
-    GoRoute(path: Routes.explore, builder: (_, state) => ExplorePage(topic: '${extraOf(state)['topic'] ?? ''}')),
+    GoRoute(
+      path: Routes.explore,
+      builder: (_, state) =>
+          ExplorePage(topic: '${extraOf(state)['topic'] ?? ''}'),
+    ),
     GoRoute(path: Routes.inbox, builder: (_, _) => const InboxPage()),
-    GoRoute(path: Routes.subscriptions, builder: (_, _) => const SubscriptionsPage()),
+    GoRoute(
+      path: Routes.subscriptions,
+      builder: (_, _) => const SubscriptionsPage(),
+    ),
 
     // Institute space.
     GoRoute(
       path: '/enter/:id',
-      pageBuilder: (context, state) => thresholdPage(state, state.pathParameters['id']!),
+      pageBuilder: (context, state) =>
+          thresholdPage(state, state.pathParameters['id']!),
     ),
     // One institute shell at a time; entering another institute replaces it.
     ShellRoute(
@@ -77,33 +109,71 @@ final GoRouter appRouter = GoRouter(
         child: child,
       ),
       routes: [
-        GoRoute(path: '/i/:id/home', pageBuilder: (_, s) => _tab(s, InstituteHomePage(instituteId: s.pathParameters['id']!))),
-        GoRoute(path: '/i/:id/courses', pageBuilder: (_, s) => _tab(s, InstituteCoursesPage(instituteId: s.pathParameters['id']!))),
-        GoRoute(path: '/i/:id/teachers', pageBuilder: (_, s) => _tab(s, InstituteTeachersPage(instituteId: s.pathParameters['id']!))),
-        GoRoute(path: '/i/:id/me', pageBuilder: (_, s) => _tab(s, InstituteMePage(instituteId: s.pathParameters['id']!))),
+        GoRoute(
+          path: '/i/:id/home',
+          pageBuilder: (_, s) =>
+              _tab(s, InstituteHomePage(instituteId: s.pathParameters['id']!)),
+        ),
+        GoRoute(
+          path: '/i/:id/courses',
+          pageBuilder: (_, s) => _tab(
+            s,
+            InstituteCoursesPage(instituteId: s.pathParameters['id']!),
+          ),
+        ),
+        GoRoute(
+          path: '/i/:id/teachers',
+          pageBuilder: (_, s) => _tab(
+            s,
+            InstituteTeachersPage(instituteId: s.pathParameters['id']!),
+          ),
+        ),
+        GoRoute(
+          path: '/i/:id/me',
+          pageBuilder: (_, s) =>
+              _tab(s, InstituteMePage(instituteId: s.pathParameters['id']!)),
+        ),
       ],
     ),
     GoRoute(
       path: '/i/:id/announcements',
-      builder: (_, s) => AnnouncementsPage(instituteId: s.pathParameters['id']!),
+      builder: (_, s) =>
+          AnnouncementsPage(instituteId: s.pathParameters['id']!),
     ),
     GoRoute(
       path: '/i/:id/announcements/:aid',
-      builder: (_, s) => AnnouncementDetailPage(instituteId: s.pathParameters['id']!, announcementId: s.pathParameters['aid']!),
+      builder: (_, s) => AnnouncementDetailPage(
+        instituteId: s.pathParameters['id']!,
+        announcementId: s.pathParameters['aid']!,
+      ),
     ),
-    GoRoute(path: '/teachers/:userId', builder: (_, s) => TeacherPageView(userId: s.pathParameters['userId']!)),
+    GoRoute(
+      path: '/teachers/:userId',
+      builder: (_, s) => TeacherPageView(userId: s.pathParameters['userId']!),
+    ),
 
     // Detail layer: keeps the colour of the space it was opened from.
-    GoRoute(path: '/course/:id', builder: (_, s) => CourseDetailPage(courseId: s.pathParameters['id']!)),
-    GoRoute(path: '/course/:id/roadmap', builder: (_, s) => RoadmapPage(courseId: s.pathParameters['id']!)),
+    GoRoute(
+      path: '/course/:id',
+      builder: (_, s) => CourseDetailPage(courseId: s.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/course/:id/roadmap',
+      builder: (_, s) => RoadmapPage(courseId: s.pathParameters['id']!),
+    ),
     GoRoute(
       path: '/unit/:id',
       pageBuilder: (context, s) => unitPage(s, s.pathParameters['id']!),
     ),
-    GoRoute(path: '/unit/:id/review', builder: (_, s) => QuizReviewPage(unitId: s.pathParameters['id']!)),
+    GoRoute(
+      path: '/unit/:id/review',
+      builder: (_, s) => QuizReviewPage(unitId: s.pathParameters['id']!),
+    ),
     GoRoute(
       path: Routes.payment,
-      builder: (_, s) => PaymentResultPage(paymentId: s.uri.queryParameters['payment_id'] ?? ''),
+      builder: (_, s) => PaymentResultPage(
+        paymentId: s.uri.queryParameters['payment_id'] ?? '',
+      ),
     ),
   ],
   errorBuilder: (context, state) => const NotFoundView(),

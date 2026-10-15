@@ -13,7 +13,9 @@ void back(BuildContext context, {String? fallback}) {
     return;
   }
   final inst = Session.instituteId.value;
-  router.go(fallback ?? (inst != null ? Routes.instHome(inst) : Routes.vitrine));
+  router.go(
+    fallback ?? (inst != null ? Routes.instHome(inst) : Routes.vitrine),
+  );
 }
 
 /// Reads `extra` safely: on web it is restored from history as JSON or null.

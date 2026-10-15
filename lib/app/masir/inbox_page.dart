@@ -30,15 +30,26 @@ class _InboxPageState extends State<InboxPage> {
   void initState() {
     super.initState();
     _load();
-    api.wallet().then((r) => r.fold((_) {}, (w) {
-      if (mounted) setState(() => _brands = {for (final c in w) c.institute.id: c.institute.brand});
-    }));
+    api.wallet().then(
+      (r) => r.fold((_) {}, (w) {
+        if (mounted) {
+          setState(
+            () => _brands = {
+              for (final c in w) c.institute.id: c.institute.brand,
+            },
+          );
+        }
+      }),
+    );
   }
 
   Future<void> _load() async {
     final res = await api.inbox();
     if (!mounted) return;
-    res.fold((e) => setState(() => _error = e), (l) => setState(() => _items = l));
+    res.fold(
+      (e) => setState(() => _error = e),
+      (l) => setState(() => _items = l),
+    );
   }
 
   Future<void> _readAll() async {
@@ -52,7 +63,12 @@ class _InboxPageState extends State<InboxPage> {
     final inst = '${p['institute_id'] ?? ''}';
     switch (it.type) {
       case 'subscription.reminder':
-        showPlanSheet(context, courseId: '${p['course_id']}', renew: true, brand: _brands[inst]);
+        showPlanSheet(
+          context,
+          courseId: '${p['course_id']}',
+          renew: true,
+          brand: _brands[inst],
+        );
       case 'announcement.published':
         context.push(Routes.announcement(inst, '${p['announcement_id']}'));
       case 'course.subscribed':
@@ -82,43 +98,107 @@ class _InboxPageState extends State<InboxPage> {
     }
     return Scaffold(
       backgroundColor: C.paper,
-      body: Column(children: [
-        Container(
-          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.border, width: 2))),
-          padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 12, 16, 12),
-          child: Row(children: [
-            BackSquare(onTap: () => back(context, fallback: Routes.vitrine)),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('صندوق پیام', style: T.of(20, FontWeight.w800)),
-              Text(unread > 0 ? '${fa(unread)} پیام نخونده' : 'همه رو خوندی', style: T.of(13, FontWeight.w500, C.muted)),
-            ])),
-            if (unread > 0)
-              TextButton(onPressed: _readAll, child: Text('همه رو خوندم', style: T.of(14, FontWeight.w800, C.violet))),
-          ]),
-        ),
-        Expanded(
-          child: _error != null
-              ? Padding(padding: const EdgeInsets.all(16), child: InlineError(body: _error!.friendly, onRetry: _load))
-              : items == null
-                  ? ListView(padding: const EdgeInsets.all(16), children: [for (var i = 0; i < 5; i++) ...[const Bone(height: 96, radius: 20), const SizedBox(height: 10)]])
-                  : items.isEmpty
-                      ? const Center(child: EmptyState(icon: MI.bell, title: 'صندوقت خالیه', body: 'یادآوری‌ها و اطلاعیه‌های مؤسسه‌هات اینجا میان.'))
-                      : RefreshIndicator(
-                          onRefresh: _load,
-                          child: ListView(padding: const EdgeInsets.fromLTRB(16, 14, 16, 24), children: [
-                            if (today.isNotEmpty) ...[_group('امروز'), for (final it in today) _row(it)],
-                            if (week.isNotEmpty) ...[_group('این هفته'), for (final it in week) _row(it)],
-                            if (older.isNotEmpty && _showOlder) ...[_group('قدیمی‌تر'), for (final it in older) _row(it)],
-                            if (older.isNotEmpty && !_showOlder)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 6),
-                                child: Btn.secondary('پیام‌های قدیمی‌تر', height: 52, fontSize: 15, onPressed: () => setState(() => _showOlder = true)),
-                              ),
-                          ]),
-                        ),
-        ),
-      ]),
+      body: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: C.border, width: 2)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              MediaQuery.paddingOf(context).top + 12,
+              16,
+              12,
+            ),
+            child: Row(
+              children: [
+                BackSquare(
+                  onTap: () => back(context, fallback: Routes.vitrine),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('صندوق پیام', style: T.of(20, FontWeight.w800)),
+                      Text(
+                        unread > 0
+                            ? '${fa(unread)} پیام نخونده'
+                            : 'همه رو خوندی',
+                        style: T.of(13, FontWeight.w500, C.muted),
+                      ),
+                    ],
+                  ),
+                ),
+                if (unread > 0)
+                  TextButton(
+                    onPressed: _readAll,
+                    child: Text(
+                      'همه رو خوندم',
+                      style: T.of(14, FontWeight.w800, C.violet),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _error != null
+                ? Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: InlineError(body: _error!.friendly, onRetry: _load),
+                  )
+                : items == null
+                ? ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      for (var i = 0; i < 5; i++) ...[
+                        const Bone(height: 96, radius: 20),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                  )
+                : items.isEmpty
+                ? const Center(
+                    child: EmptyState(
+                      icon: MI.bell,
+                      title: 'صندوقت خالیه',
+                      body: 'یادآوری‌ها و اطلاعیه‌های مؤسسه‌هات اینجا میان.',
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+                      children: [
+                        if (today.isNotEmpty) ...[
+                          _group('امروز'),
+                          for (final it in today) _row(it),
+                        ],
+                        if (week.isNotEmpty) ...[
+                          _group('این هفته'),
+                          for (final it in week) _row(it),
+                        ],
+                        if (older.isNotEmpty && _showOlder) ...[
+                          _group('قدیمی‌تر'),
+                          for (final it in older) _row(it),
+                        ],
+                        if (older.isNotEmpty && !_showOlder)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Btn.secondary(
+                              'پیام‌های قدیمی‌تر',
+                              height: 52,
+                              fontSize: 15,
+                              onPressed: () =>
+                                  setState(() => _showOlder = true),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -131,7 +211,11 @@ class _InboxPageState extends State<InboxPage> {
     final p = it.payload;
     final inst = '${p['institute_id'] ?? ''}';
     final instName = '${p['institute_name'] ?? ''}';
-    final brand = _brands[inst] ?? (instName.isNotEmpty ? Brand(palette: masirPalette, name: instName) : null);
+    final brand =
+        _brands[inst] ??
+        (instName.isNotEmpty
+            ? Brand(palette: masirPalette, name: instName)
+            : null);
     late String title, body, source;
     Widget icon;
     var reminder = false;
@@ -140,23 +224,35 @@ class _InboxPageState extends State<InboxPage> {
         reminder = true;
         title = '${p['title'] ?? 'یادآوری تمدید'}';
         body = '${p['body'] ?? ''}';
-        source = ['یادآوری تمدید', if (instName.isNotEmpty) instName].join(' · ');
-        icon = _tile(C.sunSoft, const MIcon(MI.clock, size: 22, color: Color(0xFF8A5A00)));
+        source = [
+          'یادآوری تمدید',
+          if (instName.isNotEmpty) instName,
+        ].join(' · ');
+        icon = _tile(
+          C.sunSoft,
+          const MIcon(MI.clock, size: 22, color: Color(0xFF8A5A00)),
+        );
       case 'announcement.published':
         title = '${p['title'] ?? ''}';
         body = 'اطلاعیه‌ی تازه از $instName';
         source = instName;
-        icon = brand != null ? InstituteLogo(brand: brand, size: 44) : _tile(C.violetSoft, const MIcon(MI.megaphone, color: C.violet));
+        icon = brand != null
+            ? InstituteLogo(brand: brand, size: 44)
+            : _tile(C.violetSoft, const MIcon(MI.megaphone, color: C.violet));
       case 'course.subscribed':
         title = 'شروع کردی: «${p['course_title'] ?? ''}»';
         body = 'واحدهای رایگانش بازن؛ از نقشه‌ی مسیر شروع کن.';
         source = instName.isEmpty ? 'مسیر' : instName;
-        icon = brand != null ? InstituteLogo(brand: brand, size: 44) : _tile(C.violet, const MIcon(MI.book, color: Colors.white));
+        icon = brand != null
+            ? InstituteLogo(brand: brand, size: 44)
+            : _tile(C.violet, const MIcon(MI.book, color: Colors.white));
       case 'course.published':
         title = 'دوره‌ی تازه: «${p['course_title'] ?? ''}»';
         body = 'یه دوره‌ی تازه به مؤسسه‌ات اضافه شد.';
         source = instName.isEmpty ? 'مسیر' : instName;
-        icon = brand != null ? InstituteLogo(brand: brand, size: 44) : _tile(C.violet, const MIcon(MI.book, color: Colors.white));
+        icon = brand != null
+            ? InstituteLogo(brand: brand, size: 44)
+            : _tile(C.violet, const MIcon(MI.book, color: Colors.white));
       default:
         title = instName.isNotEmpty ? 'عضو $instName شدی' : 'به مسیر خوش اومدی';
         body = 'از ویترین شروع کن؛ مؤسسه‌ت منتظرته.';
@@ -173,23 +269,73 @@ class _InboxPageState extends State<InboxPage> {
           decoration: BoxDecoration(
             color: unread ? C.surface : C.paper,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(width: 2, color: unread ? (reminder ? const Color(0xFFFFD98A) : C.violetBorder) : C.border),
-            boxShadow: unread ? [lip(reminder ? const Color(0xFFFFF0C2) : C.violetSoft)] : null,
+            border: Border.all(
+              width: 2,
+              color: unread
+                  ? (reminder ? const Color(0xFFFFD98A) : C.violetBorder)
+                  : C.border,
+            ),
+            boxShadow: unread
+                ? [lip(reminder ? const Color(0xFFFFF0C2) : C.violetSoft)]
+                : null,
           ),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            icon,
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Expanded(child: Text(title, style: T.of(15, unread ? FontWeight.w800 : FontWeight.w600))),
-                if (unread) Semantics(label: 'نخونده', child: Container(width: 10, height: 10, decoration: const BoxDecoration(color: C.violet, shape: BoxShape.circle))),
-              ]),
-              const SizedBox(height: 4),
-              if (body.isNotEmpty) Text(body, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.of(14, FontWeight.w500, unread ? C.body : C.muted, 1.8)),
-              const SizedBox(height: 4),
-              Text('$source · ${ago(it.createdAt)}', style: T.of(12, FontWeight.w500, C.muted)),
-            ])),
-          ]),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              icon,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: T.of(
+                              15,
+                              unread ? FontWeight.w800 : FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (unread)
+                          Semantics(
+                            label: 'نخونده',
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: C.violet,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    if (body.isNotEmpty)
+                      Text(
+                        body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: T.of(
+                          14,
+                          FontWeight.w500,
+                          unread ? C.body : C.muted,
+                          1.8,
+                        ),
+                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$source · ${ago(it.createdAt)}',
+                      style: T.of(12, FontWeight.w500, C.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -198,7 +344,10 @@ class _InboxPageState extends State<InboxPage> {
   Widget _tile(Color bg, Widget child) => Container(
     width: 44,
     height: 44,
-    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(14),
+    ),
     alignment: Alignment.center,
     child: child,
   );

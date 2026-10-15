@@ -33,7 +33,12 @@ class InstituteShell extends StatefulWidget {
   final String instituteId;
   final String location;
   final Widget child;
-  const InstituteShell({super.key, required this.instituteId, required this.location, required this.child});
+  const InstituteShell({
+    super.key,
+    required this.instituteId,
+    required this.location,
+    required this.child,
+  });
 
   @override
   State<InstituteShell> createState() => _InstituteShellState();
@@ -47,15 +52,17 @@ class _InstituteShellState extends State<InstituteShell> {
     super.initState();
     _detail = InstituteCache.peek(widget.instituteId);
     if (_detail != null) _enter(_detail!);
-    InstituteCache.load(widget.instituteId).then((r) => r.fold((_) {}, (d) {
-      if (!mounted) return;
-      setState(() => _detail = d);
-      _enter(d);
-    }));
+    InstituteCache.load(widget.instituteId).then(
+      (r) => r.fold((_) {}, (d) {
+        if (!mounted) return;
+        setState(() => _detail = d);
+        _enter(d);
+      }),
+    );
   }
 
-  void _enter(InstituteDetail d) =>
-      WidgetsBinding.instance.addPostFrameCallback((_) => Session.enterInstitute(d.id, d.brand));
+  void _enter(InstituteDetail d) => WidgetsBinding.instance
+      .addPostFrameCallback((_) => Session.enterInstitute(d.id, d.brand));
 
   int get _index {
     final l = widget.location;
@@ -76,20 +83,29 @@ class _InstituteShellState extends State<InstituteShell> {
       brand: brand,
       child: Scaffold(
         backgroundColor: C.paper,
-        body: Column(children: [
-          // The home tab draws its own header over the cover photo.
-          if (_index != 0)
-            InstituteBar(
-              title: _titles[_index],
-              onExit: () => context.go(Routes.vitrine),
-              onSwitch: () => showInstituteSwitcher(context, currentId: id),
-            ),
-          Expanded(child: widget.child),
-        ]),
+        body: Column(
+          children: [
+            // The home tab draws its own header over the cover photo.
+            if (_index != 0)
+              InstituteBar(
+                title: _titles[_index],
+                onExit: () => context.go(Routes.vitrine),
+                onSwitch: () => showInstituteSwitcher(context, currentId: id),
+              ),
+            Expanded(child: widget.child),
+          ],
+        ),
         bottomNavigationBar: SpaceTabBar(
           items: instituteTabs,
           index: _index,
-          onTap: (i) => context.go([Routes.instHome(id), Routes.instCourses(id), Routes.instTeachers(id), Routes.instMe(id)][i]),
+          onTap: (i) => context.go(
+            [
+              Routes.instHome(id),
+              Routes.instCourses(id),
+              Routes.instTeachers(id),
+              Routes.instMe(id),
+            ][i],
+          ),
         ),
       ),
     );
@@ -97,50 +113,76 @@ class _InstituteShellState extends State<InstituteShell> {
 }
 
 /// Bottom sheet listing the student's institutes; picking one enters it.
-Future<void> showInstituteSwitcher(BuildContext context, {required String currentId}) async {
+Future<void> showInstituteSwitcher(
+  BuildContext context, {
+  required String currentId,
+}) async {
   final res = await inject<MasirApi>().wallet();
   if (!context.mounted) return;
   final cards = res.fold((_) => <WalletCard>[], (w) => w);
-  await showMasirSheet(context, builder: (ctx) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('مؤسسه‌هات', style: T.of(19, FontWeight.w800)),
-      const SizedBox(height: 12),
-      for (final c in cards)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: PaperCard(
-            padding: const EdgeInsets.all(12),
-            border: c.institute.id == currentId ? c.institute.brand.palette.p : C.border,
-            onTap: () {
+  await showMasirSheet(
+    context,
+    builder: (ctx) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('مؤسسه‌هات', style: T.of(19, FontWeight.w800)),
+          const SizedBox(height: 12),
+          for (final c in cards)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: PaperCard(
+                padding: const EdgeInsets.all(12),
+                border: c.institute.id == currentId
+                    ? c.institute.brand.palette.p
+                    : C.border,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (c.institute.id != currentId) {
+                    context.go(Routes.threshold(c.institute.id));
+                  }
+                },
+                child: Row(
+                  children: [
+                    InstituteLogo(brand: c.institute.brand, size: 40),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        c.institute.name,
+                        style: T.of(15, FontWeight.w800),
+                      ),
+                    ),
+                    if (c.institute.id == currentId) Tag.success('اینجایی'),
+                  ],
+                ),
+              ),
+            ),
+          Btn.secondary(
+            'خروج به مسیر',
+            height: 52,
+            onPressed: () {
               Navigator.pop(ctx);
-              if (c.institute.id != currentId) context.go(Routes.threshold(c.institute.id));
+              context.go(Routes.vitrine);
             },
-            child: Row(children: [
-              InstituteLogo(brand: c.institute.brand, size: 40),
-              const SizedBox(width: 12),
-              Expanded(child: Text(c.institute.name, style: T.of(15, FontWeight.w800))),
-              if (c.institute.id == currentId) Tag.success('اینجایی'),
-            ]),
           ),
-        ),
-      Btn.secondary('خروج به مسیر', height: 52, onPressed: () {
-        Navigator.pop(ctx);
-        context.go(Routes.vitrine);
-      }),
-    ]),
-  ));
+        ],
+      ),
+    ),
+  );
 }
 
 /// Entering an institute: its colour grows from the top as a circle (520ms,
 /// emphasized), shows the logo and name, then lands on the institute home.
-Page<void> thresholdPage(GoRouterState state, String id) => CustomTransitionPage<void>(
-  key: state.pageKey,
-  opaque: false,
-  transitionDuration: Duration.zero,
-  child: _Threshold(instituteId: id),
-  transitionsBuilder: (_, _, _, child) => child,
-);
+Page<void> thresholdPage(GoRouterState state, String id) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      opaque: false,
+      transitionDuration: Duration.zero,
+      child: _Threshold(instituteId: id),
+      transitionsBuilder: (_, _, _, child) => child,
+    );
 
 class _Threshold extends StatefulWidget {
   final String instituteId;
@@ -151,8 +193,14 @@ class _Threshold extends StatefulWidget {
 }
 
 class _ThresholdState extends State<_Threshold> with TickerProviderStateMixin {
-  late final AnimationController _reveal = AnimationController(vsync: this, duration: Motion.threshold);
-  late final AnimationController _dots = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+  late final AnimationController _reveal = AnimationController(
+    vsync: this,
+    duration: Motion.threshold,
+  );
+  late final AnimationController _dots = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
   InstituteDetail? _detail;
   ApiError? _error;
 
@@ -175,7 +223,9 @@ class _ThresholdState extends State<_Threshold> with TickerProviderStateMixin {
         _reveal.forward();
       }
       if (d.isMember) await api.enterInstitute(widget.instituteId);
-      final wait = const Duration(milliseconds: 1100) - DateTime.now().difference(started);
+      final wait =
+          const Duration(milliseconds: 1100) -
+          DateTime.now().difference(started);
       if (wait > Duration.zero) await Future.delayed(wait);
       if (!mounted) return;
       Session.enterInstitute(d.id, d.brand);
@@ -199,10 +249,14 @@ class _ThresholdState extends State<_Threshold> with TickerProviderStateMixin {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: InlineError(title: 'وارد مؤسسه نشدیم', body: _error!.friendly, onRetry: () {
-              setState(() => _error = null);
-              _go();
-            }),
+            child: InlineError(
+              title: 'وارد مؤسسه نشدیم',
+              body: _error!.friendly,
+              onRetry: () {
+                setState(() => _error = null);
+                _go();
+              },
+            ),
           ),
         ),
       );
@@ -217,39 +271,79 @@ class _ThresholdState extends State<_Threshold> with TickerProviderStateMixin {
       builder: (context, _) {
         final t = Motion.emphasized.transform(_reveal.value);
         final origin = Offset(size.width / 2, 160);
-        final maxR = math.sqrt(math.pow(size.width, 2) + math.pow(size.height, 2)) + 40;
-        final content = Stack(fit: StackFit.expand, children: [
-          ColoredBox(color: pal.p),
-          PatternFill(pattern: brand.pattern, color: pal.e),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                  decoration: BoxDecoration(boxShadow: [lip(pal.e, 6)], borderRadius: BorderRadius.circular(34)),
-                  child: InstituteLogo(brand: brand, size: 112, inverted: true, fontSize: 49),
-                ),
-                const SizedBox(height: 18),
-                Opacity(opacity: .9, child: Text('داری وارد می‌شی', style: T.of(15, FontWeight.w600, pal.on))),
-                const SizedBox(height: 6),
-                Text(d.name, textAlign: TextAlign.center, style: T.of(30, FontWeight.w900, pal.on, 1.3)),
-                const SizedBox(height: 18),
-                AnimatedBuilder(
-                  animation: _dots,
-                  builder: (_, _) => Row(mainAxisSize: MainAxisSize.min, children: [
-                    for (var i = 0; i < 3; i++) ...[
-                      if (i > 0) const SizedBox(width: 6),
-                      Opacity(
-                        opacity: reduced ? [1.0, .6, .3][i] : (1 - ((_dots.value * 3 - i) % 3) / 3).clamp(.3, 1),
-                        child: Container(width: 8, height: 8, decoration: BoxDecoration(color: pal.on, shape: BoxShape.circle)),
+        final maxR =
+            math.sqrt(math.pow(size.width, 2) + math.pow(size.height, 2)) + 40;
+        final content = Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: pal.p),
+            PatternFill(pattern: brand.pattern, color: pal.e),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        boxShadow: [lip(pal.e, 6)],
+                        borderRadius: BorderRadius.circular(34),
                       ),
-                    ],
-                  ]),
+                      child: InstituteLogo(
+                        brand: brand,
+                        size: 112,
+                        inverted: true,
+                        fontSize: 49,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Opacity(
+                      opacity: .9,
+                      child: Text(
+                        'داری وارد می‌شی',
+                        style: T.of(15, FontWeight.w600, pal.on),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      d.name,
+                      textAlign: TextAlign.center,
+                      style: T.of(30, FontWeight.w900, pal.on, 1.3),
+                    ),
+                    const SizedBox(height: 18),
+                    AnimatedBuilder(
+                      animation: _dots,
+                      builder: (_, _) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (var i = 0; i < 3; i++) ...[
+                            if (i > 0) const SizedBox(width: 6),
+                            Opacity(
+                              opacity: reduced
+                                  ? [1.0, .6, .3][i]
+                                  : (1 - ((_dots.value * 3 - i) % 3) / 3).clamp(
+                                      .3,
+                                      1,
+                                    ),
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: pal.on,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ]),
+              ),
             ),
-          ),
-        ]);
+          ],
+        );
         if (reduced) return Opacity(opacity: t, child: content);
         return ClipPath(clipper: _CircleClip(origin, maxR * t), child: content);
       },
@@ -263,10 +357,12 @@ class _CircleClip extends CustomClipper<Path> {
   _CircleClip(this.center, this.radius);
 
   @override
-  Path getClip(Size size) => Path()..addOval(Rect.fromCircle(center: center, radius: radius));
+  Path getClip(Size size) =>
+      Path()..addOval(Rect.fromCircle(center: center, radius: radius));
 
   @override
-  bool shouldReclip(_CircleClip old) => old.radius != radius || old.center != center;
+  bool shouldReclip(_CircleClip old) =>
+      old.radius != radius || old.center != center;
 }
 
 /// Paints a page outside the shell (announcements) in its institute's
@@ -274,7 +370,11 @@ class _CircleClip extends CustomClipper<Path> {
 class InstituteBrand extends StatefulWidget {
   final String instituteId;
   final Widget child;
-  const InstituteBrand({super.key, required this.instituteId, required this.child});
+  const InstituteBrand({
+    super.key,
+    required this.instituteId,
+    required this.child,
+  });
 
   @override
   State<InstituteBrand> createState() => _InstituteBrandState();
@@ -288,13 +388,16 @@ class _InstituteBrandState extends State<InstituteBrand> {
     super.initState();
     _d = InstituteCache.peek(widget.instituteId);
     if (_d == null) {
-      InstituteCache.load(widget.instituteId).then((r) => r.fold((_) {}, (d) {
-        if (mounted) setState(() => _d = d);
-      }));
+      InstituteCache.load(widget.instituteId).then(
+        (r) => r.fold((_) {}, (d) {
+          if (mounted) setState(() => _d = d);
+        }),
+      );
     }
   }
 
   @override
-  Widget build(BuildContext context) =>
-      _d == null ? widget.child : BrandScope(brand: _d!.brand, child: widget.child);
+  Widget build(BuildContext context) => _d == null
+      ? widget.child
+      : BrandScope(brand: _d!.brand, child: widget.child);
 }
