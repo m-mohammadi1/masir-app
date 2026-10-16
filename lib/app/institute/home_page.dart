@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '/app/common/widgets.dart';
 import '/app/institute/institute_shell.dart';
 import '/app/routes.dart';
+import '/app/state/progress_events.dart';
 import '/app/state/session.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
@@ -35,8 +36,19 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
   String get id => widget.instituteId;
 
   @override
+  void dispose() {
+    ProgressEvents.changed.removeListener(_onProgress);
+    super.dispose();
+  }
+
+  void _onProgress() {
+    if (mounted) _load();
+  }
+
+  @override
   void initState() {
     super.initState();
+    ProgressEvents.changed.addListener(_onProgress);
     _detail = InstituteCache.peek(id);
     _load();
   }

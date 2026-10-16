@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '/app/common/video.dart';
 import '/app/course/plan_sheet.dart';
 import '/app/routes.dart';
+import '/app/state/progress_events.dart';
 import '/app/state/load_cubit.dart';
 import '/app/state/nav.dart';
 import '/core/api/endpoints.dart';
@@ -26,23 +27,28 @@ class CourseDetailPage extends StatelessWidget {
     create: (_) =>
         LoadCubit<CourseDetail>(() => inject<MasirApi>().course(courseId))
           ..load(),
-    child: BlocBuilder<LoadCubit<CourseDetail>, Load<CourseDetail>>(
-      builder: (context, s) {
-        final d = s.data;
-        return BrandScope(
-          brand: d?.instituteBrand ?? context.brand,
-          child: Scaffold(
-            backgroundColor: C.paper,
-            body: d == null
-                ? LoadView<CourseDetail>(
-                    skeleton: const _Skeleton(),
-                    builder: (_, _) => const SizedBox(),
-                  )
-                : _Body(d: d),
-            bottomNavigationBar: d == null ? null : _BottomBar(d: d),
-          ),
-        );
-      },
+    child: Builder(
+      builder: (context) => ReloadOnProgress(
+        onChange: () => context.read<LoadCubit<CourseDetail>>().load(),
+        child: BlocBuilder<LoadCubit<CourseDetail>, Load<CourseDetail>>(
+          builder: (context, s) {
+            final d = s.data;
+            return BrandScope(
+              brand: d?.instituteBrand ?? context.brand,
+              child: Scaffold(
+                backgroundColor: C.paper,
+                body: d == null
+                    ? LoadView<CourseDetail>(
+                        skeleton: const _Skeleton(),
+                        builder: (_, _) => const SizedBox(),
+                      )
+                    : _Body(d: d),
+                bottomNavigationBar: d == null ? null : _BottomBar(d: d),
+              ),
+            );
+          },
+        ),
+      ),
     ),
   );
 }

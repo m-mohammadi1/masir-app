@@ -8,6 +8,7 @@ import '/app/course/course_detail_page.dart' show unitIcon;
 import '/app/course/plan_sheet.dart';
 import '/app/course/course_brand.dart';
 import '/app/routes.dart';
+import '/app/state/progress_events.dart';
 import '/app/state/nav.dart';
 import '/app/state/offline_queue.dart';
 import '/core/api/endpoints.dart';
@@ -90,6 +91,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
   @override
   void initState() {
     super.initState();
+    ProgressEvents.changed.addListener(_onProgress);
     _load();
     api
         .course(widget.courseId)
@@ -101,8 +103,16 @@ class _RoadmapPageState extends State<RoadmapPage> {
         );
   }
 
+  void _onProgress() {
+    if (!mounted) return;
+    // Land on the new current unit when the student comes back.
+    _scrolled = false;
+    _load();
+  }
+
   @override
   void dispose() {
+    ProgressEvents.changed.removeListener(_onProgress);
     _scroll.dispose();
     super.dispose();
   }

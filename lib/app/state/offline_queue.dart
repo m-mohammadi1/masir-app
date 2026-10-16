@@ -1,3 +1,4 @@
+import '/app/state/progress_events.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
 import '/core/services/hive_service.dart';
@@ -32,7 +33,9 @@ class OfflineQueue {
           if (e.offline) left.add(id);
         }, (_) {});
       }
+      final sent = HiveService.pendingCompletions.length - left.length;
       HiveService.pendingCompletions = left;
+      if (sent > 0) ProgressEvents.notify();
     } finally {
       _flushing = false;
     }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '/app/institute/institute_shell.dart';
 import '/app/routes.dart';
+import '/app/state/progress_events.dart';
 import '/app/state/session.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
@@ -29,8 +30,19 @@ class _InstituteMePageState extends State<InstituteMePage> {
   String get id => widget.instituteId;
 
   @override
+  void dispose() {
+    ProgressEvents.changed.removeListener(_onProgress);
+    super.dispose();
+  }
+
+  void _onProgress() {
+    if (mounted) _load();
+  }
+
+  @override
   void initState() {
     super.initState();
+    ProgressEvents.changed.addListener(_onProgress);
     _load();
   }
 

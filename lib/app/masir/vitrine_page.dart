@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '/app/common/widgets.dart';
 import '/app/course/plan_sheet.dart';
 import '/app/routes.dart';
+import '/app/state/progress_events.dart';
 import '/app/state/session.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
@@ -119,7 +120,12 @@ class VitrinePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => VitrineCubit(inject<MasirApi>())..load(),
-    child: const _Vitrine(),
+    child: Builder(
+      builder: (context) => ReloadOnProgress(
+        onChange: () => context.read<VitrineCubit>().load(),
+        child: const _Vitrine(),
+      ),
+    ),
   );
 }
 

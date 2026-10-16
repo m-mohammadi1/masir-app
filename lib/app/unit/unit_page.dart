@@ -10,6 +10,7 @@ import '/app/course/plan_sheet.dart';
 import '/app/course/roadmap_page.dart' show RoadmapEvents;
 import '/app/course/course_brand.dart';
 import '/app/routes.dart';
+import '/app/state/progress_events.dart';
 import '/app/state/nav.dart';
 import '/app/state/offline_queue.dart';
 import '/app/unit/quiz_view.dart';
@@ -198,6 +199,7 @@ class _UnitPageState extends State<UnitPage> {
   /// After a unit counts: celebrate a finished path on the roadmap, show the
   /// end of the free part, or slide in the next unit.
   void _moveOn(ProgressUpdate? p) {
+    ProgressEvents.notify();
     final u = _u!;
     if (p == null) {
       _close();
@@ -327,6 +329,7 @@ class _UnitPageState extends State<UnitPage> {
                     questions: qs,
                     onExit: _close,
                     onResult: (r) => setState(() {
+                      ProgressEvents.notify();
                       _result = r;
                       _mode = _Mode.result;
                     }),
