@@ -26,6 +26,14 @@ class _RegisterPageState extends State<RegisterPage> {
   final api = inject<MasirApi>();
   int _step = 0;
 
+  /// Which way the last step change went (for the slide).
+  bool _forward = true;
+
+  set _stepTo(int v) {
+    _forward = v > _step;
+    _step = v;
+  }
+
   // Step 1
   final _code = TextEditingController();
   final _phone = TextEditingController();
@@ -108,7 +116,7 @@ class _RegisterPageState extends State<RegisterPage> {
       (dev) {
         if (kDebugMode && dev != null) _otp.text = dev;
         _startResendTimer();
-        setState(() => _step = 1);
+        setState(() => _stepTo = 1);
       },
     );
   }
@@ -155,7 +163,7 @@ class _RegisterPageState extends State<RegisterPage> {
       (e) async {
         if (e.message == 'verification failed') {
           setState(() {
-            _step = 1;
+            _stepTo = 1;
             _otpError = 'این کد درست نیست. دوباره بزنش.';
           });
         } else {
@@ -170,7 +178,7 @@ class _RegisterPageState extends State<RegisterPage> {
       (r) async {
         await Session.signIn(r.token, r.student);
         if (r.student.name.isNotEmpty) _name.text = r.student.name;
-        setState(() => _step = 3);
+        setState(() => _stepTo = 3);
       },
     );
   }
@@ -227,7 +235,10 @@ class _RegisterPageState extends State<RegisterPage> {
       context.canPop() ? context.pop() : context.go(Routes.intro);
       return;
     }
-    setState(() => _step--);
+    setState(() {
+      _forward = false;
+      _step--;
+    });
   }
 
   @override
@@ -288,17 +299,15 @@ class _RegisterPageState extends State<RegisterPage> {
                           style: T.of(15, FontWeight.w500, C.body, 1.9),
                         ),
                       const SizedBox(height: 22),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        child: KeyedSubtree(
-                          key: ValueKey(_step),
-                          child: switch (_step) {
-                            0 => _stepCode(),
-                            1 => _stepOtp(),
-                            2 => _stepPassword(),
-                            _ => _stepUsername(),
-                          },
-                        ),
+                      MasirStepSwitcher(
+                        step: _step,
+                        forward: _forward,
+                        child: switch (_step) {
+                          0 => _stepCode(),
+                          1 => _stepOtp(),
+                          2 => _stepPassword(),
+                          _ => _stepUsername(),
+                        },
                       ),
                     ],
                   ),
@@ -345,7 +354,7 @@ class _RegisterPageState extends State<RegisterPage> {
       onPressed: _otp.text.length == 5
           ? () => setState(() {
               _otpError = null;
-              _step = 2;
+              _stepTo = 2;
             })
           : null,
     ),
@@ -491,7 +500,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
         TextButton(
-          onPressed: () => setState(() => _step = 0),
+          onPressed: () => setState(() => _stepTo = 0),
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
             minimumSize: const Size(44, 36),
@@ -507,10 +516,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget _stepOtp() => Column(
     children: [
-      OtpBoxes(
-        controller: _otp,
-        error: _otpError != null,
-        onChanged: (_) => setState(() => _otpError = null),
+      MasirShake(
+        error: _otpError,
+        child: OtpBoxes(
+          controller: _otp,
+          error: _otpError != null,
+          onChanged: (_) => setState(() => _otpError = null),
+        ),
       ),
       const SizedBox(height: 12),
       if (_otpError != null)

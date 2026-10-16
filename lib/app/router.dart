@@ -19,9 +19,9 @@ final rootKey = GlobalKey<NavigatorState>();
 
 const _public = {Routes.splash, Routes.intro, Routes.register, Routes.login};
 
-/// Tabs switch without a slide.
+/// Institute tabs are peers: the new tab fades in (motion.md §4).
 Page<void> _tab(GoRouterState s, Widget child) =>
-    NoTransitionPage(key: s.pageKey, child: child);
+    masirFadeThroughPage(s, child, duration: MasirMotion.short);
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootKey,
@@ -37,25 +37,43 @@ final GoRouter appRouter = GoRouter(
   },
   routes: [
     GoRoute(path: '/', redirect: (_, _) => Routes.splash),
-    GoRoute(path: Routes.splash, builder: (_, _) => const SplashPage()),
-    GoRoute(path: Routes.intro, builder: (_, _) => const IntroPage()),
-    GoRoute(path: Routes.register, builder: (_, _) => const RegisterPage()),
-    GoRoute(path: Routes.login, builder: (_, _) => const LoginPage()),
+    GoRoute(
+      path: Routes.splash,
+      pageBuilder: (_, s) => masirFadeThroughPage(s, const SplashPage()),
+    ),
+    GoRoute(
+      path: Routes.intro,
+      pageBuilder: (_, s) => masirFadeThroughPage(s, const IntroPage()),
+    ),
+    GoRoute(
+      path: Routes.register,
+      pageBuilder: (_, s) => masirPage(s, const RegisterPage()),
+    ),
+    GoRoute(
+      path: Routes.login,
+      pageBuilder: (_, s) => masirPage(s, const LoginPage()),
+    ),
     GoRoute(
       path: Routes.welcome,
-      builder: (_, state) {
+      pageBuilder: (_, state) {
         final x = extraOf(state);
-        return WelcomePage(
-          instituteId: '${x['institute_id'] ?? ''}',
-          brand: x['brand'] is Brand ? x['brand'] as Brand : null,
-          name: '${x['name'] ?? ''}',
+        return masirFadeThroughPage(
+          state,
+          WelcomePage(
+            instituteId: '${x['institute_id'] ?? ''}',
+            brand: x['brand'] is Brand ? x['brand'] as Brand : null,
+            name: '${x['name'] ?? ''}',
+          ),
         );
       },
     ),
 
     // Masir space: three tabs that keep their own stacks.
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, shell) => MasirShell(shell: shell),
+    StatefulShellRoute(
+      pageBuilder: (context, state, shell) =>
+          masirFadeThroughPage(state, MasirShell(shell: shell)),
+      navigatorContainerBuilder: (context, shell, children) =>
+          MasirTabStack(index: shell.currentIndex, children: children),
       branches: [
         StatefulShellBranch(
           routes: [
@@ -85,13 +103,18 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: Routes.explore,
-      builder: (_, state) =>
-          ExplorePage(topic: '${extraOf(state)['topic'] ?? ''}'),
+      pageBuilder: (_, state) => masirPage(
+        state,
+        ExplorePage(topic: '${extraOf(state)['topic'] ?? ''}'),
+      ),
     ),
-    GoRoute(path: Routes.inbox, builder: (_, _) => const InboxPage()),
+    GoRoute(
+      path: Routes.inbox,
+      pageBuilder: (_, s) => masirPage(s, const InboxPage()),
+    ),
     GoRoute(
       path: Routes.subscriptions,
-      builder: (_, _) => const SubscriptionsPage(),
+      pageBuilder: (_, s) => masirPage(s, const SubscriptionsPage()),
     ),
 
     // Institute space.
@@ -102,11 +125,15 @@ final GoRouter appRouter = GoRouter(
     ),
     // One institute shell at a time; entering another institute replaces it.
     ShellRoute(
-      builder: (context, state, child) => InstituteShell(
-        key: ValueKey('inst-${state.pathParameters['id']}'),
-        instituteId: state.pathParameters['id']!,
-        location: state.uri.path,
-        child: child,
+      // The threshold covers the switch, so the shell fades in under it.
+      pageBuilder: (context, state, child) => masirFadeThroughPage(
+        state,
+        InstituteShell(
+          key: ValueKey('inst-${state.pathParameters['id']}'),
+          instituteId: state.pathParameters['id']!,
+          location: state.uri.path,
+          child: child,
+        ),
       ),
       routes: [
         GoRoute(
@@ -137,29 +164,35 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/i/:id/announcements',
-      builder: (_, s) =>
-          AnnouncementsPage(instituteId: s.pathParameters['id']!),
+      pageBuilder: (_, s) =>
+          masirPage(s, AnnouncementsPage(instituteId: s.pathParameters['id']!)),
     ),
     GoRoute(
       path: '/i/:id/announcements/:aid',
-      builder: (_, s) => AnnouncementDetailPage(
-        instituteId: s.pathParameters['id']!,
-        announcementId: s.pathParameters['aid']!,
+      pageBuilder: (_, s) => masirPage(
+        s,
+        AnnouncementDetailPage(
+          instituteId: s.pathParameters['id']!,
+          announcementId: s.pathParameters['aid']!,
+        ),
       ),
     ),
     GoRoute(
       path: '/teachers/:userId',
-      builder: (_, s) => TeacherPageView(userId: s.pathParameters['userId']!),
+      pageBuilder: (_, s) =>
+          masirPage(s, TeacherPageView(userId: s.pathParameters['userId']!)),
     ),
 
     // Detail layer: keeps the colour of the space it was opened from.
     GoRoute(
       path: '/course/:id',
-      builder: (_, s) => CourseDetailPage(courseId: s.pathParameters['id']!),
+      pageBuilder: (_, s) =>
+          masirPage(s, CourseDetailPage(courseId: s.pathParameters['id']!)),
     ),
     GoRoute(
       path: '/course/:id/roadmap',
-      builder: (_, s) => RoadmapPage(courseId: s.pathParameters['id']!),
+      pageBuilder: (_, s) =>
+          masirPage(s, RoadmapPage(courseId: s.pathParameters['id']!)),
     ),
     GoRoute(
       path: '/unit/:id',
@@ -167,12 +200,15 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/unit/:id/review',
-      builder: (_, s) => QuizReviewPage(unitId: s.pathParameters['id']!),
+      pageBuilder: (_, s) =>
+          masirPage(s, QuizReviewPage(unitId: s.pathParameters['id']!)),
     ),
     GoRoute(
       path: Routes.payment,
-      builder: (_, s) => PaymentResultPage(
-        paymentId: s.uri.queryParameters['payment_id'] ?? '',
+      // Back from the bank: a peer screen, not a step forward.
+      pageBuilder: (_, s) => masirFadeThroughPage(
+        s,
+        PaymentResultPage(paymentId: s.uri.queryParameters['payment_id'] ?? ''),
       ),
     ),
   ],

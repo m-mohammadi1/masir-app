@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'brand.dart';
 import 'components.dart';
 import 'icons.dart';
+import 'motion.dart';
 import 'tokens.dart';
 
 enum ToastTone { success, info, error }
@@ -29,8 +30,11 @@ class Toast {
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
     if (overlay == null) return;
     hide();
+    final key = GlobalKey<_ToastViewState>();
+    _key = key;
     final entry = OverlayEntry(
       builder: (ctx) => _ToastView(
+        key: key,
         title: title,
         body: body,
         tone: tone,
@@ -49,11 +53,22 @@ class Toast {
     }
   }
 
+  static GlobalKey<_ToastViewState>? _key;
+
+  /// Leaves upward (200ms, exit), then goes away.
   static void hide() {
     _timer?.cancel();
     _timer = null;
-    _current?.remove();
+    final entry = _current;
+    final state = _key?.currentState;
     _current = null;
+    _key = null;
+    if (entry == null) return;
+    if (state == null) {
+      entry.remove();
+      return;
+    }
+    state.leave().whenComplete(entry.remove);
   }
 }
 
@@ -66,6 +81,7 @@ class _ToastView extends StatefulWidget {
   final VoidCallback onClose;
 
   const _ToastView({
+    super.key,
     required this.title,
     this.body,
     required this.tone,
@@ -80,10 +96,14 @@ class _ToastView extends StatefulWidget {
 
 class _ToastViewState extends State<_ToastView>
     with SingleTickerProviderStateMixin {
+  // Drops from the top (300ms, spring), leaves in 200ms (exit).
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 260),
+    duration: MasirMotion.medium,
+    reverseDuration: const Duration(milliseconds: 200),
   )..forward();
+
+  Future<void> leave() => _c.reverse();
 
   @override
   void dispose() {
@@ -107,8 +127,17 @@ class _ToastViewState extends State<_ToastView>
         Text('!', style: T.of(16, FontWeight.w900, Colors.white)),
       ),
     };
-    final reduced = Motion.reduced(context);
-    final anim = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
+    final reduced = MasirMotion.reduced(context);
+    final anim = CurvedAnimation(
+      parent: _c,
+      curve: MasirMotion.spring,
+      reverseCurve: MasirMotion.exit,
+    );
+    final fade = CurvedAnimation(
+      parent: _c,
+      curve: MasirMotion.standard,
+      reverseCurve: MasirMotion.exit,
+    );
     return Positioned(
       top: MediaQuery.paddingOf(context).top + 12,
       left: 16,
@@ -116,10 +145,10 @@ class _ToastViewState extends State<_ToastView>
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: FadeTransition(
-          opacity: anim,
+          opacity: fade,
           child: SlideTransition(
             position: Tween(
-              begin: Offset(0, reduced ? 0 : -0.4),
+              begin: Offset(0, reduced ? 0 : -1.5),
               end: Offset.zero,
             ).animate(anim),
             child: Material(

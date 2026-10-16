@@ -58,6 +58,12 @@ class QuizRunner extends StatefulWidget {
 
 class _QuizRunnerState extends State<QuizRunner> {
   int _idx = 0;
+  bool _forward = true;
+
+  void _goTo(int i) => setState(() {
+    _forward = i >= _idx;
+    _idx = i;
+  });
   final Map<int, Object> _answers = {};
   bool _sending = false;
 
@@ -145,7 +151,7 @@ class _QuizRunnerState extends State<QuizRunner> {
                               label:
                                   'سؤال ${fa(i + 1)}${_answers.containsKey(i) ? '، جواب داده شده' : ''}',
                               child: GestureDetector(
-                                onTap: () => setState(() => _idx = i),
+                                onTap: () => _goTo(i),
                                 child: Container(
                                   height: 10,
                                   decoration: BoxDecoration(
@@ -176,56 +182,60 @@ class _QuizRunnerState extends State<QuizRunner> {
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-            children: [
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Container(
-                  height: 28,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: pal.soft,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Center(
-                    widthFactor: 1,
-                    child: Text(
-                      q.trueFalse ? 'درست یا نادرست' : 'چهارگزینه‌ای',
-                      style: T.of(13, FontWeight.w800, pal.ink),
+          child: MasirStepSwitcher(
+            step: _idx,
+            forward: _forward,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+              children: [
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Container(
+                    height: 28,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: pal.soft,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Center(
+                      widthFactor: 1,
+                      child: Text(
+                        q.trueFalse ? 'درست یا نادرست' : 'چهارگزینه‌ای',
+                        style: T.of(13, FontWeight.w800, pal.ink),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(q.text, style: T.of(22, FontWeight.w800, C.ink, 1.7)),
-              const SizedBox(height: 22),
-              if (q.trueFalse)
-                Row(
-                  children: [
-                    for (final v in [true, false]) ...[
-                      if (!v) const SizedBox(width: 14),
-                      Expanded(
-                        child: _TfOption(
-                          value: v,
-                          selected: answered == v,
-                          onTap: () => setState(() => _answers[_idx] = v),
+                const SizedBox(height: 10),
+                Text(q.text, style: T.of(22, FontWeight.w800, C.ink, 1.7)),
+                const SizedBox(height: 22),
+                if (q.trueFalse)
+                  Row(
+                    children: [
+                      for (final v in [true, false]) ...[
+                        if (!v) const SizedBox(width: 14),
+                        Expanded(
+                          child: _TfOption(
+                            value: v,
+                            selected: answered == v,
+                            onTap: () => setState(() => _answers[_idx] = v),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
+                  )
+                else
+                  for (var i = 0; i < q.options.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 12),
+                    _ChoiceOption(
+                      keyLabel: i < _keys.length ? _keys[i] : fa(i + 1),
+                      text: q.options[i],
+                      selected: answered == i,
+                      onTap: () => setState(() => _answers[_idx] = i),
+                    ),
                   ],
-                )
-              else
-                for (var i = 0; i < q.options.length; i++) ...[
-                  if (i > 0) const SizedBox(height: 12),
-                  _ChoiceOption(
-                    keyLabel: i < _keys.length ? _keys[i] : fa(i + 1),
-                    text: q.options[i],
-                    selected: answered == i,
-                    onTap: () => setState(() => _answers[_idx] = i),
-                  ),
-                ],
-            ],
+              ],
+            ),
           ),
         ),
         Container(
@@ -243,7 +253,7 @@ class _QuizRunnerState extends State<QuizRunner> {
                   kind: BtnKind.secondary,
                   height: 56,
                   fontSize: 16,
-                  onPressed: _idx == 0 ? null : () => setState(() => _idx--),
+                  onPressed: _idx == 0 ? null : () => _goTo(_idx - 1),
                 ),
               ),
               const SizedBox(width: 10),
@@ -262,7 +272,7 @@ class _QuizRunnerState extends State<QuizRunner> {
                         fontSize: 17,
                         onPressed: answered == null
                             ? null
-                            : () => setState(() => _idx++),
+                            : () => _goTo(_idx + 1),
                       ),
               ),
             ],
@@ -553,11 +563,13 @@ class QuizResultView extends StatelessWidget {
                             stroke: 16,
                             color: ring,
                             fill: C.paper,
+                            countUp: true,
                             label: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  pct(r.score),
+                                MasirCountUp(
+                                  value: r.score,
+                                  format: MasirCountUp.percent,
                                   style: T.of(42, FontWeight.w900, C.ink, 1.1),
                                 ),
                                 Text(

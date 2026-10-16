@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'brand.dart';
 import 'components.dart';
 import 'icons.dart';
+import 'motion.dart';
 import 'tokens.dart';
 
 enum MarkStyle { onViolet, onLight, onDark, monoWhite }
@@ -121,7 +122,8 @@ class SpaceTabBar extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
+                        duration: MasirMotion.back,
+                        curve: MasirMotion.standard,
                         width: pillWidth,
                         height: 32,
                         decoration: BoxDecoration(

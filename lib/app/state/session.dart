@@ -27,6 +27,7 @@ class Session {
 
   static Future<void> signOut() async {
     await HiveService.logout();
+    MasirStagger.reset();
     updateHeader();
     student.value = null;
     space.value = Brand.masir;

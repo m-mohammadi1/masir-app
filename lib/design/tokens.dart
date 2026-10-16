@@ -118,21 +118,6 @@ class Gap {
   static const inputHeight = 54.0;
 }
 
-class Motion {
-  Motion._();
-  static const press = Duration(milliseconds: 90);
-  static const sheet = Duration(milliseconds: 380);
-  static const threshold = Duration(milliseconds: 520);
-  static const nextUnit = Duration(milliseconds: 320);
-  static const pinPop = Duration(milliseconds: 420);
-  static const trailGrow = Duration(milliseconds: 600);
-  static const emphasized = Cubic(0.2, 0, 0, 1);
-
-  /// Reduced motion: fade only, no slide or pulse.
-  static bool reduced(BuildContext context) =>
-      MediaQuery.disableAnimationsOf(context);
-}
-
 /// The "lip": things sit on a solid edge, never a blurred shadow.
 BoxShadow lip(Color color, [double dy = 4]) =>
     BoxShadow(color: color, offset: Offset(0, dy), blurRadius: 0);

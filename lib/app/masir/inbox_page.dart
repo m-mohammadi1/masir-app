@@ -167,8 +167,12 @@ class _InboxPageState extends State<InboxPage> {
                   )
                 : RefreshIndicator(
                     onRefresh: _load,
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+                    child: MasirStagger(
+                      id: 'inbox',
+                      layout: (c) => ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+                        children: c,
+                      ),
                       children: [
                         if (today.isNotEmpty) ...[
                           _group('امروز'),

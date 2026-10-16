@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -173,8 +171,9 @@ Future<void> showInstituteSwitcher(
   );
 }
 
-/// Entering an institute: its colour grows from the top as a circle (520ms,
-/// emphasized), shows the logo and name, then lands on the institute home.
+/// Entering an institute: its colour grows as a circle from the badge the
+/// student tapped (520ms, motion.md §7), shows the logo and name, then lands
+/// on the institute home. Reduced motion: the colour fades in.
 Page<void> thresholdPage(GoRouterState state, String id) =>
     CustomTransitionPage<void>(
       key: state.pageKey,
@@ -195,7 +194,7 @@ class _Threshold extends StatefulWidget {
 class _ThresholdState extends State<_Threshold> with TickerProviderStateMixin {
   late final AnimationController _reveal = AnimationController(
     vsync: this,
-    duration: Motion.threshold,
+    duration: MasirMotion.threshold,
   );
   late final AnimationController _dots = AnimationController(
     vsync: this,
@@ -203,6 +202,9 @@ class _ThresholdState extends State<_Threshold> with TickerProviderStateMixin {
   )..repeat();
   InstituteDetail? _detail;
   ApiError? _error;
+
+  /// The badge or card the student tapped to get here.
+  final Offset? _origin = TapOrigin.recent;
 
   @override
   void initState() {
@@ -264,15 +266,12 @@ class _ThresholdState extends State<_Threshold> with TickerProviderStateMixin {
     if (d == null) return const SizedBox.expand();
     final brand = d.brand;
     final pal = brand.palette;
-    final reduced = Motion.reduced(context);
+    final reduced = MasirMotion.reduced(context);
     final size = MediaQuery.sizeOf(context);
     return AnimatedBuilder(
       animation: _reveal,
       builder: (context, _) {
-        final t = Motion.emphasized.transform(_reveal.value);
-        final origin = Offset(size.width / 2, 160);
-        final maxR =
-            math.sqrt(math.pow(size.width, 2) + math.pow(size.height, 2)) + 40;
+        final t = MasirMotion.standard.transform(_reveal.value);
         final content = Stack(
           fit: StackFit.expand,
           children: [
@@ -345,24 +344,16 @@ class _ThresholdState extends State<_Threshold> with TickerProviderStateMixin {
           ],
         );
         if (reduced) return Opacity(opacity: t, child: content);
-        return ClipPath(clipper: _CircleClip(origin, maxR * t), child: content);
+        return ClipPath(
+          clipper: CircleRevealClipper(
+            _origin ?? Offset(size.width / 2, 160),
+            t,
+          ),
+          child: content,
+        );
       },
     );
   }
-}
-
-class _CircleClip extends CustomClipper<Path> {
-  final Offset center;
-  final double radius;
-  _CircleClip(this.center, this.radius);
-
-  @override
-  Path getClip(Size size) =>
-      Path()..addOval(Rect.fromCircle(center: center, radius: radius));
-
-  @override
-  bool shouldReclip(_CircleClip old) =>
-      old.radius != radius || old.center != center;
 }
 
 /// Paints a page outside the shell (announcements) in its institute's

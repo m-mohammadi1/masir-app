@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -25,23 +26,12 @@ import '/design/design.dart';
 /// the current page so «back» returns to where the student came from.
 Page<void> unitPage(GoRouterState state, String id) {
   final x = extraOf(state);
-  return CustomTransitionPage(
-    key: state.pageKey,
-    transitionDuration: Motion.nextUnit,
-    reverseTransitionDuration: Motion.nextUnit,
-    child: UnitPage(
+  return masirPage(
+    state,
+    UnitPage(
       unitId: id,
       courseId: '${x['course_id'] ?? ''}',
       fromRoadmap: x['from_roadmap'] == true,
-      doneTitle: x['done_title'] as String?,
-      doneNext: x['done_next'] as String?,
-    ),
-    transitionsBuilder: (context, a, _, child) => SlideTransition(
-      position: Tween(
-        begin: const Offset(-1, 0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
-      child: child,
     ),
   );
 }
@@ -50,15 +40,11 @@ class UnitPage extends StatefulWidget {
   final String unitId;
   final String courseId;
   final bool fromRoadmap;
-  final String? doneTitle;
-  final String? doneNext;
   const UnitPage({
     super.key,
     required this.unitId,
     this.courseId = '',
     this.fromRoadmap = false,
-    this.doneTitle,
-    this.doneNext,
   });
 
   @override
@@ -76,23 +62,15 @@ class _UnitPageState extends State<UnitPage> {
   _Mode _mode = _Mode.content;
   QuizResult? _result;
   bool _busy = false;
-  bool _showDone = false;
+  bool _done = false;
   final _progress = ValueNotifier<double>(0);
   final _scroll = ScrollController();
-  Timer? _doneTimer;
 
   String get courseId => _u?.courseId ?? widget.courseId;
 
   @override
   void initState() {
     super.initState();
-    _showDone = widget.doneTitle != null;
-    if (_showDone) {
-      _doneTimer = Timer(
-        const Duration(milliseconds: 2600),
-        () => mounted ? setState(() => _showDone = false) : null,
-      );
-    }
     _scroll.addListener(() {
       if (_u?.type != 'html' && _u?.type != 'practice') return;
       final p = _scroll.position;
@@ -105,7 +83,6 @@ class _UnitPageState extends State<UnitPage> {
 
   @override
   void dispose() {
-    _doneTimer?.cancel();
     _progress.dispose();
     _scroll.dispose();
     super.dispose();
@@ -193,7 +170,35 @@ class _UnitPageState extends State<UnitPage> {
         body: e.friendly,
         tone: ToastTone.error,
       );
-    }, _moveOn);
+    }, _celebrate);
+  }
+
+  /// motion.md §9: the button turns green and draws a check, «ایول!» drops
+  /// in, and the next unit slides in at 600ms, so the screen is never empty.
+  Future<void> _celebrate(ProgressUpdate? p) async {
+    final u = _u!;
+    final next = p?.nextUnit;
+    final bigMoment =
+        p != null &&
+        (p.pathCompleted || p.courseCompleted || p.moduleCompleted);
+    setState(() => _done = true);
+    HapticFeedback.lightImpact();
+    if (!bigMoment) {
+      Future.delayed(const Duration(milliseconds: 160), () {
+        if (!mounted) return;
+        final nextName = next == null ? '' : (unitTypeNames[next.type] ?? '');
+        Toast.show(
+          context,
+          title: 'ایول!',
+          body: nextName.isNotEmpty
+              ? '«${u.title}» تموم شد · بعدی: $nextName'
+              : '«${u.title}» تموم شد',
+          duration: const Duration(milliseconds: 1500),
+        );
+      });
+    }
+    await Future.delayed(const Duration(milliseconds: 510));
+    if (mounted) _moveOn(p);
   }
 
   /// After a unit counts: celebrate a finished path on the roadmap, show the
@@ -225,12 +230,7 @@ class _UnitPageState extends State<UnitPage> {
     }
     context.pushReplacement(
       Routes.unit(next.id),
-      extra: {
-        'course_id': courseId,
-        'from_roadmap': widget.fromRoadmap,
-        'done_title': u.title,
-        'done_next': unitTypeNames[next.type] ?? '',
-      },
+      extra: {'course_id': courseId, 'from_roadmap': widget.fromRoadmap},
     );
   }
 
@@ -354,21 +354,8 @@ class _UnitPageState extends State<UnitPage> {
           }
           return Scaffold(
             backgroundColor: C.paper,
-            body: Stack(
-              children: [
-                Positioned.fill(child: body),
-                if (_showDone && widget.doneTitle != null)
-                  Positioned(
-                    top: MediaQuery.paddingOf(context).top + 62,
-                    left: 16,
-                    right: 16,
-                    child: _DoneCard(
-                      title: widget.doneTitle!,
-                      next: widget.doneNext ?? '',
-                    ),
-                  ),
-              ],
-            ),
+            // Quiz → result (and the other modes) are peers: fade-through.
+            body: MasirFadeThrough(index: _mode.index, child: body),
           );
         },
       ),
@@ -555,14 +542,17 @@ class _UnitPageState extends State<UnitPage> {
             border: Border(top: BorderSide(color: C.border, width: 2)),
           ),
           padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + bottom),
-          child: Btn(
-            u.completed
-                ? (unitDoneLabels[u.type] ?? 'تموم شد')
-                : (unitDoneLabels[u.type] ?? 'تموم شد'),
-            height: 56,
-            fontSize: 18,
-            loading: _busy,
-            onPressed: _complete,
+          child: AnimatedSwitcher(
+            duration: MasirMotion.quick,
+            child: _done
+                ? const _DoneButton()
+                : Btn(
+                    unitDoneLabels[u.type] ?? 'تموم شد',
+                    height: 56,
+                    fontSize: 18,
+                    loading: _busy,
+                    onPressed: _complete,
+                  ),
           ),
         ),
       ],
@@ -779,81 +769,59 @@ class _Practice extends StatelessWidget {
   }
 }
 
-/// «دمت گرم!»: the unit just finished, shown over the next one.
-class _DoneCard extends StatelessWidget {
-  final String title;
-  final String next;
-  const _DoneCard({required this.title, required this.next});
+/// The finished button: green, with a check that draws itself (250ms).
+class _DoneButton extends StatelessWidget {
+  const _DoneButton();
 
   @override
   Widget build(BuildContext context) => Semantics(
+    label: 'ثبت شد',
     liveRegion: true,
-    child: TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutBack,
-      builder: (_, t, child) => Opacity(
-        opacity: t.clamp(0, 1),
-        child: Transform.translate(
-          offset: Offset(0, -16 * (1 - t)),
-          child: child,
-        ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: C.toast,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(color: C.darkLip, offset: Offset(0, 4)),
-            BoxShadow(
-              color: Color(0x402B2633),
-              offset: Offset(0, 16),
-              blurRadius: 32,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        Btn('', kind: BtnKind.success, height: 56, onPressed: () {}),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: MasirMotion.reduced(context) ? 1 : 0, end: 1),
+            duration: const Duration(milliseconds: 250),
+            curve: MasirMotion.standard,
+            builder: (_, t, _) => CustomPaint(
+              size: const Size.square(28),
+              painter: _CheckPainter(t),
             ),
-          ],
+          ),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: C.green,
-                shape: BoxShape.circle,
-                boxShadow: [lip(C.greenDark, 3)],
-              ),
-              alignment: Alignment.center,
-              child: const MIcon(
-                MI.check,
-                size: 20,
-                color: Colors.white,
-                strokeWidth: 3.4,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'دمت گرم!',
-                    style: T.of(17, FontWeight.w800, Colors.white),
-                  ),
-                  Text(
-                    next.isNotEmpty
-                        ? '«$title» تموم شد · بعدی: $next'
-                        : '«$title» تموم شد',
-                    style: T.of(13, FontWeight.w500, C.toastMuted),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     ),
   );
+}
+
+class _CheckPainter extends CustomPainter {
+  final double t;
+  _CheckPainter(this.t);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(size.width * .2, size.height * .53)
+      ..lineTo(size.width * .42, size.height * .75)
+      ..lineTo(size.width * .82, size.height * .28);
+    final metric = path.computeMetrics().first;
+    canvas.drawPath(
+      metric.extractPath(0, metric.length * t),
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.6
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CheckPainter old) => old.t != t;
 }
 
 /// «پایان بخش رایگان»: the free units are done; what a subscription opens.

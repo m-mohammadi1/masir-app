@@ -4,7 +4,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'tokens.dart' show fa;
+import 'tokens.dart' show C, fa;
 
 /// Motion tokens (masir-design/rules/motion.md §1). Use nothing else.
 ///
@@ -138,27 +138,65 @@ CustomTransitionPage<T> masirPage<T>(
   child: child,
 );
 
+/// [masirPush] for routes go_router and Navigator build by default
+/// (MaterialPage, MaterialPageRoute), so every platform moves the same way.
+class MasirPushTransitions extends PageTransitionsBuilder {
+  const MasirPushTransitions();
+
+  @override
+  Duration get transitionDuration => MasirMotion.medium;
+
+  @override
+  Duration get reverseTransitionDuration => MasirMotion.back;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => masirPush(context, animation, secondaryAnimation, child);
+}
+
 // ---------------------------------------------------------- §4 fade-through
 
 /// Peer screens (Splash → Intro, Login → Vitrine, Quiz → QuizResult): the
-/// old one fades out, the new one fades in from 92–96% scale. 300ms.
+/// old one is gone (go() drops it), the new one fades in from 96% scale over
+/// paper. 300ms.
 CustomTransitionPage<T> masirFadeThroughPage<T>(
   GoRouterState state,
-  Widget child,
-) => CustomTransitionPage<T>(
+  Widget child, {
+  Duration duration = MasirMotion.medium,
+}) => CustomTransitionPage<T>(
   key: state.pageKey,
-  transitionDuration: MasirMotion.medium,
-  reverseTransitionDuration: MasirMotion.medium,
-  transitionsBuilder: (context, a, s, child) => MasirMotion.reduced(context)
-      ? FadeTransition(opacity: a, child: child)
-      : FadeThroughTransition(
-          animation: a,
-          secondaryAnimation: s,
-          fillColor: Colors.transparent,
-          child: child,
-        ),
+  transitionDuration: duration,
+  reverseTransitionDuration: duration,
+  transitionsBuilder: (context, a, _, child) => masirFadeIn(context, a, child),
   child: child,
 );
+
+/// The second half of a fade-through: paper at once, then the new screen
+/// fades in from 96% scale. Reduced motion: a plain fade.
+Widget masirFadeIn(BuildContext context, Animation<double> a, Widget child) {
+  if (MasirMotion.reduced(context)) {
+    return FadeTransition(opacity: a, child: child);
+  }
+  final t = CurvedAnimation(
+    parent: a,
+    curve: const Interval(.3, 1, curve: MasirMotion.standard),
+  );
+  return ColoredBox(
+    color: C.paper,
+    child: FadeTransition(
+      opacity: t,
+      child: ScaleTransition(
+        scale: Tween(begin: .96, end: 1.0).animate(t),
+        child: child,
+      ),
+    ),
+  );
+}
 
 /// Tab switcher: fades the current tab out (90ms) and the new one in from
 /// slight scale (210ms). Nothing slides; tabs are peers. Give each tab's
@@ -345,6 +383,33 @@ CustomTransitionPage<T> circleRevealPage<T>(
   child: child,
 );
 
+/// Where the student last touched the screen, so a circle reveal can grow
+/// from the badge they tapped without every caller passing it along.
+abstract final class TapOrigin {
+  static Offset? _at;
+  static DateTime? _when;
+
+  /// The last touch, if it was within the last second.
+  static Offset? get recent {
+    final w = _when;
+    if (w == null ||
+        DateTime.now().difference(w) > const Duration(seconds: 1)) {
+      return null;
+    }
+    return _at;
+  }
+
+  /// Wrap the app with this to record touches.
+  static Widget recorder(Widget child) => Listener(
+    behavior: HitTestBehavior.translucent,
+    onPointerDown: (e) {
+      _at = e.position;
+      _when = DateTime.now();
+    },
+    child: child,
+  );
+}
+
 // ------------------------------------------------------------------ §8 press
 
 /// Anything with a lip: sinks onto its lip on tap down (90ms, standard) and
@@ -468,14 +533,20 @@ class _MasirStaggerState extends State<MasirStagger>
     final c = _c;
     if (c == null) return widget.layout(widget.children);
     final totalMs = c.duration!.inMilliseconds;
+    // Spacers don't take a slot; they move with the card after them.
+    var slot = 0;
+    final slots = [
+      for (final w in widget.children) w is SizedBox ? slot : slot++,
+    ];
     return widget.layout([
       for (var i = 0; i < widget.children.length; i++)
         _Staggered(
           animation: CurvedAnimation(
             parent: c,
             curve: Interval(
-              (math.min(i, _max - 1) * 40) / totalMs,
-              (math.min(i, _max - 1) * 40 + MasirMotion.short.inMilliseconds) /
+              (math.min(slots[i], _max - 1) * 40) / totalMs,
+              (math.min(slots[i], _max - 1) * 40 +
+                      MasirMotion.short.inMilliseconds) /
                   totalMs,
               curve: MasirMotion.standard,
             ),
@@ -599,6 +670,273 @@ class _MasirProgressState extends State<MasirProgress> {
       duration: MasirMotion.celebrate,
       curve: MasirMotion.standard,
       builder: (context, v, _) => widget.builder(context, v),
+    );
+  }
+}
+
+// ------------------------------------------------------------ §14 celebration
+
+/// The trophy or check of a big moment: scales 0.6 → 1.12 → 1 and fades in
+/// (450ms, spring). Reduced motion: shown as is.
+class MasirPopIn extends StatelessWidget {
+  final Widget child;
+  const MasirPopIn({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (MasirMotion.reduced(context)) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 450),
+      builder: (_, t, child) => Opacity(
+        opacity: (t * 2.5).clamp(0, 1),
+        child: Transform.scale(
+          scale: t < .6
+              ? 0.6 + 0.52 * MasirMotion.standard.transform(t / .6)
+              : 1.12 - 0.12 * MasirMotion.spring.transform((t - .6) / .4),
+          child: child,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// The headline of a big moment: fades up 8px after [delay].
+class MasirRiseIn extends StatefulWidget {
+  final Widget child;
+  final Duration delay;
+  const MasirRiseIn({
+    super.key,
+    required this.child,
+    this.delay = const Duration(milliseconds: 250),
+  });
+
+  @override
+  State<MasirRiseIn> createState() => _MasirRiseInState();
+}
+
+class _MasirRiseInState extends State<MasirRiseIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: MasirMotion.medium,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(widget.delay, () {
+      if (mounted) _c.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MasirMotion.reduced(context)) return widget.child;
+    return AnimatedBuilder(
+      animation: _c,
+      child: widget.child,
+      builder: (_, child) {
+        final t = MasirMotion.standard.transform(_c.value);
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, 8 * (1 - t)),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// About 16 pieces burst out of the middle once (900ms) and fall away.
+/// Place it over the trophy with Positioned.fill. Reduced motion: nothing.
+class MasirConfetti extends StatefulWidget {
+  final List<Color> colors;
+  const MasirConfetti({super.key, required this.colors});
+
+  @override
+  State<MasirConfetti> createState() => _MasirConfettiState();
+}
+
+class _MasirConfettiState extends State<MasirConfetti>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: MasirMotion.confetti,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!MasirMotion.reduced(context) && _c.isDismissed) _c.forward();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MasirMotion.reduced(context)) return const SizedBox.shrink();
+    return IgnorePointer(
+      child: CustomPaint(painter: _ConfettiPainter(_c, widget.colors)),
+    );
+  }
+}
+
+class _ConfettiPainter extends CustomPainter {
+  final Animation<double> t;
+  final List<Color> colors;
+  _ConfettiPainter(this.t, this.colors) : super(repaint: t);
+
+  static const _n = 16;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final v = t.value;
+    if (v <= 0 || v >= 1) return;
+    final c = size.center(Offset.zero);
+    final reach = math.min(size.width, size.height) * .6 + 40;
+    final out = MasirMotion.standard.transform(v);
+    final paint = Paint();
+    for (var i = 0; i < _n; i++) {
+      // Spread evenly with a little jitter, mostly upwards.
+      final angle =
+          -math.pi / 2 +
+          (i / _n - .5) * math.pi * 1.7 +
+          (i.isEven ? .12 : -.08);
+      final dist = reach * (.65 + (i % 4) * .12) * out;
+      final fall = 70 * v * v;
+      final pos =
+          c + Offset(math.cos(angle) * dist, math.sin(angle) * dist + fall);
+      paint.color = colors[i % colors.length].withValues(
+        alpha: (1 - math.max(0, v - .6) / .4).clamp(0, 1),
+      );
+      canvas.save();
+      canvas.translate(pos.dx, pos.dy);
+      canvas.rotate(angle + v * (i.isEven ? 6 : -5));
+      final rect = i % 3 == 0
+          ? const Rect.fromLTWH(-4, -4, 8, 8)
+          : const Rect.fromLTWH(-6, -2.5, 12, 5);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(2)),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ConfettiPainter old) => false;
+}
+
+// ------------------------------------------------------------------ §15 shake
+
+/// Shakes [child] sideways (0 → 6 → −6 → 6 → −6 → 0 px, 300ms) each time
+/// [error] turns into a new message. The field only, never the screen.
+/// Reduced motion: still.
+class MasirShake extends StatefulWidget {
+  final Object? error;
+  final Widget child;
+  const MasirShake({super.key, required this.error, required this.child});
+
+  @override
+  State<MasirShake> createState() => _MasirShakeState();
+}
+
+class _MasirShakeState extends State<MasirShake>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: MasirMotion.medium,
+  );
+
+  @override
+  void didUpdateWidget(MasirShake old) {
+    super.didUpdateWidget(old);
+    if (widget.error != null &&
+        widget.error != false &&
+        widget.error != old.error &&
+        !MasirMotion.reduced(context)) {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _c,
+    child: widget.child,
+    builder: (_, child) {
+      final t = _c.value;
+      // Four half-swings that settle back to rest.
+      final dx = _c.isAnimating ? 6 * math.sin(t * math.pi * 4) : 0.0;
+      return Transform.translate(offset: Offset(dx, 0), child: child);
+    },
+  );
+}
+
+// ------------------------------------------------------------ steps (§3 short)
+
+/// Steps inside one screen (sign-up steps, quiz questions): a short push.
+/// The next step comes in from the reading side (220ms) and the old one
+/// leaves the other way; going back reverses it. Reduced motion: a fade.
+class MasirStepSwitcher extends StatelessWidget {
+  final int step;
+  final bool forward;
+  final Widget child;
+  const MasirStepSwitcher({
+    super.key,
+    required this.step,
+    required this.forward,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = MasirMotion.reduced(context);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return ClipRect(
+      child: AnimatedSwitcher(
+        duration: reduced ? MasirMotion.quick : MasirMotion.short,
+        switchInCurve: MasirMotion.standard,
+        switchOutCurve: MasirMotion.exit,
+        layoutBuilder: (current, previous) => Stack(
+          alignment: Alignment.topCenter,
+          children: [...previous, ?current],
+        ),
+        transitionBuilder: (child, a) {
+          final fade = FadeTransition(opacity: a, child: child);
+          if (reduced) return fade;
+          final incoming = child.key == ValueKey(step);
+          // RTL forward: in from the left, out to the right.
+          final side = (rtl ? -1.0 : 1.0) * (forward ? 1 : -1);
+          return SlideTransition(
+            position: Tween(
+              begin: Offset(side * (incoming ? .3 : -.3), 0),
+              end: Offset.zero,
+            ).animate(a),
+            child: fade,
+          );
+        },
+        child: KeyedSubtree(key: ValueKey(step), child: child),
+      ),
     );
   }
 }

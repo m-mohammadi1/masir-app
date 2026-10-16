@@ -193,88 +193,107 @@ class _Success extends StatelessWidget {
                     child: SizedBox(
                       width: 112,
                       height: 112,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned(
-                            top: -6,
-                            right: -12,
-                            child: Transform.rotate(
-                              angle: .35,
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: C.sun,
-                                  borderRadius: BorderRadius.circular(3),
+                      child: MasirPopIn(
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned(
+                              top: -6,
+                              right: -12,
+                              child: Transform.rotate(
+                                angle: .35,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: C.sun,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          Positioned(
-                            bottom: 6,
-                            left: -16,
-                            child: Container(
-                              width: 10,
-                              height: 10,
-                              decoration: const BoxDecoration(
+                            Positioned(
+                              bottom: 6,
+                              left: -16,
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: C.green,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 12,
+                              left: -10,
+                              child: Transform.rotate(
+                                angle: -.52,
+                                child: Container(
+                                  width: 14,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: pal.p,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: -8,
+                              right: 4,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: C.coral,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 112,
+                              height: 112,
+                              decoration: BoxDecoration(
                                 color: C.green,
                                 shape: BoxShape.circle,
+                                boxShadow: [lip(C.greenDark, 6)],
+                              ),
+                              alignment: Alignment.center,
+                              child: const MIcon(
+                                MI.check,
+                                size: 54,
+                                color: Colors.white,
+                                strokeWidth: 3,
                               ),
                             ),
-                          ),
-                          Positioned(
-                            top: 12,
-                            left: -10,
-                            child: Transform.rotate(
-                              angle: -.52,
-                              child: Container(
-                                width: 14,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: pal.p,
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
+                            Positioned(
+                              left: -90,
+                              right: -90,
+                              top: -90,
+                              bottom: -90,
+                              child: MasirConfetti(
+                                colors: [
+                                  C.green,
+                                  C.sun,
+                                  pal.p,
+                                  C.coral,
+                                  C.violet,
+                                ],
                               ),
                             ),
-                          ),
-                          Positioned(
-                            bottom: -8,
-                            right: 4,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: C.coral,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 112,
-                            height: 112,
-                            decoration: BoxDecoration(
-                              color: C.green,
-                              shape: BoxShape.circle,
-                              boxShadow: [lip(C.greenDark, 6)],
-                            ),
-                            alignment: Alignment.center,
-                            child: const MIcon(
-                              MI.check,
-                              size: 54,
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text(
-                    'اشتراکت فعال شد!',
-                    textAlign: TextAlign.center,
-                    style: T.of(27, FontWeight.w900, C.ink, 1.4),
+                  MasirRiseIn(
+                    child: Text(
+                      'اشتراکت فعال شد!',
+                      textAlign: TextAlign.center,
+                      style: T.of(27, FontWeight.w900, C.ink, 1.4),
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Text(

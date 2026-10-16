@@ -78,7 +78,8 @@ class RoadmapPage extends StatefulWidget {
   State<RoadmapPage> createState() => _RoadmapPageState();
 }
 
-class _RoadmapPageState extends State<RoadmapPage> {
+class _RoadmapPageState extends State<RoadmapPage>
+    with SingleTickerProviderStateMixin {
   final api = inject<MasirApi>();
   final _scroll = ScrollController();
   Outline? _o;
@@ -87,6 +88,22 @@ class _RoadmapPageState extends State<RoadmapPage> {
   ProgressUpdate? _celebrate;
   bool _scrolled = false;
   final Map<int, double> _plateTops = {};
+
+  /// motion.md §10, played when the student is back on the map: the done
+  /// pin pops (0–420ms), the green trail grows to the next pin (420–1020ms)
+  /// and the next pin pops (1020–1440ms) before its pulse starts.
+  late final AnimationController _step = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1440),
+    value: 1,
+  );
+  String? _poppedDone, _poppedNext;
+  bool _stepPending = false;
+  bool _visible = true;
+
+  /// The path-complete card waits until the map is on screen again, so its
+  /// confetti isn't spent behind the unit page.
+  bool _celebrateReady = false;
 
   @override
   void initState() {
@@ -111,8 +128,27 @@ class _RoadmapPageState extends State<RoadmapPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Covered by the unit page, the map's tickers are off; play the step
+    // once it shows again, after the page has slid away.
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (visible && !_visible) {
+      final step = _stepPending;
+      _stepPending = false;
+      Future.delayed(MasirMotion.back, () {
+        if (!mounted) return;
+        if (step) _step.forward(from: 0);
+        if (_celebrate != null) setState(() => _celebrateReady = true);
+      });
+    }
+    _visible = visible;
+  }
+
+  @override
   void dispose() {
     ProgressEvents.changed.removeListener(_onProgress);
+    _step.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -121,6 +157,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
     await OfflineQueue.flush();
     final r = await api.outline(widget.courseId);
     if (!mounted) return;
+    final before = _o?.currentUnitId;
     r.fold(
       (e) => setState(() => _error = e),
       (o) => setState(() {
@@ -131,7 +168,22 @@ class _RoadmapPageState extends State<RoadmapPage> {
     final ev = RoadmapEvents.pathDone;
     if (ev != null && ev.courseId == widget.courseId) {
       RoadmapEvents.pathDone = null;
-      setState(() => _celebrate = ev.update);
+      setState(() {
+        _celebrate = ev.update;
+        _celebrateReady = _visible;
+      });
+    } else if (before != null &&
+        _o != null &&
+        _o!.currentUnitId != before &&
+        !MasirMotion.reduced(context)) {
+      _poppedDone = before;
+      _poppedNext = _o!.currentUnitId;
+      _step.value = 0;
+      if (_visible) {
+        _step.forward(from: 0);
+      } else {
+        _stepPending = true;
+      }
     }
   }
 
@@ -342,7 +394,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
                       : Stack(
                           children: [
                             Positioned.fill(child: _map(context, o)),
-                            if (_celebrate != null)
+                            if (_celebrate != null && _celebrateReady)
                               Positioned(
                                 left: 12,
                                 right: 12,
@@ -385,6 +437,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
       double? prevCy;
       var side = 0;
       var curIdx = -1;
+      var fromIdx = -1;
       double curY = 0;
       _Item? pending;
       const base = 140.0;
@@ -458,6 +511,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
         }
         pts.add(Offset(cx, cy));
         final labelLeft = isR ? cx - size / 2 - 14 - lw : cx + size / 2 + 14;
+        if (s.id == _poppedDone) fromIdx = pts.length - 1;
         if (current) {
           pins.add(
             Positioned(
@@ -465,22 +519,30 @@ class _RoadmapPageState extends State<RoadmapPage> {
               top: cy - size / 2,
               width: size,
               height: size,
-              child: _Pulse(color: pal.p),
+              child: _AfterStep(
+                step: _step,
+                child: _Pulse(color: pal.p),
+              ),
             ),
           );
         }
+        final pin = _Pin(
+          stop: s,
+          size: size,
+          guest: _guest,
+          onTap: () => _pick(context, o, s),
+        );
         pins.add(
           Positioned(
             left: cx - size / 2,
             top: cy - size / 2,
             width: size,
             height: size,
-            child: _Pin(
-              stop: s,
-              size: size,
-              guest: _guest,
-              onTap: () => _pick(context, o, s),
-            ),
+            child: s.id == _poppedDone
+                ? _Pop(step: _step, from: 0, to: 420 / 1440, child: pin)
+                : s.id == _poppedNext && current
+                ? _Pop(step: _step, from: 1020 / 1440, to: 1, child: pin)
+                : pin,
           ),
         );
         if (s.st == _St.free) {
@@ -594,7 +656,21 @@ class _RoadmapPageState extends State<RoadmapPage> {
               children: [
                 Positioned.fill(
                   child: CustomPaint(
-                    painter: _TrailPainter(walked: walked, ahead: ahead),
+                    painter: _TrailPainter(
+                      walked: walked,
+                      ahead: ahead,
+                      growFrom: fromIdx >= 0 && fromIdx < walked.length
+                          ? fromIdx
+                          : null,
+                      grow: CurvedAnimation(
+                        parent: _step,
+                        curve: const Interval(
+                          420 / 1440,
+                          1020 / 1440,
+                          curve: MasirMotion.standard,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 ...plates,
@@ -1602,13 +1678,13 @@ class _Pulse extends StatefulWidget {
 class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
+    duration: const Duration(milliseconds: 1100),
   );
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (MasirMotion.reduced(context)) {
       _c.stop();
     } else if (!_c.isAnimating) {
       _c.repeat();
@@ -1626,9 +1702,9 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
     child: AnimatedBuilder(
       animation: _c,
       builder: (_, _) {
-        final t = Curves.easeOut.transform(_c.value);
+        final t = _c.value;
         return Transform.scale(
-          scale: 1 + .45 * t,
+          scale: 1 + .9 * t,
           child: Opacity(
             opacity: .55 * (1 - t),
             child: DecoratedBox(
@@ -1644,11 +1720,68 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
   );
 }
 
+/// Pin pop (motion.md §10): 0 → 1.2 → 1 over its part of [step], spring.
+class _Pop extends AnimatedWidget {
+  final double from, to;
+  final Widget child;
+  const _Pop({
+    required Animation<double> step,
+    required this.from,
+    required this.to,
+    required this.child,
+  }) : super(listenable: step);
+
+  static final _scale = TweenSequence<double>([
+    TweenSequenceItem(tween: Tween(begin: 0, end: 1.2), weight: 60),
+    TweenSequenceItem(
+      tween: Tween<double>(
+        begin: 1.2,
+        end: 1,
+      ).chain(CurveTween(curve: MasirMotion.spring)),
+      weight: 40,
+    ),
+  ]);
+
+  @override
+  Widget build(BuildContext context) {
+    final v = (listenable as Animation<double>).value;
+    final t = ((v - from) / (to - from)).clamp(0.0, 1.0);
+    if (t >= 1) return child;
+    return Transform.scale(
+      scale: _scale.transform(MasirMotion.standard.transform(t)),
+      child: child,
+    );
+  }
+}
+
+/// Shows [child] only once [step] has finished (the pulse waits for the pop).
+class _AfterStep extends AnimatedWidget {
+  final Widget child;
+  const _AfterStep({required Animation<double> step, required this.child})
+    : super(listenable: step);
+
+  @override
+  Widget build(BuildContext context) =>
+      (listenable as Animation<double>).value >= 1
+      ? child
+      : const SizedBox.shrink();
+}
+
 /// Green walked trail (with its darker lip) and the dotted way ahead.
 class _TrailPainter extends CustomPainter {
   final List<Offset> walked;
   final List<Offset> ahead;
-  _TrailPainter({required this.walked, required this.ahead});
+
+  /// While [grow] runs, the walked trail is drawn up to pin [growFrom] and
+  /// then grows to its end.
+  final int? growFrom;
+  final Animation<double>? grow;
+  _TrailPainter({
+    required this.walked,
+    required this.ahead,
+    this.growFrom,
+    this.grow,
+  }) : super(repaint: grow);
 
   static Path _curve(List<Offset> pts) {
     final p = Path();
@@ -1679,7 +1812,17 @@ class _TrailPainter extends CustomPainter {
       }
     }
     if (walked.length > 1) {
-      final path = _curve(walked);
+      var path = _curve(walked);
+      final g = grow?.value ?? 1;
+      if (growFrom != null && g < 1) {
+        final full = path.computeMetrics().first;
+        final old = growFrom! < 1
+            ? 0.0
+            : _curve(
+                walked.sublist(0, growFrom! + 1),
+              ).computeMetrics().first.length;
+        path = full.extractPath(0, old + (full.length - old) * g);
+      }
       final stroke = Paint()
         ..strokeWidth = 16
         ..strokeCap = StrokeCap.round
@@ -1694,7 +1837,7 @@ class _TrailPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TrailPainter old) =>
-      old.walked != walked || old.ahead != ahead;
+      old.walked != walked || old.ahead != ahead || old.growFrom != growFrom;
 }
 
 class _DashedRRect extends CustomPainter {
@@ -1789,6 +1932,15 @@ class _Celebration extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Positioned(
+              left: 0,
+              right: 0,
+              top: -40,
+              height: 160,
+              child: MasirConfetti(
+                colors: [C.green, C.sun, pal.p, C.coral, C.violet],
+              ),
+            ),
+            Positioned(
               top: -4,
               right: 8,
               child: Transform.rotate(
@@ -1831,10 +1983,12 @@ class _Celebration extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: T.of(26, FontWeight.w900),
+                MasirRiseIn(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: T.of(26, FontWeight.w900),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(

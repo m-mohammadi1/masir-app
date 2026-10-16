@@ -30,8 +30,12 @@ class InstituteTeachersPage extends StatelessWidget {
         }.length;
         return RefreshIndicator(
           onRefresh: () => context.read<LoadCubit<List<Teacher>>>().load(),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          child: MasirStagger(
+            id: 'teachers-$instituteId',
+            layout: (c) => ListView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+              children: c,
+            ),
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),

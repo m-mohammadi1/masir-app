@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -40,8 +39,12 @@ ThemeData masirTheme() {
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: C.violet),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
-        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.android: MasirPushTransitions(),
+        TargetPlatform.iOS: MasirPushTransitions(),
+        TargetPlatform.macOS: MasirPushTransitions(),
+        TargetPlatform.windows: MasirPushTransitions(),
+        TargetPlatform.linux: MasirPushTransitions(),
+        TargetPlatform.fuchsia: MasirPushTransitions(),
       },
     ),
   );
@@ -106,7 +109,9 @@ class _MasirAppState extends State<MasirApp> {
           valueListenable: Session.space,
           builder: (_, brand, _) => BrandScope(
             brand: brand,
-            child: RecoveryBar(child: child ?? const SizedBox()),
+            child: TapOrigin.recorder(
+              RecoveryBar(child: child ?? const SizedBox()),
+            ),
           ),
         ),
       ),

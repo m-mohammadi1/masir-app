@@ -74,7 +74,7 @@ class _SplashPageState extends State<SplashPage>
                     for (var i = 0; i < 3; i++) ...[
                       if (i > 0) const SizedBox(width: 8),
                       Opacity(
-                        opacity: Motion.reduced(context)
+                        opacity: MasirMotion.reduced(context)
                             ? [1.0, .6, .3][i]
                             : (1 - ((_dots.value * 3 - i) % 3) / 3).clamp(
                                 .3,

@@ -132,8 +132,12 @@ class _ExplorePageState extends State<ExplorePage> {
                       ],
                     ],
                   )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                : MasirStagger(
+                    id: 'explore',
+                    layout: (c) => ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      children: c,
+                    ),
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),

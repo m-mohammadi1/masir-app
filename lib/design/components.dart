@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import 'brand.dart';
 import 'icons.dart';
+import 'motion.dart';
 import 'palettes.dart';
 import 'tokens.dart';
 
@@ -54,10 +55,13 @@ class _LipState extends State<Lip> {
     final br = widget.borderRadius ?? BorderRadius.circular(widget.radius);
     final h = widget.lipColor == null ? 0.0 : widget.lipHeight;
     final pressed = _down && h > 0;
+    // §8: sink onto the lip (90ms) and spring back on release (120ms).
+    // Reduced motion: no movement, the lip just disappears while pressed.
+    final reduced = MasirMotion.reduced(context);
     final box = AnimatedContainer(
-      duration: Motion.press,
-      curve: Curves.easeOut,
-      transform: Matrix4.translationValues(0, pressed ? h : 0, 0),
+      duration: _down ? MasirMotion.instant : MasirMotion.release,
+      curve: _down ? MasirMotion.standard : MasirMotion.spring,
+      transform: Matrix4.translationValues(0, pressed && !reduced ? h : 0, 0),
       padding: widget.padding,
       decoration: BoxDecoration(
         color: widget.fill,
@@ -346,15 +350,20 @@ class Track extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(child: ColoredBox(color: background)),
-          FractionallySizedBox(
-            alignment: AlignmentDirectional.centerStart,
-            widthFactor: value.clamp(0, 1).toDouble(),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(999),
+          // Moves when the value changes (a unit done), never on first paint.
+          MasirProgress(
+            value: value.clamp(0, 1).toDouble(),
+            from: value.clamp(0, 1).toDouble(),
+            builder: (_, v) => FractionallySizedBox(
+              alignment: AlignmentDirectional.centerStart,
+              widthFactor: v.clamp(0, 1),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const SizedBox.expand(),
               ),
-              child: const SizedBox.expand(),
             ),
           ),
         ],
@@ -564,62 +573,74 @@ class _FieldState extends State<Field> {
           Text(widget.label, style: T.of(14, FontWeight.w800)),
           const SizedBox(height: 8),
         ],
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: hasError ? C.coralInputBg : C.surface,
-            borderRadius: BorderRadius.circular(R.input),
-            border: Border.all(color: borderColor, width: 2),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Row(
-            children: [
-              if (widget.prefix != null) ...[
-                widget.prefix!,
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: _focus,
-                  obscureText: widget.obscure,
-                  keyboardType: widget.keyboard,
-                  textDirection: widget.direction,
-                  textAlign: widget.align,
-                  autofocus: widget.autofocus,
-                  textInputAction: widget.action,
-                  inputFormatters: widget.formatters,
-                  maxLength: widget.maxLength,
-                  onChanged: widget.onChanged,
-                  onSubmitted: widget.onSubmitted,
-                  cursorColor: context.pal.p,
-                  style: T
-                      .of(widget.fontSize, widget.weight)
-                      .copyWith(letterSpacing: widget.letterSpacing),
-                  decoration: InputDecoration(
-                    isCollapsed: true,
-                    border: InputBorder.none,
-                    counterText: '',
-                    hintText: widget.hint,
-                    hintStyle: T.of(
-                      widget.fontSize,
-                      FontWeight.w500,
-                      C.disabledText,
+        MasirShake(
+          error: hasError ? widget.error : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: hasError ? C.coralInputBg : C.surface,
+              borderRadius: BorderRadius.circular(R.input),
+              border: Border.all(color: borderColor, width: 2),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              children: [
+                if (widget.prefix != null) ...[
+                  widget.prefix!,
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: TextField(
+                    controller: widget.controller,
+                    focusNode: _focus,
+                    obscureText: widget.obscure,
+                    keyboardType: widget.keyboard,
+                    textDirection: widget.direction,
+                    textAlign: widget.align,
+                    autofocus: widget.autofocus,
+                    textInputAction: widget.action,
+                    inputFormatters: widget.formatters,
+                    maxLength: widget.maxLength,
+                    onChanged: widget.onChanged,
+                    onSubmitted: widget.onSubmitted,
+                    cursorColor: context.pal.p,
+                    style: T
+                        .of(widget.fontSize, widget.weight)
+                        .copyWith(letterSpacing: widget.letterSpacing),
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      border: InputBorder.none,
+                      counterText: '',
+                      hintText: widget.hint,
+                      hintStyle: T.of(
+                        widget.fontSize,
+                        FontWeight.w500,
+                        C.disabledText,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              if (widget.suffix != null) ...[
-                const SizedBox(width: 8),
-                widget.suffix!,
+                if (widget.suffix != null) ...[
+                  const SizedBox(width: 8),
+                  widget.suffix!,
+                ],
               ],
-            ],
+            ),
           ),
         ),
         if (hasError) ...[
           const SizedBox(height: 6),
-          Text(widget.error!, style: T.of(13, FontWeight.w600, C.coralText)),
+          TweenAnimationBuilder<double>(
+            key: ValueKey(widget.error),
+            tween: Tween(begin: 0, end: 1),
+            duration: MasirMotion.medium,
+            builder: (_, t, child) => Opacity(opacity: t, child: child),
+            child: Text(
+              widget.error!,
+              style: T.of(13, FontWeight.w600, C.coralText),
+            ),
+          ),
         ] else if (widget.helper != null) ...[
           const SizedBox(height: 6),
           Text(widget.helper!, style: T.of(13, FontWeight.w500, C.muted)),
@@ -643,11 +664,19 @@ Future<V?> showMasirSheet<V>(
     isDismissible: dismissible,
     enableDrag: dismissible,
     backgroundColor: Colors.transparent,
-    barrierColor: C.scrim,
-    sheetAnimationStyle: const AnimationStyle(
-      duration: Motion.sheet,
-      curve: Curves.easeOut,
-    ),
+    barrierColor: const Color(0x802B2633),
+    // §6: rises in 380ms (standard), closes in 250ms (exit); no overshoot.
+    sheetAnimationStyle: MasirMotion.reduced(context)
+        ? const AnimationStyle(
+            duration: MasirMotion.quick,
+            reverseDuration: MasirMotion.quick,
+          )
+        : const AnimationStyle(
+            duration: Duration(milliseconds: 380),
+            reverseDuration: MasirMotion.back,
+            curve: MasirMotion.standard,
+            reverseCurve: MasirMotion.exit,
+          ),
     builder: (ctx) => BrandScope(
       brand: brand,
       child: Directionality(
@@ -706,10 +735,11 @@ class Bone extends StatefulWidget {
 }
 
 class _BoneState extends State<Bone> with SingleTickerProviderStateMixin {
+  // §13: a gentle shimmer sweeping right to left, 1.2s, linear, looping.
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat(reverse: true);
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
 
   @override
   void dispose() {
@@ -719,17 +749,33 @@ class _BoneState extends State<Bone> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final still = Motion.reduced(context);
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (_, _) => Container(
+    final box = BorderRadius.circular(widget.radius);
+    if (MasirMotion.reduced(context)) {
+      return Container(
         width: widget.width,
         height: widget.height,
-        decoration: BoxDecoration(
-          color: Color.lerp(C.sand, C.border, still ? 0.5 : _c.value),
-          borderRadius: BorderRadius.circular(widget.radius),
-        ),
-      ),
+        decoration: BoxDecoration(color: C.sand, borderRadius: box),
+      );
+    }
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (_, _) {
+        // The light band travels from the right edge to the left.
+        final x = 1.6 - 3.2 * _c.value;
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: box,
+            gradient: LinearGradient(
+              begin: Alignment(x - 1, 0),
+              end: Alignment(x + 1, 0),
+              colors: const [C.sand, C.sandLight, C.sand],
+              stops: const [0.3, 0.5, 0.7],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -754,6 +800,9 @@ class ScoreRing extends StatelessWidget {
   final Color fill;
   final Widget? label;
 
+  /// Fills from empty when it first shows (the quiz result).
+  final bool countUp;
+
   const ScoreRing({
     super.key,
     required this.percent,
@@ -763,20 +812,25 @@ class ScoreRing extends StatelessWidget {
     this.track = C.border,
     this.fill = C.surface,
     this.label,
+    this.countUp = false,
   });
 
   @override
   Widget build(BuildContext context) => SizedBox.square(
     dimension: size,
-    child: CustomPaint(
-      painter: _RingPainter(percent / 100, stroke, color, track),
-      child: Center(
-        child: Container(
-          width: size - stroke * 2,
-          height: size - stroke * 2,
-          decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
-          alignment: Alignment.center,
-          child: label,
+    child: MasirProgress(
+      value: percent / 100,
+      from: countUp ? 0 : percent / 100,
+      builder: (_, v) => CustomPaint(
+        painter: _RingPainter(v, stroke, color, track),
+        child: Center(
+          child: Container(
+            width: size - stroke * 2,
+            height: size - stroke * 2,
+            decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: label,
+          ),
         ),
       ),
     ),

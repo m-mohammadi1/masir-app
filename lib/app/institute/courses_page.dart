@@ -32,8 +32,12 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
         final shown = _tab == 0 ? all : mine;
         return RefreshIndicator(
           onRefresh: () => context.read<LoadCubit<List<CourseCard>>>().load(),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: MasirStagger(
+            id: 'courses-${widget.instituteId}',
+            layout: (c) => ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              children: c,
+            ),
             children: [
               Segments(
                 labels: [

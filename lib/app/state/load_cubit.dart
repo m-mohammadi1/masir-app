@@ -55,23 +55,45 @@ class LoadView<D> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocBuilder<LoadCubit<D>, Load<D>>(
-    builder: (context, s) {
-      if (s.data != null) return builder(context, s.data as D);
-      if (s.error != null) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: InlineError(
-            title: s.error!.offline ? 'به سرور وصل نشدیم' : errorTitle,
-            body: s.error!.offline
-                ? 'اینترنتت رو یه نگاه بنداز.'
-                : s.error!.friendly,
-            onRetry: () => context.read<LoadCubit<D>>().load(),
-          ),
-        );
-      }
-      return skeleton ?? const ListSkeleton();
-    },
+    // §13: skeleton → content cross-fades in 200ms; reloads with data on
+    // screen keep the same child, so nothing flashes.
+    builder: (context, s) => AnimatedSwitcher(
+      duration: MasirMotion.reduced(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 200),
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.topCenter,
+        children: [...previous, ?current],
+      ),
+      child: KeyedSubtree(
+        key: ValueKey(
+          s.data != null
+              ? 'data'
+              : s.error != null
+              ? 'error'
+              : 'loading',
+        ),
+        child: _body(context, s),
+      ),
+    ),
   );
+
+  Widget _body(BuildContext context, Load<D> s) {
+    if (s.data != null) return builder(context, s.data as D);
+    if (s.error != null) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: InlineError(
+          title: s.error!.offline ? 'به سرور وصل نشدیم' : errorTitle,
+          body: s.error!.offline
+              ? 'اینترنتت رو یه نگاه بنداز.'
+              : s.error!.friendly,
+          onRetry: () => context.read<LoadCubit<D>>().load(),
+        ),
+      );
+    }
+    return skeleton ?? const ListSkeleton();
+  }
 }
 
 /// Default skeleton: a few card-shaped bones.
