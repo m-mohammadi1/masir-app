@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '/app/common/lesson_blocks.dart';
 import '/app/common/rich_body.dart';
 import '/app/course/course_detail_page.dart' show unitIcon;
 import '/app/course/plan_sheet.dart';
@@ -384,7 +385,9 @@ class _UnitPageState extends State<UnitPage> {
       case 'practice':
         inner = _Practice(payload: p);
       default:
-        inner = RichBody('${p['body'] ?? ''}');
+        inner = LessonBlocks.has(p)
+            ? LessonBlocks(payload: p)
+            : RichBody('${p['body'] ?? ''}');
     }
     final media = u.type == 'video' || u.type == 'audio';
     return Column(
