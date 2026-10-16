@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '/app/app.dart';
+import '/app/state/error_recovery.dart';
 import 'core/services/hive_service.dart';
 import 'core/services/service_locator.dart';
 import 'fcm.dart';
@@ -19,6 +20,8 @@ Future<void> background(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // A page that throws shows a way out instead of a blank screen.
+  AppErrors.install();
   GEasyHelper.errorNetwork = 'به سرور وصل نشدیم! اینترنتت رو یه نگاه بنداز.';
   GEasyHelper.vpnError = 'فیلترشکن روشنه؛ یه بار خاموشش کن و دوباره امتحان کن.';
 

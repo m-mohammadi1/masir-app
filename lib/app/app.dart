@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '/app/router.dart';
 import '/app/routes.dart';
+import '/app/state/error_recovery.dart';
 import '/app/state/offline_queue.dart';
 import '/app/state/session.dart';
 import '/design/design.dart';
@@ -103,8 +104,10 @@ class _MasirAppState extends State<MasirApp> {
         // of the space they were opened from.
         child: ValueListenableBuilder<Brand>(
           valueListenable: Session.space,
-          builder: (_, brand, _) =>
-              BrandScope(brand: brand, child: child ?? const SizedBox()),
+          builder: (_, brand, _) => BrandScope(
+            brand: brand,
+            child: RecoveryBar(child: child ?? const SizedBox()),
+          ),
         ),
       ),
     ),
