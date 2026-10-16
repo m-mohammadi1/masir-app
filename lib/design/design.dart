@@ -10,3 +10,4 @@ export 'palettes.dart';
 export 'tokens.dart';
 export 'format.dart';
 export 'media.dart';
+export 'motion.dart';
