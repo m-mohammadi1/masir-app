@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '/app/common/widgets.dart';
@@ -13,8 +15,10 @@ import '/core/api/models.dart';
 import '/core/services/service_locator.dart';
 import '/design/design.dart';
 
-/// «خانه‌ی مؤسسه»: cover, identity, the next step (or join), photos, the
-/// notice board, courses, teachers and outside links.
+part 'home_blocks.dart';
+
+/// «خانه‌ی مؤسسه»: the fixed top (cover, identity, then the next step or the
+/// join card), then the blocks the institute arranged for this viewer.
 class InstituteHomePage extends StatefulWidget {
   final String instituteId;
   const InstituteHomePage({super.key, required this.instituteId});
@@ -28,9 +32,8 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
   InstituteDetail? _detail;
   ApiError? _error;
   InstituteMe? _me;
-  List<Announcement>? _ann;
-  List<CourseCard>? _courses;
-  List<Teacher>? _teachers;
+  InstituteHome? _home;
+  ApiError? _homeError;
   bool _joining = false;
 
   String get id => widget.instituteId;
@@ -65,14 +68,16 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
           .instituteMe(id)
           .then((r) => r.fold((_) {}, (m) => _set(() => _me = m))),
       api
-          .announcements(id)
-          .then((r) => r.fold((_) {}, (a) => _set(() => _ann = a))),
-      api
-          .instituteCourses(id)
-          .then((r) => r.fold((_) {}, (c) => _set(() => _courses = c))),
-      api
-          .instituteTeachers(id)
-          .then((r) => r.fold((_) {}, (t) => _set(() => _teachers = t))),
+          .instituteHome(id)
+          .then(
+            (r) => r.fold(
+              (e) => _set(() => _homeError = e),
+              (h) => _set(() {
+                _home = h;
+                _homeError = null;
+              }),
+            ),
+          ),
     ]);
   }
 
@@ -121,9 +126,9 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
     final current = _me?.courses
         .where((c) => c.currentUnit != null)
         .firstOrNull;
-    final photos = [
-      ...d.photos,
-      if (d.brand.coverUrl.isNotEmpty) d.brand.coverUrl,
+    final blocks = [
+      for (final b in _home?.blocks ?? const <HomeBlockData>[])
+        ?homeBlock(context, b, detail: d),
     ];
     return RefreshIndicator(
       onRefresh: _load,
@@ -145,97 +150,12 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
             ),
           ),
           const SizedBox(height: 32),
-          if (photos.length > 1) ...[
+          if (_home == null && _homeError != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'یه نگاه به ${d.name}',
-                style: T.of(20, FontWeight.w900),
-              ),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              child: InlineError(body: _homeError!.friendly, onRetry: _load),
             ),
-            const SizedBox(height: 14),
-            SizedBox(
-              height: 150,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: photos.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemBuilder: (_, i) => ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: SizedBox(
-                    width: 220,
-                    child: CoverImage(url: photos[i], brand: d.brand),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
-          if ((_ann ?? []).isNotEmpty) ...[
-            _NoticeBoard(
-              items: _ann!.take(2).toList(),
-              instituteId: id,
-              instituteName: d.name,
-            ),
-            const SizedBox(height: 32),
-          ],
-          if ((_courses ?? []).isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SectionTitle(
-                'دوره‌ها',
-                action: 'همه',
-                onAction: () => context.go(Routes.instCourses(id)),
-              ),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              height: 272,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-                itemCount: _courses!.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 14),
-                itemBuilder: (_, i) =>
-                    _CourseMini(course: _courses![i], brand: d.brand),
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
-          if ((_teachers ?? []).isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SectionTitle(
-                'اساتید',
-                action: 'همه',
-                onAction: () => context.go(Routes.instTeachers(id)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 216,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 8,
-                ),
-                itemCount: _teachers!.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 18),
-                itemBuilder: (_, i) =>
-                    Polaroid(teacher: _teachers![i], tilt: i.isEven ? -3 : 2.5),
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
-          if (d.links.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _Links(detail: d),
-            ),
-            const SizedBox(height: 32),
-          ],
+          for (final b in blocks) ...[b, const SizedBox(height: 32)],
         ],
       ),
     );
@@ -543,10 +463,12 @@ class _JoinCard extends StatelessWidget {
 }
 
 class _NoticeBoard extends StatelessWidget {
+  final String heading;
   final List<Announcement> items;
   final String instituteId;
   final String instituteName;
   const _NoticeBoard({
+    required this.heading,
     required this.items,
     required this.instituteId,
     required this.instituteName,
@@ -563,7 +485,7 @@ class _NoticeBoard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: SectionTitle(
-              'تابلوی اعلانات',
+              heading,
               action: 'همه',
               onAction: () => context.push(Routes.announcements(instituteId)),
             ),
@@ -837,67 +759,6 @@ class Polaroid extends StatelessWidget {
       ),
     ),
   );
-}
-
-class _Links extends StatelessWidget {
-  final InstituteDetail detail;
-  const _Links({required this.detail});
-
-  @override
-  Widget build(BuildContext context) {
-    final pal = context.pal;
-    MI icon(String k) => switch (k) {
-      'telegram' => MI.telegram,
-      'instagram' => MI.camera,
-      _ => MI.globe,
-    };
-    String label(String k) => switch (k) {
-      'telegram' => 'کانال تلگرام',
-      'instagram' => 'اینستاگرام',
-      _ => 'وب‌سایت',
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: C.surface,
-        border: Border.all(color: C.border, width: 2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              '${detail.name} رو بیرون از اپ هم دنبال کن',
-              style: T.of(15, FontWeight.w800),
-            ),
-          ),
-          for (final l in detail.links) ...[
-            const SizedBox(width: 10),
-            Semantics(
-              button: true,
-              label: label(l.kind),
-              child: GestureDetector(
-                onTap: () => launchUrl(
-                  Uri.parse(l.url),
-                  mode: LaunchMode.externalApplication,
-                ),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: pal.soft,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  alignment: Alignment.center,
-                  child: MIcon(icon(l.kind), color: pal.ink),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 class _HomeSkeleton extends StatelessWidget {

@@ -156,6 +156,8 @@ extension DiscoveryEndpoints on MasirApi {
     (d) => items(d).map(CourseCard.fromJson).toList(),
     query: {'per_page': 50},
   );
+  Future<Res<InstituteHome>> instituteHome(String id) =>
+      get('institutes/$id/home', (d) => InstituteHome.fromJson(asMap(d)));
   Future<Res<List<Teacher>>> instituteTeachers(String id) => get(
     'institutes/$id/teachers',
     (d) => (d is Map ? asList(d['items']) : asList(d))

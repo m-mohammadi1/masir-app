@@ -1320,3 +1320,122 @@ class ReminderPrefs {
   );
   J toJson() => {'reminder_push': push, 'reminder_sms': sms};
 }
+
+/// The institute home built from blocks, already resolved for this viewer
+/// (guest or member): only visible blocks, in order. Unknown types are kept
+/// as-is and skipped when drawn.
+class InstituteHome {
+  final bool member;
+  final bool solo;
+  final List<HomeBlockData> blocks;
+  const InstituteHome({
+    required this.member,
+    required this.solo,
+    required this.blocks,
+  });
+  factory InstituteHome.fromJson(J j) => InstituteHome(
+    member: str(j['viewer']) == 'member',
+    solo: toBool(j['solo']),
+    blocks: asList(j['blocks']).map(HomeBlockData.fromJson).toList(),
+  );
+}
+
+class HomeBlockData {
+  final String id;
+  final String type;
+  final String heading;
+  final String badge;
+  final CourseCard? course;
+  final String kicker;
+  final String title;
+  final DateTime? startsAt;
+  final String place;
+  final String cta;
+  final String? announcementId;
+  final Announcement? announcement;
+  final List<CourseCard> courses;
+  final HomeOffer? offer;
+  final List<Teacher> teachers;
+  final List<String> photos;
+  final String text;
+  final List<String> items;
+  final String address;
+  final String phone;
+  final List<({String kind, String url})> links;
+  const HomeBlockData({
+    required this.id,
+    required this.type,
+    this.heading = '',
+    this.badge = '',
+    this.course,
+    this.kicker = '',
+    this.title = '',
+    this.startsAt,
+    this.place = '',
+    this.cta = '',
+    this.announcementId,
+    this.announcement,
+    this.courses = const [],
+    this.offer,
+    this.teachers = const [],
+    this.photos = const [],
+    this.text = '',
+    this.items = const [],
+    this.address = '',
+    this.phone = '',
+    this.links = const [],
+  });
+  factory HomeBlockData.fromJson(J j) => HomeBlockData(
+    id: str(j['id']),
+    type: str(j['type']),
+    heading: str(j['heading']),
+    badge: str(j['badge']),
+    course: j['course'] is Map ? CourseCard.fromJson(asMap(j['course'])) : null,
+    kicker: str(j['kicker']),
+    title: str(j['title']),
+    startsAt: date(j['starts_at']),
+    place: str(j['place']),
+    cta: str(j['cta']),
+    announcementId: strOrNull(j['announcement_id']),
+    announcement: j['announcement'] is Map
+        ? Announcement.fromJson(asMap(j['announcement']))
+        : null,
+    courses: asList(j['courses']).map(CourseCard.fromJson).toList(),
+    offer: j['offer'] is Map ? HomeOffer.fromJson(asMap(j['offer'])) : null,
+    teachers: asList(j['teachers']).map(Teacher.fromJson).toList(),
+    photos: (j['photos'] as List? ?? const []).map(str).toList(),
+    text: str(j['text']),
+    items: (j['items'] as List? ?? const []).map(str).toList(),
+    address: str(j['address']),
+    phone: str(j['phone']),
+    links: asList(
+      j['links'],
+    ).map((l) => (kind: str(l['kind']), url: str(l['url']))).toList(),
+  );
+}
+
+/// A discount code pinned on the home («پیشنهاد و تخفیف»).
+class HomeOffer {
+  final String code;
+  final int percent;
+  final bool firstPaymentOnly;
+  final DateTime? expiresAt;
+  final String courseId;
+  final String courseTitle;
+  const HomeOffer({
+    required this.code,
+    required this.percent,
+    required this.firstPaymentOnly,
+    this.expiresAt,
+    required this.courseId,
+    required this.courseTitle,
+  });
+  factory HomeOffer.fromJson(J j) => HomeOffer(
+    code: str(j['code']),
+    percent: toInt(j['percent']),
+    firstPaymentOnly: toBool(j['first_payment_only']),
+    expiresAt: date(j['expires_at']),
+    courseId: str(j['course_id']),
+    courseTitle: str(j['course_title']),
+  );
+}

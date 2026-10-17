@@ -63,6 +63,16 @@ class MI {
   static const megaphone = MI(
     '<path d="M3 11v2a1 1 0 0 0 1 1h2l6 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M16 9a3 3 0 0 1 0 6"/>',
   );
+  static const pin = MI(
+    '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>',
+  );
+  static const call = MI(
+    '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+  );
+  static const copy = MI('<path d="M8 8h11v11H8zM5 16V5h11"/>');
+  static const link = MI(
+    '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>',
+  );
   static const phone = MI(
     '<rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/>',
   );
