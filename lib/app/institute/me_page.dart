@@ -117,7 +117,7 @@ class _InstituteMePageState extends State<InstituteMePage> {
     r.fold(
       (e) => Toast.show(
         context,
-        title: 'عضو نشدی',
+        title: '${context.brand.memberWord} نشدی',
         body: e.friendly,
         tone: ToastTone.error,
       ),
@@ -356,7 +356,9 @@ class _MemberCard extends StatelessWidget {
                             child: Center(
                               widthFactor: 1,
                               child: Text(
-                                'کارت عضویت',
+                                context.brand.solo
+                                    ? 'کارت شاگردی'
+                                    : 'کارت عضویت',
                                 style: T.of(12, FontWeight.w900, pal.ink),
                               ),
                             ),
@@ -372,8 +374,8 @@ class _MemberCard extends StatelessWidget {
                     ),
                     Text(
                       me.memberSince != null
-                          ? 'عضو $name از ${jMonthYear(me.memberSince!)}'
-                          : 'عضو $name',
+                          ? '${context.brand.memberWord} $name از ${jMonthYear(me.memberSince!)}'
+                          : '${context.brand.memberWord} $name',
                       style: T.of(13, FontWeight.w600, pal.on),
                     ),
                     const SizedBox(height: 14),
@@ -667,16 +669,21 @@ class _Guest extends StatelessWidget {
               child: MIcon(MI.user, size: 44, color: pal.ink, strokeWidth: 2),
             ),
             const SizedBox(height: 16),
-            Text('هنوز عضو نشده‌ای', style: T.of(22, FontWeight.w900)),
+            Text(
+              context.brand.solo ? 'هنوز شاگرد نشدی' : 'هنوز عضو نشده‌ای',
+              style: T.of(22, FontWeight.w900),
+            ),
             const SizedBox(height: 16),
             Text(
-              'عضویت رایگانه. عضو که بشی، کارت عضویت و پیشرفتت توی این مؤسسه همین‌جا میاد.',
+              context.brand.solo
+                  ? 'رایگانه. بعدش کلاس‌ها و پیشرفتت همین‌جا کنار هم میان.'
+                  : 'عضویت رایگانه. عضو که بشی، کارت عضویت و پیشرفتت توی این مؤسسه همین‌جا میاد.',
               textAlign: TextAlign.center,
               style: T.of(15, FontWeight.w500, C.body, 1.9),
             ),
             const SizedBox(height: 20),
             Btn(
-              'عضو شو',
+              context.brand.joinLabel,
               height: 52,
               fontSize: 16,
               loading: busy,

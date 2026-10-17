@@ -19,6 +19,11 @@ class Brand {
   final String logoUrl;
   final String coverUrl;
 
+  /// An independent teacher's space: the copy speaks about one person and
+  /// the logo frame shows [teacherPhotoUrl].
+  final bool solo;
+  final String teacherPhotoUrl;
+
   const Brand({
     required this.palette,
     this.pattern = 'dots',
@@ -26,7 +31,24 @@ class Brand {
     this.name = '',
     this.logoUrl = '',
     this.coverUrl = '',
+    this.solo = false,
+    this.teacherPhotoUrl = '',
   });
+
+  /// What fills the logo frame: the teacher's photo in a solo space, else
+  /// the logo (empty = the first letter).
+  String get frameImageUrl =>
+      solo && teacherPhotoUrl.isNotEmpty ? teacherPhotoUrl : logoUrl;
+
+  /// «شاگرد» for a person's space, «عضو» for an institute: «شاگرد نگار شو»,
+  /// «عضو Acme شو».
+  String get memberWord => solo ? 'شاگرد' : 'عضو';
+
+  /// The other learners: «۴۰ شاگرد» / «۵۵ هم‌کلاسی».
+  String get peersWord => solo ? 'شاگرد' : 'هم‌کلاسی';
+
+  /// The join button: «شروع کن» / «عضو شو».
+  String get joinLabel => solo ? 'شروع کن' : 'عضو شو';
 
   static const masir = Brand(palette: masirPalette, name: 'مسیر');
 
@@ -39,6 +61,8 @@ class Brand {
       name: (j['name'] as String?) ?? '',
       logoUrl: (j['logo_url'] as String?) ?? '',
       coverUrl: (j['cover_url'] as String?) ?? '',
+      solo: j['solo'] == true || j['type'] == 'one_teacher',
+      teacherPhotoUrl: (j['teacher_photo_url'] as String?) ?? '',
     );
   }
 
@@ -57,11 +81,21 @@ class Brand {
       other.frame == frame &&
       other.name == name &&
       other.logoUrl == logoUrl &&
-      other.coverUrl == coverUrl;
+      other.coverUrl == coverUrl &&
+      other.solo == solo &&
+      other.teacherPhotoUrl == teacherPhotoUrl;
 
   @override
-  int get hashCode =>
-      Object.hash(palette, pattern, frame, name, logoUrl, coverUrl);
+  int get hashCode => Object.hash(
+    palette,
+    pattern,
+    frame,
+    name,
+    logoUrl,
+    coverUrl,
+    solo,
+    teacherPhotoUrl,
+  );
 }
 
 /// Provides the active space's brand: Masir violet outside institutes, the
@@ -442,9 +476,10 @@ class InstituteLogo extends StatelessWidget {
     final bg = inverted ? Colors.white : pal.p;
     final fg = inverted ? pal.ink : pal.on;
     Widget inner;
-    if (brand.logoUrl.isNotEmpty) {
+    final image = brand.frameImageUrl;
+    if (image.isNotEmpty) {
       inner = Image.network(
-        brand.logoUrl,
+        image,
         fit: BoxFit.cover,
         width: size,
         height: size,

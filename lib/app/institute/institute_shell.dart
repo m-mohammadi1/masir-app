@@ -72,6 +72,9 @@ class _InstituteShellState extends State<InstituteShell> {
 
   static const _titles = ['', 'دوره‌ها', 'اساتید', 'من در این مؤسسه'];
 
+  /// Tab positions of the routes; a solo space skips «اساتید».
+  static const _soloTab = [0, 1, -1, 2];
+
   @override
   Widget build(BuildContext context) {
     final d = _detail;
@@ -86,7 +89,7 @@ class _InstituteShellState extends State<InstituteShell> {
             // The home tab draws its own header over the cover photo.
             if (_index != 0)
               InstituteBar(
-                title: _titles[_index],
+                title: brand.solo && _index == 3 ? 'من' : _titles[_index],
                 onExit: () => context.go(Routes.vitrine),
                 onSwitch: () => showInstituteSwitcher(context, currentId: id),
               ),
@@ -94,15 +97,21 @@ class _InstituteShellState extends State<InstituteShell> {
           ],
         ),
         bottomNavigationBar: SpaceTabBar(
-          items: instituteTabs,
-          index: _index,
+          items: brand.solo ? soloTabs : instituteTabs,
+          index: brand.solo ? _soloTab[_index].clamp(0, 2) : _index,
           onTap: (i) => context.go(
-            [
-              Routes.instHome(id),
-              Routes.instCourses(id),
-              Routes.instTeachers(id),
-              Routes.instMe(id),
-            ][i],
+            (brand.solo
+                ? [
+                    Routes.instHome(id),
+                    Routes.instCourses(id),
+                    Routes.instMe(id),
+                  ]
+                : [
+                    Routes.instHome(id),
+                    Routes.instCourses(id),
+                    Routes.instTeachers(id),
+                    Routes.instMe(id),
+                  ])[i],
           ),
         ),
       ),

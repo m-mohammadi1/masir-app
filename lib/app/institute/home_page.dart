@@ -93,14 +93,15 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
     res.fold(
       (e) => Toast.show(
         context,
-        title: 'عضو نشدی',
+        title: '${_detail?.brand.memberWord ?? 'عضو'} نشدی',
         body: e.friendly,
         tone: ToastTone.error,
       ),
       (_) {
         Toast.show(
           context,
-          title: 'عضو ${_detail?.name ?? ''} شدی!',
+          title:
+              '${_detail?.brand.memberWord ?? 'عضو'} ${_detail?.name ?? ''} شدی!',
           body: 'دوره‌ها و پیشرفتت همین‌جا کنار هم میان.',
         );
         InstituteCache.forget(id);
@@ -146,7 +147,12 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
                         : _StartCard(
                             onTap: () => context.go(Routes.instCourses(id)),
                           ))
-                  : _JoinCard(name: d.name, busy: _joining, onJoin: _join),
+                  : _JoinCard(
+                      name: d.name,
+                      solo: d.brand.solo,
+                      busy: _joining,
+                      onJoin: _join,
+                    ),
             ),
           ),
           const SizedBox(height: 32),
@@ -175,10 +181,11 @@ class _Hero extends StatelessWidget {
     final chipBg = pal.darkText
         ? const Color(0x1A000000)
         : const Color(0x33FFFFFF);
+    // A person's space counts courses and students, never teachers.
     final chips = [
       '${fa(d.courseCount)} دوره',
-      '${fa(d.teacherCount)} استاد',
-      '${fa(d.studentCount)} هم‌کلاسی',
+      if (!brand.solo) '${fa(d.teacherCount)} استاد',
+      '${fa(d.studentCount)} ${brand.peersWord}',
     ];
     Widget glass(
       Widget child, {
@@ -299,10 +306,12 @@ class _Hero extends StatelessWidget {
                     const SizedBox(height: 14),
                     Text(d.name, style: T.of(30, FontWeight.w900, pal.on, 1.3)),
                     Text(
-                      [
-                        if (d.topic.isNotEmpty) d.topic,
-                        if (d.foundedYear != null) 'از ${fa(d.foundedYear)}',
-                      ].join('، '),
+                      (brand.solo ? 'استاد مستقل · ' : '') +
+                          [
+                            if (d.topic.isNotEmpty) d.topic,
+                            if (d.foundedYear != null)
+                              'از ${fa(d.foundedYear)}',
+                          ].join('، '),
                       style: T.of(14, FontWeight.w600, pal.on),
                     ),
                     if (d.description.isNotEmpty) ...[
@@ -429,10 +438,12 @@ class _StartCard extends StatelessWidget {
 
 class _JoinCard extends StatelessWidget {
   final String name;
+  final bool solo;
   final bool busy;
   final VoidCallback onJoin;
   const _JoinCard({
     required this.name,
+    required this.solo,
     required this.busy,
     required this.onJoin,
   });
@@ -443,15 +454,20 @@ class _JoinCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('عضو $name شو', style: T.of(19, FontWeight.w800)),
+        Text(
+          solo ? 'شاگرد $name شو' : 'عضو $name شو',
+          style: T.of(19, FontWeight.w800),
+        ),
         const SizedBox(height: 4),
         Text(
-          'عضویت رایگانه. عضو که بشی، دوره‌ها و پیشرفتت همین‌جا کنار هم میان.',
+          solo
+              ? 'رایگانه. بعدش کلاس‌ها و پیشرفتت همین‌جا کنار هم میان.'
+              : 'عضویت رایگانه. عضو که بشی، دوره‌ها و پیشرفتت همین‌جا کنار هم میان.',
           style: T.of(14, FontWeight.w500, C.body, 1.8),
         ),
         const SizedBox(height: 12),
         Btn(
-          'عضو شو',
+          solo ? 'شروع کن' : 'عضو شو',
           height: 52,
           fontSize: 16,
           loading: busy,

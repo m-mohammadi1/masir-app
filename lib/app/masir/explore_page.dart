@@ -263,7 +263,7 @@ class _ExploreRow extends StatelessWidget {
                     ),
                     if (item.isMember) ...[
                       const SizedBox(width: 6),
-                      Tag.success('عضوی'),
+                      Tag.success(item.brand.solo ? 'شاگردشی' : 'عضوی'),
                     ],
                   ],
                 ),

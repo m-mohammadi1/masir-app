@@ -415,7 +415,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'کد درسته! عضو این مؤسسه می‌شی',
+                        _invite!.brand.solo
+                            ? 'کد درسته! شاگرد ${_invite!.brand.name} می‌شی'
+                            : 'کد درسته! عضو این مؤسسه می‌شی',
                         style: T.of(12, FontWeight.w700, C.greenText),
                       ),
                       Text(

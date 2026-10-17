@@ -727,7 +727,7 @@ class _CurrentInstitute extends StatelessWidget {
     final meta = [
       if (inst.topic.isNotEmpty) inst.topic,
       '${fa(inst.courseCount)} دوره',
-      '${fa(inst.studentCount)} هم‌کلاسی',
+      '${fa(inst.studentCount)} ${brand.peersWord}',
     ].join(' · ');
     return Padding(
       padding: _hPad,
@@ -1336,7 +1336,7 @@ class _RecommendCardState extends State<RecommendCard> {
     res.fold(
       (e) => Toast.show(
         context,
-        title: 'عضو نشدی',
+        title: '${widget.item.brand.memberWord} نشدی',
         body: e.friendly,
         tone: ToastTone.error,
       ),
@@ -1478,7 +1478,7 @@ class _RecommendCardState extends State<RecommendCard> {
                                 ),
                               )
                             : Text(
-                                'عضو شو · رایگان',
+                                '${it.brand.joinLabel} · رایگان',
                                 style: T.of(15, FontWeight.w800, pal.ink),
                               ),
                       ),

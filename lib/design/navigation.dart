@@ -77,6 +77,13 @@ const instituteTabs = [
   TabItem(MI.user, 'من'),
 ];
 
+/// An independent teacher's space has no «اساتید» tab.
+const soloTabs = [
+  TabItem(MI.home, 'خانه'),
+  TabItem(MI.book, 'دوره‌ها'),
+  TabItem(MI.user, 'من'),
+];
+
 /// Bottom tab bar of a space: white, 2px sand top border, the active tab sits
 /// in a soft pill of the space colour.
 class SpaceTabBar extends StatelessWidget {

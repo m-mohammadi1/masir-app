@@ -243,7 +243,7 @@ class _MembershipCard extends StatelessWidget {
                     ),
                     if (card.memberSince != null)
                       Text(
-                        'عضو از ${jMonthYear(card.memberSince!)}',
+                        '${inst.brand.memberWord} از ${jMonthYear(card.memberSince!)}',
                         style: T.of(13, FontWeight.w600, pal.on),
                       ),
                     const SizedBox(height: 14),
@@ -473,7 +473,7 @@ class _InstituteRowState extends State<InstituteRow> {
     res.fold(
       (e) => Toast.show(
         context,
-        title: 'عضو نشدی',
+        title: '${widget.item.brand.memberWord} نشدی',
         body: e.friendly,
         tone: ToastTone.error,
       ),
@@ -535,7 +535,7 @@ class _InstituteRowState extends State<InstituteRow> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        'عضو شو',
+                        it.brand.joinLabel,
                         style: T.of(14, FontWeight.w800, C.violetDark),
                       ),
               ),
