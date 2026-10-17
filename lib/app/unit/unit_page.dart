@@ -527,7 +527,11 @@ class _UnitPageState extends State<UnitPage> {
                     if (u.type == 'practice') ...[
                       const SizedBox(height: 8),
                       Text(
-                        'این تمرین رو روی کاغذ یا توی فایل انجام بده، بعد برگرد و تیکش رو بزن.',
+                        // With steps, the intro sits here (UnitPractice).
+                        _practiceSteps(p).isNotEmpty &&
+                                '${p['instructions'] ?? ''}'.trim().isNotEmpty
+                            ? '${p['instructions']}'.trim()
+                            : 'این تمرین رو روی کاغذ یا توی فایل انجام بده، بعد برگرد و تیکش رو بزن.',
                         style: T.of(15, FontWeight.w500, C.body, 1.9),
                       ),
                     ],
@@ -637,6 +641,33 @@ class _PathSteps extends StatelessWidget {
   }
 }
 
+List<String> _practiceSteps(Map<String, dynamic> p) => [
+  for (final s in (p['steps'] as List? ?? const []))
+    if ('$s'.trim().isNotEmpty) '$s'.trim(),
+];
+
+/// The practice's files; older units have only the single attachment.
+List<({String url, String name, int size})> _practiceFiles(
+  Map<String, dynamic> p,
+) {
+  final list = [
+    for (final a in (p['attachments'] as List? ?? const []).whereType<Map>())
+      (
+        url: '${a['url'] ?? ''}',
+        name: '${a['name'] ?? ''}',
+        size: (a['size_bytes'] as num?)?.toInt() ?? 0,
+      ),
+  ].where((a) => a.url.isNotEmpty).toList();
+  if (list.isEmpty && '${p['attachment_url'] ?? ''}'.isNotEmpty) {
+    list.add((
+      url: '${p['attachment_url']}',
+      name: '${p['attachment_name'] ?? ''}',
+      size: (p['attachment_size_bytes'] as num?)?.toInt() ?? 0,
+    ));
+  }
+  return list;
+}
+
 class _Practice extends StatelessWidget {
   final Map<String, dynamic> payload;
   const _Practice({required this.payload});
@@ -644,12 +675,8 @@ class _Practice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pal = context.pal;
-    final url = '${payload['attachment_url'] ?? ''}';
-    final name = '${payload['attachment_name'] ?? ''}';
-    final size = (payload['attachment_size_bytes'] as num?)?.toInt() ?? 0;
-    final ext = name.contains('.')
-        ? name.split('.').last.toUpperCase()
-        : 'فایل';
+    final steps = _practiceSteps(payload);
+    final files = _practiceFiles(payload);
     String human(int b) => b >= 1024 * 1024
         ? '${fa((b / 1024 / 1024).toStringAsFixed(1))} مگابایت'
         : '${fa((b / 1024).round())} کیلوبایت';
@@ -664,84 +691,55 @@ class _Practice extends StatelessWidget {
             children: [
               Text('چی کار کنی', style: T.of(17, FontWeight.w800)),
               const SizedBox(height: 14),
-              RichBody(
-                '${payload['instructions'] ?? ''}',
-                fontSize: 15,
-                lineHeight: 1.9,
-              ),
+              if (steps.isEmpty)
+                RichBody(
+                  '${payload['instructions'] ?? ''}',
+                  fontSize: 15,
+                  lineHeight: 1.9,
+                )
+              else
+                for (var i = 0; i < steps.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: pal.p,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          fa(i + 1),
+                          style: T.of(14, FontWeight.w800, pal.on, 1),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          steps[i],
+                          style: T.of(15, FontWeight.w500, C.ink, 1.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
             ],
           ),
         ),
-        if (url.isNotEmpty) ...[
+        if (files.isNotEmpty) ...[
           const SizedBox(height: 18),
           Text('پیوست', style: T.of(17, FontWeight.w800)),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () =>
-                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: C.surface,
-                border: Border.all(color: C.border, width: 2),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFE9EA),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      ext.length > 4 ? ext.substring(0, 4) : ext,
-                      style: T.of(11, FontWeight.w900, C.coralText),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name.isEmpty ? 'فایل تمرین' : name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: T.of(15, FontWeight.w800),
-                        ),
-                        if (size > 0)
-                          Text(
-                            human(size),
-                            style: T.of(13, FontWeight.w500, C.muted),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Semantics(
-                    label: 'دانلود',
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: pal.soft,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      alignment: Alignment.center,
-                      child: MIcon(
-                        MI.download,
-                        size: 20,
-                        color: pal.ink,
-                        strokeWidth: 2.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          for (final f in files) ...[
+            const SizedBox(height: 10),
+            _PracticeFile(
+              url: f.url,
+              name: f.name,
+              size: f.size > 0 ? human(f.size) : '',
             ),
-          ),
+          ],
         ],
         const SizedBox(height: 18),
         Container(
@@ -1057,4 +1055,90 @@ class _UnitSkeleton extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// One downloadable practice file (PDF, Word or audio).
+class _PracticeFile extends StatelessWidget {
+  final String url;
+  final String name;
+  final String size;
+  const _PracticeFile({
+    required this.url,
+    required this.name,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    final clean = Uri.decodeComponent(url.split('?').first.split('/').last);
+    final shown = name.isNotEmpty ? name : clean;
+    final ext = shown.contains('.')
+        ? shown.split('.').last.toUpperCase()
+        : 'فایل';
+    return Semantics(
+      button: true,
+      label: 'دانلود $shown',
+      child: GestureDetector(
+        onTap: () =>
+            launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: C.surface,
+            border: Border.all(color: C.border, width: 2),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE9EA),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  ext.length > 4 ? ext.substring(0, 4) : ext,
+                  style: T.of(11, FontWeight.w900, C.coralText),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      shown.isEmpty ? 'فایل تمرین' : shown,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: T.of(15, FontWeight.w800),
+                    ),
+                    if (size.isNotEmpty)
+                      Text(size, style: T.of(13, FontWeight.w500, C.muted)),
+                  ],
+                ),
+              ),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: pal.soft,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: MIcon(
+                  MI.download,
+                  size: 20,
+                  color: pal.ink,
+                  strokeWidth: 2.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
