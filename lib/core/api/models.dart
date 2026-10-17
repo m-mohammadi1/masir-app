@@ -985,6 +985,10 @@ class Announcement {
   final String authorName;
   final DateTime? publishedAt;
   final bool unread;
+
+  /// `{blocks, images}` when written with the dashboard's toolbar (read by
+  /// `LessonBlocks`); older announcements have only [body].
+  final J content;
   const Announcement({
     required this.id,
     required this.instituteId,
@@ -997,6 +1001,7 @@ class Announcement {
     required this.authorName,
     this.publishedAt,
     required this.unread,
+    this.content = const {},
   });
   factory Announcement.fromJson(J j) => Announcement(
     id: str(j['id']),
@@ -1010,6 +1015,7 @@ class Announcement {
     authorName: str(j['author_name']),
     publishedAt: date(j['published_at']),
     unread: toBool(j['is_unread']),
+    content: {'blocks': j['blocks'], 'images': j['images']},
   );
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '/app/common/lesson_blocks.dart';
 import '/app/common/rich_body.dart';
 import '/app/institute/announcements_page.dart';
 import '/app/institute/institute_shell.dart';
@@ -114,7 +115,11 @@ class _Body extends StatelessWidget {
               const SizedBox(height: 16),
               Text(a.title, style: T.of(26, FontWeight.w900, C.ink, 1.45)),
               const SizedBox(height: 16),
-              RichBody(a.body),
+              if (LessonBlocks.has(a.content)) ...[
+                LessonBlocks(payload: a.content),
+                const SizedBox(height: 16),
+              ] else
+                RichBody(a.body),
               if (courseId != null) ...[
                 const SizedBox(height: 8),
                 GestureDetector(
