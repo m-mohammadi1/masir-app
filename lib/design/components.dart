@@ -87,6 +87,11 @@ class _LipState extends State<Lip> {
       // and with a label the visible text inside isn't read a second time.
       container: true,
       excludeSemantics: widget.semanticLabel != null,
+      // Excluding the child also drops its tap action; give it back.
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap!();
+      },
       child: Padding(
         padding: EdgeInsets.only(bottom: h),
         child: GestureDetector(
