@@ -464,6 +464,8 @@ class _MasirPressableState extends State<MasirPressable> {
       button: true,
       selected: widget.selected,
       label: widget.semanticLabel,
+      // With a label, the visible text inside would be read a second time.
+      excludeSemantics: widget.semanticLabel != null,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: (_) => _set(true),

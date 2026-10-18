@@ -23,15 +23,23 @@ class _MasirShellState extends State<MasirShell> {
   @override
   Widget build(BuildContext context) => BrandScope(
     brand: Brand.masir,
-    child: Scaffold(
-      backgroundColor: C.paper,
-      body: widget.shell,
-      bottomNavigationBar: SpaceTabBar(
-        items: masirTabs,
-        index: widget.shell.currentIndex,
-        onTap: (i) => widget.shell.goBranch(
-          i,
-          initialLocation: i == widget.shell.currentIndex,
+    // Android back on «مؤسسات من» or «پروفایل» goes to «ویترین» first;
+    // only back on «ویترین» leaves the app.
+    child: PopScope(
+      canPop: widget.shell.currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) widget.shell.goBranch(0);
+      },
+      child: Scaffold(
+        backgroundColor: C.paper,
+        body: widget.shell,
+        bottomNavigationBar: SpaceTabBar(
+          items: masirTabs,
+          index: widget.shell.currentIndex,
+          onTap: (i) => widget.shell.goBranch(
+            i,
+            initialLocation: i == widget.shell.currentIndex,
+          ),
         ),
       ),
     ),

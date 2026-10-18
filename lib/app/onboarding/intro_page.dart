@@ -59,7 +59,11 @@ class _IntroPageState extends State<IntroPage> {
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: TextButton(
-                  onPressed: () => context.push(Routes.register),
+                  // To the last slide, where «حساب دارم» and registration
+                  // both are; on it, «رد شو» starts registration.
+                  onPressed: () => last
+                      ? context.push(Routes.register)
+                      : _go(_slides.length - 1),
                   style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
                   child: Text(
                     'رد شو',

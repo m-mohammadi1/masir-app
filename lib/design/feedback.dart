@@ -48,7 +48,8 @@ class Toast {
     );
     _current = entry;
     overlay.insert(entry);
-    if (tone != ToastTone.error || action == null) {
+    // Errors stay until the student closes them.
+    if (tone != ToastTone.error) {
       _timer = Timer(duration, hide);
     }
   }

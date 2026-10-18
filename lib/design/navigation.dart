@@ -330,7 +330,7 @@ class PaperHeader extends StatelessWidget {
   );
 }
 
-/// Sand segmented control ("همه · ۳ | دوره‌های من · ۱").
+/// Sand segmented control ("همه • ۳ | دوره‌های من • ۱").
 class Segments extends StatelessWidget {
   final List<String> labels;
   final int index;

@@ -122,7 +122,6 @@ class FCMManager {
         if (token != null) {
           HiveService.fcmToken = token;
         }
-        debugPrint("fcm token is : $token");
       });
       return HiveService.fcmToken;
     } catch (e) {

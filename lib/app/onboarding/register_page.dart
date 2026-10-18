@@ -494,7 +494,8 @@ class _RegisterPageState extends State<RegisterPage> {
             children: [
               const TextSpan(text: 'یه کد ۵ رقمی به '),
               TextSpan(
-                text: fa(masked),
+                // Left-to-right isolate, so the groups keep their order in RTL.
+                text: '\u2066${fa(masked)}\u2069',
                 style: T.of(15, FontWeight.w800, C.body),
               ),
               const TextSpan(text: ' فرستادیم.'),
@@ -854,8 +855,10 @@ class _OtpBoxesState extends State<OtpBoxes> {
             ],
           ),
           Positioned.fill(
+            // Invisible over the boxes, but still a field for TalkBack.
             child: Opacity(
               opacity: 0,
+              alwaysIncludeSemantics: true,
               child: TextField(
                 controller: widget.controller,
                 focusNode: _focus,
@@ -870,6 +873,7 @@ class _OtpBoxesState extends State<OtpBoxes> {
                 decoration: const InputDecoration(
                   counterText: '',
                   border: InputBorder.none,
+                  labelText: 'کد ۵ رقمی',
                 ),
               ),
             ),

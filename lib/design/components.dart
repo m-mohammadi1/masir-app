@@ -83,6 +83,8 @@ class _LipState extends State<Lip> {
       button: true,
       selected: widget.selected,
       label: widget.semanticLabel,
+      // With a label, the visible text inside would be read a second time.
+      excludeSemantics: widget.semanticLabel != null,
       child: Padding(
         padding: EdgeInsets.only(bottom: h),
         child: GestureDetector(
@@ -278,7 +280,7 @@ class PaperCard extends StatelessWidget {
   );
 }
 
-/// Small rounded label ("رایگان", "اشتراک فعال · ۴۵٪").
+/// Small rounded label ("رایگان", "اشتراک فعال • ۴۵٪").
 class Tag extends StatelessWidget {
   final String text;
   final Color bg;
@@ -466,16 +468,26 @@ class SectionTitle extends StatelessWidget {
         ),
       ),
       if (action != null)
-        GestureDetector(
-          onTap: onAction,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              action!,
-              style: T.of(
-                14,
-                FontWeight.w800,
-                context.pal == masirPalette ? C.violet : context.pal.ink,
+        Semantics(
+          button: true,
+          child: GestureDetector(
+            onTap: onAction,
+            behavior: HitTestBehavior.opaque,
+            // At least 44×44 to tap, however short the word.
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                widthFactor: 1,
+                heightFactor: 1,
+                child: Text(
+                  action!,
+                  style: T.of(
+                    14,
+                    FontWeight.w800,
+                    context.pal == masirPalette ? C.violet : context.pal.ink,
+                  ),
+                ),
               ),
             ),
           ),

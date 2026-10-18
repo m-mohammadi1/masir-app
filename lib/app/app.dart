@@ -10,6 +10,7 @@ import '/app/routes.dart';
 import '/app/state/error_recovery.dart';
 import '/app/state/offline_queue.dart';
 import '/app/state/session.dart';
+import '/core/api/masir_api.dart';
 import '/design/design.dart';
 
 ThemeData masirTheme() {
@@ -65,6 +66,7 @@ class _MasirAppState extends State<MasirApp> {
   void initState() {
     super.initState();
     OfflineQueue.flush();
+    MasirApi.onSessionExpired = _sessionExpired;
     if (!kIsWeb) {
       // masir://payment?payment_id=…&status=… brings the student back from the bank.
       _links = AppLinks().uriLinkStream.listen((uri) {
@@ -78,6 +80,27 @@ class _MasirAppState extends State<MasirApp> {
         }
       });
     }
+  }
+
+  bool _expiring = false;
+
+  /// A signed-in call came back 401: sign out once and say why on the login.
+  Future<void> _sessionExpired() async {
+    if (_expiring) return;
+    _expiring = true;
+    await Session.signOut();
+    appRouter.go(Routes.login);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _expiring = false;
+      final ctx = appRouter.routerDelegate.navigatorKey.currentContext;
+      if (ctx == null) return;
+      Toast.show(
+        ctx,
+        title: 'نشستت تموم شده',
+        body: 'برای ادامه دوباره وارد شو.',
+        tone: ToastTone.info,
+      );
+    });
   }
 
   @override

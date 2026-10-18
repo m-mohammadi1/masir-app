@@ -213,8 +213,8 @@ class _ExploreRow extends StatelessWidget {
       else if (item.description.isNotEmpty)
         item.description,
       '${fa(item.courseCount)} دوره',
-      '${fa(item.teacherCount)} استاد',
-    ].join(' · ');
+      item.brand.solo ? 'استاد مستقل' : '${fa(item.teacherCount)} استاد',
+    ].join(' • ');
     return PaperCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       onTap: () => item.isMember
@@ -261,6 +261,10 @@ class _ExploreRow extends StatelessWidget {
                         style: T.of(16, FontWeight.w800),
                       ),
                     ),
+                    if (item.isFeatured) ...[
+                      const SizedBox(width: 6),
+                      Tag.warn('برگزیده'),
+                    ],
                     if (item.isMember) ...[
                       const SizedBox(width: 6),
                       Tag.success(item.brand.solo ? 'شاگردشی' : 'عضوی'),

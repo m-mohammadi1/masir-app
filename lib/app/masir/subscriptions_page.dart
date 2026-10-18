@@ -191,7 +191,7 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
                     _Toggle(
                       title: 'پیامک',
                       subtitle: phone.length >= 11
-                          ? 'به ${fa('${phone.substring(0, 4)}•••${phone.substring(7)}')}'
+                          ? 'به \u2066${fa('${phone.substring(0, 4)}•••${phone.substring(7)}')}\u2069'
                           : null,
                       value: _prefs!.sms,
                       onChanged: (v) =>
@@ -358,7 +358,7 @@ class _SubCard extends StatelessWidget {
                       style: T.of(17, FontWeight.w800, C.ink, 1.5),
                     ),
                     Text(
-                      '${brand.name} · ${planNames[a.plan] ?? ''}',
+                      '${brand.name} • ${planNames[a.plan] ?? ''}',
                       style: T.of(13, FontWeight.w500, C.muted),
                     ),
                   ],
@@ -545,15 +545,15 @@ class _PaymentRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${p.courseTitle} · ${planNames[p.plan] ?? ''}',
+                '${p.courseTitle} • ${planNames[p.plan] ?? ''}',
                 style: T.of(14, FontWeight.w800),
               ),
               Text(
-                '${p.createdAt == null ? '' : jDay(p.createdAt!, year: true)} · ${toman(p.amount)} تومان',
+                '${p.createdAt == null ? '' : jDay(p.createdAt!, year: true)} • ${toman(p.amount)} تومان',
                 style: T.of(12, FontWeight.w500, C.muted),
               ),
               Text(
-                p.paid ? 'موفق' : 'ناموفق · برگشت خورد',
+                p.paid ? 'موفق' : 'ناموفق • برگشت خورد',
                 style: T.of(
                   12,
                   FontWeight.w800,

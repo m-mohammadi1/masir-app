@@ -33,4 +33,11 @@ void main() {
     expect(unitMeta('video', 7, 0), '۷ دقیقه');
     expect(unitMeta('html', 0, 0), '');
   });
+
+  test('ordinal', () {
+    expect(ordinal(1), 'اول');
+    expect(ordinal(2), 'دوم');
+    expect(ordinal(10), 'دهم');
+    expect(ordinal(11), '۱۱');
+  });
 }

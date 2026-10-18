@@ -89,6 +89,15 @@ String approxDuration(int totalMinutes) {
 
 String pct(int p) => fa('$p٪');
 
+const _ordinals = [
+  'اول', 'دوم', 'سوم', 'چهارم', 'پنجم', //
+  'ششم', 'هفتم', 'هشتم', 'نهم', 'دهم',
+];
+
+/// «دوم» for 2 («تلاش دوم»); past ten, «۱۱».
+String ordinal(int n) =>
+    n >= 1 && n <= _ordinals.length ? _ordinals[n - 1] : fa('$n');
+
 /// «۲ روز پیش», «امروز», «۲۰ شهریور».
 String ago(DateTime? d) {
   if (d == null) return '';

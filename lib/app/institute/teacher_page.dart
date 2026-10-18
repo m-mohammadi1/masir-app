@@ -291,7 +291,7 @@ class _CourseRow extends StatelessWidget {
     final meta = [
       if (c.level != null && levelNames[c.level] != null) levelNames[c.level]!,
       if (c.unitCount > 0) '${fa(c.unitCount)} واحد',
-    ].join(' · ');
+    ].join(' • ');
     final tag = switch (c.access.state) {
       AccessState.active || AccessState.expiring => (
         text: 'اشتراک فعال',

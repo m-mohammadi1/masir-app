@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:dartz/dartz.dart';
 import 'package:easy_helper/easy_helper.dart';
 import 'package:injectable/injectable.dart';
 
+import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
 
 /// Why a request failed, in a form screens can show.
@@ -74,7 +77,13 @@ typedef Res<T> = Either<ApiError, T>;
 class MasirApi {
   Dio get _dio => inject<WebService>().dio;
 
+  /// Called when a signed-in request comes back 401: the session ended
+  /// (expired or revoked). `auth/…` calls are left out, since a wrong
+  /// password is a 401 there too. Set by the app.
+  static void Function()? onSessionExpired;
+
   Future<Res<T>> _run<T>(
+    String path,
     Future<Response<dynamic>> Function() call,
     T Function(dynamic data) parse,
   ) async {
@@ -84,7 +93,13 @@ class MasirApi {
       final data = body is Map ? body['data'] : body;
       return Right(parse(data));
     } catch (e) {
-      return Left(ApiError.from(e));
+      final err = ApiError.from(e);
+      if (err.status == 401 &&
+          HiveService.isLogged &&
+          !path.startsWith('auth/')) {
+        onSessionExpired?.call();
+      }
+      return Left(err);
     }
   }
 
@@ -92,28 +107,28 @@ class MasirApi {
     String path,
     T Function(dynamic data) parse, {
     Map<String, dynamic>? query,
-  }) => _run(() => _dio.get(path, queryParameters: query), parse);
+  }) => _run(path, () => _dio.get(path, queryParameters: query), parse);
 
   Future<Res<T>> post<T>(
     String path,
     T Function(dynamic data) parse, {
     Object? body,
-  }) => _run(() => _dio.post(path, data: body ?? {}), parse);
+  }) => _run(path, () => _dio.post(path, data: body ?? {}), parse);
 
   Future<Res<T>> put<T>(
     String path,
     T Function(dynamic data) parse, {
     Object? body,
-  }) => _run(() => _dio.put(path, data: body ?? {}), parse);
+  }) => _run(path, () => _dio.put(path, data: body ?? {}), parse);
 
   Future<Res<T>> patch<T>(
     String path,
     T Function(dynamic data) parse, {
     Object? body,
-  }) => _run(() => _dio.patch(path, data: body ?? {}), parse);
+  }) => _run(path, () => _dio.patch(path, data: body ?? {}), parse);
 
   Future<Res<T>> delete<T>(String path, T Function(dynamic data) parse) =>
-      _run(() => _dio.delete(path), parse);
+      _run(path, () => _dio.delete(path), parse);
 }
 
 /// JSON helpers for models.
@@ -133,3 +148,14 @@ DateTime? date(dynamic v) =>
 /// Items of a paginated list (`{items, meta}`) or a bare list.
 List<J> items(dynamic data) =>
     data is Map ? asList(data['items']) : asList(data);
+
+final _rand = Random.secure();
+
+/// A random (v4) UUID, for ids the app makes itself (quiz attempts).
+String newUuid() {
+  final b = List<int>.generate(16, (_) => _rand.nextInt(256));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  final h = b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
+  return '${h.substring(0, 8)}-${h.substring(8, 12)}-${h.substring(12, 16)}-${h.substring(16, 20)}-${h.substring(20)}';
+}

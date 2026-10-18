@@ -76,6 +76,14 @@ class _InboxPageState extends State<InboxPage> {
         context.push(Routes.course('${p['course_id']}'));
       case 'student.joined_institute':
         context.push(Routes.threshold(inst));
+      case 'student.streak':
+        // Back to the roadmap of the course the streak came from.
+        final course = '${p['course_id'] ?? ''}';
+        if (course.isNotEmpty) {
+          context.push(Routes.roadmap(course));
+        } else {
+          context.go(Routes.vitrine);
+        }
     }
     setState(() {});
   }
@@ -228,10 +236,16 @@ class _InboxPageState extends State<InboxPage> {
         reminder = true;
         title = '${p['title'] ?? 'یادآوری تمدید'}';
         body = '${p['body'] ?? ''}';
+        // The board's title doesn't say which course; with several
+        // subscriptions the source line does.
+        final course = '${p['course_title'] ?? ''}';
         source = [
           'یادآوری تمدید',
-          if (instName.isNotEmpty) instName,
-        ].join(' · ');
+          if (course.isNotEmpty)
+            '«$course»'
+          else if (instName.isNotEmpty)
+            instName,
+        ].join(' • ');
         icon = _tile(
           C.sunSoft,
           const MIcon(MI.clock, size: 22, color: Color(0xFF8A5A00)),
@@ -250,6 +264,14 @@ class _InboxPageState extends State<InboxPage> {
         icon = brand != null
             ? InstituteLogo(brand: brand, size: 44)
             : _tile(C.violet, const MIcon(MI.book, color: Colors.white));
+      case 'student.streak':
+        title = '${fa(toInt(p['days']))} روز پیاپی!';
+        body = 'امروز هم یه واحد برو که زنجیره نشکنه.';
+        source = 'مسیر';
+        icon = _tile(
+          C.sunSoft,
+          const MIcon(MI.flame, size: 22, color: Color(0xFFFF8A00)),
+        );
       case 'course.published':
         title = 'دوره‌ی تازه: «${p['course_title'] ?? ''}»';
         body = 'یه دوره‌ی تازه به مؤسسه‌ات اضافه شد.';
@@ -258,7 +280,9 @@ class _InboxPageState extends State<InboxPage> {
             ? InstituteLogo(brand: brand, size: 44)
             : _tile(C.violet, const MIcon(MI.book, color: Colors.white));
       default:
-        title = instName.isNotEmpty ? 'عضو $instName شدی' : 'به مسیر خوش اومدی';
+        title = instName.isNotEmpty
+            ? '${brand?.memberWord ?? 'عضو'} $instName شدی'
+            : 'به مسیر خوش اومدی';
         body = 'از ویترین شروع کن؛ مؤسسه‌ت منتظرته.';
         source = 'مسیر';
         icon = _tile(C.violet, const MasirSmallMark(size: 22));
@@ -332,7 +356,7 @@ class _InboxPageState extends State<InboxPage> {
                       ),
                     const SizedBox(height: 4),
                     Text(
-                      '$source · ${ago(it.createdAt)}',
+                      '$source • ${ago(it.createdAt)}',
                       style: T.of(12, FontWeight.w500, C.muted),
                     ),
                   ],

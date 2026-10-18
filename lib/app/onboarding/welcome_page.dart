@@ -142,7 +142,9 @@ class _WelcomePageState extends State<WelcomePage> {
                             TextSpan(
                               style: T.of(16, FontWeight.w500, C.body, 1.9),
                               children: [
-                                const TextSpan(text: 'حسابت ساخته شد و عضو '),
+                                TextSpan(
+                                  text: 'حسابت ساخته شد و ${brand.memberWord} ',
+                                ),
                                 TextSpan(
                                   text: brand.name,
                                   style: T.of(16, FontWeight.w800, C.body),
@@ -191,7 +193,7 @@ class _WelcomePageState extends State<WelcomePage> {
                                       ),
                                       Text(
                                         _suggestion!.previewUnits > 0
-                                            ? '${_suggestion!.title} · ${fa(_suggestion!.previewUnits)} واحد رایگان'
+                                            ? '${_suggestion!.title} • ${fa(_suggestion!.previewUnits)} واحد رایگان'
                                             : _suggestion!.title,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,

@@ -7,7 +7,7 @@ import '/core/api/models.dart';
 import '/design/design.dart';
 
 /// Full-width course card: cover with the intro badge and access tag, title,
-/// teacher · level · units, then progress or price.
+/// teacher • level • units, then progress or price.
 class CourseTile extends StatelessWidget {
   final CourseCard course;
   const CourseTile({super.key, required this.course});
@@ -20,10 +20,10 @@ class CourseTile extends StatelessWidget {
       if (c.teacherLine.isNotEmpty) c.teacherLine,
       if (c.level != null && levelNames[c.level] != null) levelNames[c.level]!,
       if (c.unitCount > 0) '${fa(c.unitCount)} واحد',
-    ].join(' · ');
+    ].join(' • ');
     final tag = switch (a.state) {
       AccessState.active => (
-        text: 'اشتراک فعال · ${pct(c.progressPercent)}',
+        text: 'اشتراک فعال • ${pct(c.progressPercent)}',
         fg: C.greenText,
         bg: C.greenSoft,
       ),

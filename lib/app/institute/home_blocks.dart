@@ -152,7 +152,7 @@ class _FeaturedBlock extends StatelessWidget {
                           runSpacing: 6,
                           children: [
                             _Chip(
-                              '${fa(c.moduleCount)} فصل · ${fa(c.unitCount)} واحد',
+                              '${fa(c.moduleCount)} فصل • ${fa(c.unitCount)} واحد',
                               bg: C.sand,
                               fg: C.body,
                             ),
@@ -245,7 +245,7 @@ class _EventBlock extends StatelessWidget {
       weekdayNames[(at.weekday + 1) % 7],
       if (at.hour != 0 || at.minute != 0) _hour(at),
       if (b.place.isNotEmpty) b.place,
-    ].join(' · ');
+    ].join(' • ');
     final announcement = b.announcementId;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -728,7 +728,7 @@ class _CurrentInstitute extends StatelessWidget {
       if (inst.topic.isNotEmpty) inst.topic,
       '${fa(inst.courseCount)} دوره',
       '${fa(inst.studentCount)} ${brand.peersWord}',
-    ].join(' · ');
+    ].join(' • ');
     return Padding(
       padding: _hPad,
       child: Semantics(
@@ -1232,7 +1232,7 @@ class InstituteColorCard extends StatelessWidget {
                               Text(
                                 course == null
                                     ? '${fa(card.institute.courseCount)} دوره'
-                                    : '${course.title} · ${pct(course.progressPercent)}',
+                                    : '${course.title} • ${pct(course.progressPercent)}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: T.of(13, FontWeight.w600, pal.on, 1.6),
@@ -1417,7 +1417,7 @@ class _RecommendCardState extends State<RecommendCard> {
                             if (it.topic.isNotEmpty) it.topic,
                             if (it.courseCount > 0)
                               '${fa(it.courseCount)} دوره',
-                          ].join(' · '),
+                          ].join(' • '),
                           style: T.of(13, FontWeight.w500, C.muted, 1.6),
                         ),
                         if (it.description.isNotEmpty) ...[
@@ -1478,7 +1478,7 @@ class _RecommendCardState extends State<RecommendCard> {
                                 ),
                               )
                             : Text(
-                                '${it.brand.joinLabel} · رایگان',
+                                '${it.brand.joinLabel} • رایگان',
                                 style: T.of(15, FontWeight.w800, pal.ink),
                               ),
                       ),

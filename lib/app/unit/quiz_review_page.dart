@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '/app/course/course_brand.dart';
 import '/app/routes.dart';
+import '/app/unit/quiz_view.dart';
 import '/app/state/load_cubit.dart';
 import '/app/state/nav.dart';
 import '/core/api/endpoints.dart';
@@ -61,15 +62,15 @@ class _QuizReviewPageState extends State<QuizReviewPage> {
                         title: 'مرور پاسخ‌ها',
                         subtitle: r == null
                             ? null
-                            : '${r.unitTitle} · آخرین تلاش · ${fa(r.correct)} از ${fa(r.total)} درست',
+                            : '${r.unitTitle} • آخرین تلاش • ${fa(r.correct)} از ${fa(r.total)} درست',
                         onBack: () => back(context),
                       ),
                       if (r != null)
                         ChipRow(
                           soft: true,
                           labels: [
-                            'همه · ${fa(r.questions.length)}',
-                            'اشتباه‌ها · ${fa(wrong.length)}',
+                            'همه • ${fa(r.questions.length)}',
+                            'اشتباه‌ها • ${fa(wrong.length)}',
                           ],
                           index: _tab,
                           onChanged: (i) => setState(() => _tab = i),
@@ -124,7 +125,9 @@ class _QuizReviewPageState extends State<QuizReviewPage> {
                             icon: MI.retry,
                             height: 56,
                             fontSize: 15,
-                            onPressed: () {
+                            onPressed: () async {
+                              if (!await confirmRetake(context)) return;
+                              if (!context.mounted) return;
                               // Back to the quiz page under this one, which starts a fresh attempt.
                               if (context.canPop()) {
                                 context.pop('retry');
@@ -235,7 +238,7 @@ class _QuestionCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'سؤال ${fa(number)} · ${ok ? 'درست' : 'نادرست'}',
+                'سؤال ${fa(number)} • ${ok ? 'درست' : 'نادرست'}',
                 style: T.of(
                   13,
                   FontWeight.w800,

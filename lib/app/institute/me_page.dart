@@ -86,8 +86,7 @@ class _InstituteMePageState extends State<InstituteMePage> {
     final ok = await confirmSheet(
       context,
       title: 'از $name خارج می‌شی؟',
-      body:
-          'عضویت رایگانه و هر وقت خواستی برمی‌گردی. اشتراک‌های فعالت تا آخر مدتشون می‌مونن.',
+      body: _leaveNote(context),
       keep: 'می‌مونم',
       leave: 'خارج شو',
     );
@@ -272,7 +271,7 @@ class _InstituteMePageState extends State<InstituteMePage> {
                   ),
                 ),
                 Text(
-                  'عضویت رایگانه و هر وقت خواستی برمی‌گردی. اشتراک‌های فعالت تا آخر مدتشون می‌مونن.',
+                  _leaveNote(context),
                   style: T.of(12, FontWeight.w500, C.muted, 1.8),
                 ),
               ],
@@ -444,15 +443,15 @@ class _MyCourseRow extends StatelessWidget {
     final expired = a.state == AccessState.expired;
     final String sub;
     if (a.paidActive && a.accessEndsAt != null) {
-      sub = 'اشتراک ${planNames[a.plan] ?? ''} · تا ${jDay(a.accessEndsAt!)}'
+      sub = 'اشتراک ${planNames[a.plan] ?? ''} • تا ${jDay(a.accessEndsAt!)}'
           .replaceAll('  ', ' ');
     } else if (c.freeCourse) {
-      sub = 'رایگان · ${fa(c.unitCount)} واحد';
+      sub = 'رایگان • ${fa(c.unitCount)} واحد';
     } else if (expired) {
-      sub = 'اشتراک تموم شده · ${pct(c.progressPercent)}';
+      sub = 'اشتراک تموم شده • ${pct(c.progressPercent)}';
     } else {
       sub =
-          'بخش رایگان · ${fa(c.completedUnits.clamp(0, c.previewUnits))} از ${fa(c.previewUnits)} واحد';
+          'بخش رایگان • ${fa(c.completedUnits.clamp(0, c.previewUnits))} از ${fa(c.previewUnits)} واحد';
     }
     final freeLeft = (c.previewUnits - c.completedUnits).clamp(
       0,
@@ -695,3 +694,7 @@ class _Guest extends StatelessWidget {
     );
   }
 }
+
+/// «عضویت…» for an institute; an independent teacher's space has no members.
+String _leaveNote(BuildContext context) =>
+    '${context.brand.solo ? 'شاگردی' : 'عضویت'} رایگانه و هر وقت خواستی برمی‌گردی. اشتراک‌های فعالت تا آخر مدتشون می‌مونن.';

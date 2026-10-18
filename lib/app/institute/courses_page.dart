@@ -41,8 +41,8 @@ class _InstituteCoursesPageState extends State<InstituteCoursesPage> {
             children: [
               Segments(
                 labels: [
-                  'همه · ${fa(all.length)}',
-                  'دوره‌های من · ${fa(mine.length)}',
+                  'همه • ${fa(all.length)}',
+                  'دوره‌های من • ${fa(mine.length)}',
                 ],
                 index: _tab,
                 onChanged: (i) => setState(() => _tab = i),

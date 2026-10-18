@@ -78,28 +78,33 @@ class _Body extends StatelessWidget {
                   alignment: AlignmentDirectional.centerStart,
                   child: GestureDetector(
                     onTap: () => context.push(Routes.threshold(c.instituteId)),
-                    child: Container(
-                      height: 36,
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        6,
-                        0,
-                        12,
-                        0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: pal.soft,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          InstituteLogo(brand: brand, size: 26, fontSize: 13),
-                          const SizedBox(width: 8),
-                          Text(
-                            brand.name,
-                            style: T.of(14, FontWeight.w800, pal.ink),
-                          ),
-                        ],
+                    behavior: HitTestBehavior.opaque,
+                    // A 36px chip with a 44px tap area.
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Container(
+                        height: 36,
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          6,
+                          0,
+                          12,
+                          0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: pal.soft,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InstituteLogo(brand: brand, size: 26, fontSize: 13),
+                            const SizedBox(width: 8),
+                            Text(
+                              brand.name,
+                              style: T.of(14, FontWeight.w800, pal.ink),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -351,7 +356,7 @@ class _Hero extends StatelessWidget {
                         poster: poster,
                         durationSeconds: c.introVideoSeconds,
                         posterLabel: c.introVideoSeconds > 0
-                            ? 'ویدیوی معرفی · ${clock(c.introVideoSeconds)}'
+                            ? 'ویدیوی معرفی • ${clock(c.introVideoSeconds)}'
                             : 'ویدیوی معرفی',
                       )
                     : poster,
@@ -977,6 +982,16 @@ class _BottomBarState extends State<_BottomBar> {
       ],
     );
     switch (a.state) {
+      case AccessState.guest when !c.freeCourse && c.previewUnits == 0:
+        // No free units: starting would open nothing, so only subscription.
+        body = Btn(
+          c.fromPerMonth > 0
+              ? 'اشتراک بگیر • از ${perMonth(c.fromPerMonth)}'
+              : 'اشتراک بگیر',
+          height: 54,
+          fontSize: 17,
+          onPressed: _plans,
+        );
       case AccessState.guest:
         body = Column(
           mainAxisSize: MainAxisSize.min,
@@ -992,7 +1007,7 @@ class _BottomBarState extends State<_BottomBar> {
             if (!c.freeCourse && c.fromPerMonth > 0) ...[
               const SizedBox(height: 8),
               Btn(
-                'یا همین حالا اشتراک بگیر · از ${perMonth(c.fromPerMonth)}',
+                'یا همین حالا اشتراک بگیر • از ${perMonth(c.fromPerMonth)}',
                 kind: BtnKind.ghost,
                 height: 44,
                 fontSize: 15,
@@ -1017,7 +1032,7 @@ class _BottomBarState extends State<_BottomBar> {
                 Expanded(
                   child: Text(
                     left > 0
-                        ? 'بخش رایگان · ${fa(left)} واحد رایگان مونده'
+                        ? 'بخش رایگان • ${fa(left)} واحد رایگان مونده'
                         : 'بخش رایگان تموم شد؛ بقیه با اشتراک باز می‌شن.',
                     style: T.of(12, FontWeight.w500, C.muted),
                   ),
@@ -1052,7 +1067,7 @@ class _BottomBarState extends State<_BottomBar> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'اشتراک ${planNames[a.plan] ?? ''} · تا ${jDay(a.accessEndsAt!)}',
+                    'اشتراک ${planNames[a.plan] ?? ''} • تا ${jDay(a.accessEndsAt!)}',
                     style: T.of(12, FontWeight.w500, C.muted),
                   ),
                 ],
@@ -1306,7 +1321,7 @@ Future<void> showStartedSheet(
                                   first.durationMinutes,
                                   first.questionCount,
                                 ),
-                            ].join(' · '),
+                            ].join(' • '),
                             style: T.of(15, FontWeight.w800),
                           ),
                         ],

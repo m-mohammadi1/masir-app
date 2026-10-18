@@ -45,7 +45,7 @@ class InstituteTeachersPage extends StatelessWidget {
                     Text('استادهای $name', style: T.of(22, FontWeight.w900)),
                     const SizedBox(height: 2),
                     Text(
-                      '${fa(teachers.length)} استاد · ${fa(courses)} دوره · رو هر کدوم بزنی، دوره‌هاش رو می‌بینی',
+                      '${fa(teachers.length)} استاد • ${fa(courses)} دوره • رو هر کدوم بزنی، دوره‌هاش رو می‌بینی',
                       style: T.of(14, FontWeight.w500, C.muted),
                     ),
                   ],

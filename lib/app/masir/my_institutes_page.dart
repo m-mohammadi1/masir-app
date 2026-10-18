@@ -143,17 +143,17 @@ class _MembershipCard extends StatelessWidget {
       switch (access.state) {
         case AccessState.active:
           subNote =
-              'اشتراک ${planNames[access.plan] ?? ''} · تا ${jDay(access.accessEndsAt!)}';
+              'اشتراک ${planNames[access.plan] ?? ''} • تا ${jDay(access.accessEndsAt!)}';
         case AccessState.expiring:
           subNote =
-              '${fa(access.daysLeft ?? 0)} روز تا پایان اشتراک · تمدید از «پروفایل › اشتراک‌ها»';
+              '${fa(access.daysLeft ?? 0)} روز تا پایان اشتراک • تمدید از «پروفایل › اشتراک‌ها»';
           subColor = const Color(0xFF8A5A00);
         case AccessState.expired:
           subNote =
               'اشتراک ${jDay(access.accessEndsAt!)} تموم شد؛ پیشرفتت سر جاشه';
           subColor = C.coralText;
         case AccessState.trial:
-          subNote = 'بخش رایگان · ${fa(course!.previewUnits)} واحد';
+          subNote = 'بخش رایگان • ${fa(course!.previewUnits)} واحد';
         case AccessState.freeCourse:
           subNote = 'دوره‌ی رایگان';
         case AccessState.guest:
@@ -318,6 +318,21 @@ class _MembershipCard extends StatelessWidget {
                                       : 'از واحدهای رایگان یه دوره شروع کن.',
                                   style: T.of(14, FontWeight.w500, C.muted),
                                 ),
+                                // A finished course can still have a
+                                // subscription ending soon.
+                                if (subNote != null &&
+                                    access?.state == AccessState.expiring) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    subNote,
+                                    style: T.of(
+                                      12,
+                                      FontWeight.w700,
+                                      subColor,
+                                      1.7,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                     ),
@@ -507,7 +522,7 @@ class _InstituteRowState extends State<InstituteRow> {
                             else if (it.description.isNotEmpty)
                               it.description,
                             '${fa(it.courseCount)} دوره',
-                          ].join(' · '),
+                          ].join(' • '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: T.of(13, FontWeight.w500, C.muted),

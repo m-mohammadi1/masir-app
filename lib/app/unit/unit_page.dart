@@ -192,7 +192,7 @@ class _UnitPageState extends State<UnitPage> {
           context,
           title: 'ایول!',
           body: nextName.isNotEmpty
-              ? '«${u.title}» تموم شد · بعدی: $nextName'
+              ? '«${u.title}» تموم شد • بعدی: $nextName'
               : '«${u.title}» تموم شد',
           duration: const Duration(milliseconds: 1500),
         );
@@ -211,6 +211,17 @@ class _UnitPageState extends State<UnitPage> {
       _close();
       return;
     }
+    final next = p.nextUnit;
+    // The end of the free part wins over a path celebration: when the last
+    // free unit also ends a path, the student still needs to hear how to go on.
+    final freeEnd =
+        !p.courseCompleted &&
+        ((next?.needsSubscription ?? false) ||
+            (u.isLastPreview && !u.isSubscribed));
+    if (freeEnd) {
+      setState(() => _mode = _Mode.previewEnd);
+      return;
+    }
     if (p.pathCompleted || p.courseCompleted || p.moduleCompleted) {
       RoadmapEvents.pathDone = (courseId: courseId, update: p);
       if (widget.fromRoadmap && context.canPop()) {
@@ -220,13 +231,8 @@ class _UnitPageState extends State<UnitPage> {
       }
       return;
     }
-    final next = p.nextUnit;
     if (next == null) {
       _close();
-      return;
-    }
-    if (next.needsSubscription || (u.isLastPreview && !u.isSubscribed)) {
-      setState(() => _mode = _Mode.previewEnd);
       return;
     }
     context.pushReplacement(
@@ -451,7 +457,7 @@ class _UnitPageState extends State<UnitPage> {
                 Expanded(
                   child: Text(
                     u.previewCount > 0
-                        ? 'پیش‌نمایش رایگان · ${fa(u.previewIndex)} از ${fa(u.previewCount)}'
+                        ? 'پیش‌نمایش رایگان • ${fa(u.previewIndex)} از ${fa(u.previewCount)}'
                         : 'پیش‌نمایش رایگان',
                     style: T.of(13, FontWeight.w700, C.sunText),
                   ),
@@ -503,7 +509,7 @@ class _UnitPageState extends State<UnitPage> {
                             [
                               unitTypeNames[u.type] ?? '',
                               if (meta.isNotEmpty) meta,
-                            ].join(' · '),
+                            ].join(' • '),
                             style: T.of(13, FontWeight.w800, pal.ink),
                           ),
                         ],
@@ -520,7 +526,7 @@ class _UnitPageState extends State<UnitPage> {
                         [
                           if (teacher != null) teacher.name,
                           if (u.pathTitle.isNotEmpty) 'مسیر ${u.pathTitle}',
-                        ].join(' · '),
+                        ].join(' • '),
                         style: T.of(13, FontWeight.w500, C.muted),
                       ),
                     ],
@@ -850,7 +856,7 @@ class PreviewEndView extends StatelessWidget {
     final priceLine = [
       if (monthly != null) 'اشتراک ماهانه ${shortToman(monthly.price)} تومان',
       if (yearly != null) 'سالانه ماهی ${shortToman(yearly.perMonth)}',
-    ].join(' · ');
+    ].join(' • ');
     final top = MediaQuery.paddingOf(context).top;
     final bottom = MediaQuery.paddingOf(context).bottom;
     Widget doneDot() => Container(

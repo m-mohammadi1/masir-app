@@ -99,13 +99,21 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                                     .load(),
                                 child: shown.isEmpty
                                     ? ListView(
-                                        children: const [
-                                          SizedBox(height: 40),
+                                        children: [
+                                          const SizedBox(height: 40),
                                           EmptyState(
                                             icon: MI.megaphone,
-                                            title: 'اطلاعیه‌ای نیست',
+                                            title: 'هنوز اطلاعیه‌ای نیومده',
                                             body:
-                                                'خبرهای تازه‌ی مؤسسه که برسه، اینجا می‌بینیش.',
+                                                'هر خبری از ${name ?? 'مؤسسه'} بیاد، اول اینجا می‌بینیش. تا اون موقع بریم سراغ درس؟',
+                                            // The institute home has the
+                                            // continue-learning card.
+                                            action: 'ادامه یادگیری',
+                                            onAction: () => context.go(
+                                              Routes.instHome(
+                                                widget.instituteId,
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       )
@@ -131,11 +139,11 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
   }
 }
 
-/// «آمادگی آیلتس · فصل ۲» or «عمومی».
+/// «آمادگی آیلتس • فصل ۲» or «عمومی».
 String announcementScope(Announcement a) {
   if (a.courseTitle == null) return 'عمومی';
   return a.moduleNumber > 0
-      ? '${a.courseTitle} · فصل ${fa(a.moduleNumber)}'
+      ? '${a.courseTitle} • فصل ${fa(a.moduleNumber)}'
       : a.courseTitle!;
 }
 

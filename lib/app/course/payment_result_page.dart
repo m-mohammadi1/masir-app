@@ -460,7 +460,7 @@ class _Failed extends StatelessWidget {
                     rows: [
                       (
                         'اشتراک',
-                        '${planNames[p.plan] ?? p.plan} · ${toman(p.amount)} تومان',
+                        '${planNames[p.plan] ?? p.plan} • ${toman(p.amount)} تومان',
                       ),
                       if (p.bankMessage.isNotEmpty)
                         ('پیام بانک', p.bankMessage),

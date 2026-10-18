@@ -209,7 +209,7 @@ class _PlanPageState extends State<PlanPage> {
                                   style: T.of(22, FontWeight.w900, C.ink, 1.4),
                                 ),
                                 Text(
-                                  '${c.card.title} · ${c.instituteBrand.name}',
+                                  '${c.card.title} • ${c.instituteBrand.name}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: T.of(13, FontWeight.w500, C.muted),
@@ -541,7 +541,7 @@ class _PlanOption extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      '${toman(total)} تومان · ${planEvery[plan.period]}',
+                      '${toman(total)} تومان • ${planEvery[plan.period]}',
                       style: T.of(13, FontWeight.w500, C.muted),
                     ),
                   ],
@@ -630,7 +630,7 @@ class _PayBar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'اشتراک ${planNames[plan?.period] ?? ''}${until == null ? '' : ' · تا $until'}',
+                      'اشتراک ${planNames[plan?.period] ?? ''}${until == null ? '' : ' • تا $until'}',
                       style: T.of(13, FontWeight.w500, C.muted),
                     ),
                     Text.rich(

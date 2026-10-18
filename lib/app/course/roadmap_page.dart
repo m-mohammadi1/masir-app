@@ -14,6 +14,7 @@ import '/app/state/offline_queue.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
 import '/core/api/models.dart';
+import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
 import '/design/design.dart';
 
@@ -161,7 +162,8 @@ class _RoadmapPageState extends State<RoadmapPage>
     r.fold(
       (e) => setState(() => _error = e),
       (o) => setState(() {
-        _o = o;
+        // Units finished offline show as done until they're sent.
+        _o = o.withCompleted(HiveService.pendingCompletions.toSet());
         _error = null;
       }),
     );
@@ -270,15 +272,15 @@ class _RoadmapPageState extends State<RoadmapPage>
         String text;
         if (guest || st == _St.locked) {
           text = !guest && st == _St.locked && hasCurrent && pi > 0
-              ? 'مسیر ${fa(pi + 1)} · بعد از مسیر ${fa(pi)} باز می‌شه'
-              : 'مسیر ${fa(pi + 1)} · ${p.title}';
+              ? 'مسیر ${fa(pi + 1)} • بعد از مسیر ${fa(pi)} باز می‌شه'
+              : 'مسیر ${fa(pi + 1)} • ${p.title}';
         } else {
           final pct0 = p.units.isEmpty
               ? 0
               : p.units.where((u) => u.completed).length *
                     100 ~/
                     p.units.length;
-          text = 'مسیر ${fa(pi + 1)} · ${p.title} · ${pct(pct0)}';
+          text = 'مسیر ${fa(pi + 1)} • ${p.title} • ${pct(pct0)}';
         }
         items.add(
           _Item(plate: pi == 0 ? plate : null, marker: _Marker(text, st)),
@@ -602,7 +604,7 @@ class _RoadmapPageState extends State<RoadmapPage>
                           : [
                               unitTypeNames[s.type] ?? '',
                               if (s.meta.isNotEmpty) s.meta,
-                            ].join(' · '),
+                            ].join(' • '),
                       textAlign: isR ? TextAlign.right : TextAlign.left,
                       style: T.of(12, FontWeight.w600, C.muted),
                     ),
@@ -772,7 +774,7 @@ class _RoadmapPageState extends State<RoadmapPage>
                   ),
                 ),
                 if (meta.isNotEmpty)
-                  Text(' · $meta', style: T.of(13, FontWeight.w500, C.muted)),
+                  Text(' • $meta', style: T.of(13, FontWeight.w500, C.muted)),
               ],
             ),
             const SizedBox(height: 10),
@@ -812,7 +814,7 @@ class _RoadmapPageState extends State<RoadmapPage>
     final u = s.unit;
     final kicker = s.special
         ? s.title
-        : '${unitTypeNames[s.type] ?? ''}${s.meta.isNotEmpty ? ' · ${s.meta}' : ''}';
+        : '${unitTypeNames[s.type] ?? ''}${s.meta.isNotEmpty ? ' • ${s.meta}' : ''}';
     String note;
     String? cta;
     VoidCallback? action;
@@ -1055,7 +1057,7 @@ class _RoadmapPageState extends State<RoadmapPage>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'فصل ${fa(mi + 1)} · الان اینجایی',
+                                    'فصل ${fa(mi + 1)} • الان اینجایی',
                                     style: T.of(
                                       12,
                                       FontWeight.w500,
@@ -1128,9 +1130,9 @@ class _RoadmapPageState extends State<RoadmapPage>
                           children: [
                             Text(
                               _guest
-                                  ? 'فصل ${fa(mi + 1)}${units.any((u) => u.isPreview) ? ' · رایگان' : ''}'
+                                  ? 'فصل ${fa(mi + 1)}${units.any((u) => u.isPreview) ? ' • رایگان' : ''}'
                                   : mi > 0
-                                  ? 'فصل ${fa(mi + 1)} · بعد از تموم شدن فصل ${fa(mi)}'
+                                  ? 'فصل ${fa(mi + 1)} • بعد از تموم شدن فصل ${fa(mi)}'
                                   : 'فصل ${fa(mi + 1)}',
                               style: T.of(12, FontWeight.w500, C.muted),
                             ),
@@ -1237,7 +1239,7 @@ class _RoadmapPageState extends State<RoadmapPage>
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'مسیر ${fa(pi + 1)} · ${p.title}',
+                'مسیر ${fa(pi + 1)} • ${p.title}',
                 style: T.of(15, FontWeight.w700, open ? C.ink : C.muted),
               ),
             ),
@@ -2037,7 +2039,7 @@ class _Celebration extends StatelessWidget {
                         child: Center(
                           widthFactor: 1,
                           child: Text(
-                            'فصل ${fa(u.moduleOrder)} · ${fa(u.moduleCompletedUnits)} از ${fa(u.moduleTotalUnits)}',
+                            'فصل ${fa(u.moduleOrder)} • ${fa(u.moduleCompletedUnits)} از ${fa(u.moduleTotalUnits)}',
                             style: T.of(13, FontWeight.w800, C.greenText),
                           ),
                         ),

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '/app/common/app_version.dart';
 import '/app/routes.dart';
 import '/app/state/session.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
 import '/core/api/models.dart';
-import '/core/services/hive_service.dart';
 import '/core/services/service_locator.dart';
 import '/design/design.dart';
 
@@ -24,7 +24,6 @@ class _ProfilePageState extends State<ProfilePage> {
   StudentStats? _stats;
   List<WalletCard>? _wallet;
   List<Subscription>? _subs;
-  bool _dark = HiveService.isDarkMode;
 
   @override
   void initState() {
@@ -233,7 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     subtitle: _subs == null
                         ? null
                         : expiring.isNotEmpty
-                        ? '${fa(paidCount)} اشتراک · یکی ${fa(expiring.first.course.access.daysLeft ?? 0)} روز دیگه تموم می‌شه'
+                        ? '${fa(paidCount)} اشتراک • یکی ${fa(expiring.first.course.access.daysLeft ?? 0)} روز دیگه تموم می‌شه'
                         : '${fa(paidCount)} اشتراک',
                     subtitleColor: expiring.isNotEmpty
                         ? const Color(0xFF8A5A00)
@@ -252,19 +251,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     title: 'تغییر رمز عبور',
                     onTap: _changePassword,
                   ),
-                  const SandLine(),
-                  _Row(
-                    lead: const MIcon(MI.moon),
-                    title: 'حالت تاریک',
-                    trailing: MSwitch(
-                      value: _dark,
-                      label: 'حالت تاریک',
-                      onChanged: (v) {
-                        setState(() => _dark = v);
-                        HiveService.isDarkMode = v;
-                      },
-                    ),
-                  ),
+                  // «حالت تاریک» stays hidden until dark mode is designed.
                   const SandLine(),
                   _Row(
                     lead: const MIcon(MI.info),
@@ -277,8 +264,8 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 18),
             OutlinedDanger('خروج از حساب', onPressed: _logout),
             const SizedBox(height: 18),
-            Text(
-              'مسیر · نسخه‌ی آزمایشی ۰.۹',
+            AppVersionText(
+              prefix: 'مسیر • ',
               textAlign: TextAlign.center,
               style: T.of(12, FontWeight.w500, C.muted),
             ),
@@ -412,7 +399,7 @@ class _ProfilePageState extends State<ProfilePage> {
             style: T.of(15, FontWeight.w500, C.body, 1.9),
           ),
           const SizedBox(height: 8),
-          Text('نسخه‌ی آزمایشی ۰.۹', style: T.of(13, FontWeight.w600, C.muted)),
+          AppVersionText(style: T.of(13, FontWeight.w600, C.muted)),
         ],
       ),
     ),

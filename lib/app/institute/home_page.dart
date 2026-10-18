@@ -306,7 +306,7 @@ class _Hero extends StatelessWidget {
                     const SizedBox(height: 14),
                     Text(d.name, style: T.of(30, FontWeight.w900, pal.on, 1.3)),
                     Text(
-                      (brand.solo ? 'استاد مستقل · ' : '') +
+                      (brand.solo ? 'استاد مستقل • ' : '') +
                           [
                             if (d.topic.isNotEmpty) d.topic,
                             if (d.foundedYear != null)

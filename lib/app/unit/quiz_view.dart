@@ -67,6 +67,9 @@ class _QuizRunnerState extends State<QuizRunner> {
   final Map<int, Object> _answers = {};
   bool _sending = false;
 
+  /// One id per attempt; a retake builds a new runner and a new id.
+  final String _attemptId = newUuid();
+
   List<QuizQuestion> get qs => widget.questions;
 
   Future<void> _exit() async {
@@ -89,15 +92,17 @@ class _QuizRunnerState extends State<QuizRunner> {
     final r = await inject<MasirApi>().submitQuiz(widget.unitId, [
       for (var i = 0; i < qs.length; i++)
         (questionId: qs[i].id, answer: _answers[i]!),
-    ]);
+    ], attemptId: _attemptId);
     if (!mounted) return;
     setState(() => _sending = false);
     r.fold(
       (e) => Toast.show(
         context,
-        title: 'ارسال نشد',
-        body: e.friendly,
+        title: 'پاسخ‌ها ارسال نشد',
+        body: e.offline ? 'جواب‌هات روی گوشی نگه داشته شده.' : e.friendly,
         tone: ToastTone.error,
+        action: 'دوباره',
+        onAction: _submit,
       ),
       widget.onResult,
     );
@@ -477,7 +482,7 @@ class QuizResultView extends StatelessWidget {
     if (better) {
       title = 'این بار بهتر شد!';
       body =
-          'نتیجه‌ی تلاش ${fa(attempts.length)}م جای قبلی نشست. همین‌طوری ادامه بده.';
+          'نتیجه‌ی تلاش ${ordinal(attempts.length)} جای قبلی نشست. همین‌طوری ادامه بده.';
     } else if (good) {
       title = 'آزمون تموم شد!';
       body = p != null && p.moduleOrder > 0 && !p.moduleCompleted
@@ -725,7 +730,9 @@ class QuizResultView extends StatelessWidget {
                   icon: MI.retry,
                   height: 52,
                   fontSize: 15,
-                  onPressed: onRetry,
+                  onPressed: () async {
+                    if (await confirmRetake(context)) onRetry();
+                  },
                 ),
               ),
             ],
@@ -741,3 +748,13 @@ class QuizResultView extends StatelessWidget {
     decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(r)),
   );
 }
+
+/// «دوباره بده» says first that the new result replaces the old one.
+Future<bool> confirmRetake(BuildContext context) => confirmSheet(
+  context,
+  title: 'دوباره می‌دی؟',
+  body: 'اگه دوباره بدی، نتیجه‌ی جدید جاش ثبت می‌شه، حتی اگه کمتر باشه.',
+  keep: 'بی‌خیال',
+  leave: 'دوباره بده',
+  danger: false,
+);

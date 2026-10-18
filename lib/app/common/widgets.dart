@@ -172,7 +172,7 @@ String priceLine(CourseCard c) {
   return from;
 }
 
-/// Small rounded label over a cover («معرفی · ۱:۴۲»).
+/// Small rounded label over a cover («معرفی • ۱:۴۲»).
 class VideoBadge extends StatelessWidget {
   final int seconds;
   const VideoBadge(this.seconds, {super.key});
@@ -191,7 +191,7 @@ class VideoBadge extends StatelessWidget {
         const MIcon(MI.play, size: 12, color: Colors.white),
         const SizedBox(width: 4),
         Text(
-          'معرفی · ${clock(seconds)}',
+          'معرفی • ${clock(seconds)}',
           style: T.of(12, FontWeight.w800, Colors.white),
         ),
       ],

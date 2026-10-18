@@ -489,6 +489,70 @@ class Outline {
   OutlineUnit? get currentUnit => currentUnitId == null
       ? null
       : units.where((u) => u.id == currentUnitId).firstOrNull;
+
+  /// The outline with units finished offline (still queued) shown as done,
+  /// and the current unit moved past them.
+  Outline withCompleted(Set<String> ids) {
+    if (ids.isEmpty || !units.any((u) => ids.contains(u.id) && !u.completed)) {
+      return this;
+    }
+    OutlineUnit mark(OutlineUnit u) => !ids.contains(u.id) || u.completed
+        ? u
+        : OutlineUnit(
+            id: u.id,
+            title: u.title,
+            type: u.type,
+            completed: true,
+            quizScore: u.quizScore,
+            locked: false,
+            isPreview: u.isPreview,
+            durationMinutes: u.durationMinutes,
+            questionCount: u.questionCount,
+          );
+    final mods = [
+      for (final m in modules)
+        OutlineModule(
+          id: m.id,
+          title: m.title,
+          locked: m.locked,
+          complete: m.complete,
+          paths: [
+            for (final p in m.paths)
+              OutlinePath(
+                id: p.id,
+                title: p.title,
+                locked: p.locked,
+                complete: p.complete,
+                progressPercent: p.progressPercent,
+                units: p.units.map(mark).toList(),
+              ),
+          ],
+        ),
+    ];
+    final all = [
+      for (final m in mods)
+        for (final p in m.paths) ...p.units,
+    ];
+    final done = all.where((u) => u.completed).length;
+    var current = currentUnitId;
+    if (current != null && ids.contains(current)) {
+      final i = all.indexWhere((u) => u.id == current);
+      current = all.skip(i + 1).where((u) => !u.completed).firstOrNull?.id;
+    }
+    return Outline(
+      id: id,
+      title: title,
+      progressPercent: totalUnits == 0 ? 0 : done * 100 ~/ totalUnits,
+      previewUnitCount: previewUnitCount,
+      completedUnits: done,
+      totalUnits: totalUnits,
+      currentUnitId: current,
+      access: access,
+      plans: plans,
+      modules: mods,
+      teachers: teachers,
+    );
+  }
 }
 
 // ---------------------------------------------------------------- units
@@ -745,6 +809,9 @@ class InstituteSummary {
   final int studentCount;
   final bool isMember;
 
+  /// Picked by the Masir team («برگزیده»).
+  final bool isFeatured;
+
   const InstituteSummary({
     required this.id,
     required this.name,
@@ -755,6 +822,7 @@ class InstituteSummary {
     this.teacherCount = 0,
     this.studentCount = 0,
     this.isMember = false,
+    this.isFeatured = false,
   });
 
   factory InstituteSummary.fromJson(J j) => InstituteSummary(
@@ -767,6 +835,7 @@ class InstituteSummary {
     teacherCount: toInt(j['teacher_count']),
     studentCount: toInt(j['student_count']),
     isMember: toBool(j['is_member']),
+    isFeatured: toBool(j['is_featured']),
   );
 }
 

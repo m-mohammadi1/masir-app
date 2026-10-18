@@ -17,13 +17,16 @@ Future<void> setup() async => _getIt.initial();
 /// `--dart-define=API_BASE_URL=https://api.getmasir.com/v1/app/` (or a
 /// machine's LAN address when testing on a physical phone).
 ///
-/// Without it the app uses the local backend on port 9393. The Android
-/// emulator reaches the host machine at 10.0.2.2, not 127.0.0.1.
+/// Without it a release build uses production, and debug/profile builds use
+/// the local backend on port 9393. The Android emulator reaches the host
+/// machine at 10.0.2.2, not 127.0.0.1.
 final String _baseUrl = _resolveBaseUrl();
 
 String _resolveBaseUrl() {
   const configured = String.fromEnvironment('API_BASE_URL');
   if (configured.isNotEmpty) return configured;
+  // A release build never talks to a developer's machine.
+  if (kReleaseMode) return 'https://api.getmasir.com/v1/app/';
   final isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
   return 'http://${isAndroid ? '10.0.2.2' : '127.0.0.1'}:9393/v1/app/';
 }
@@ -61,10 +64,13 @@ abstract class AppModule {
       baseUrl: _baseUrl,
       header: _header(_haveFormData),
       refreshToken: () async {
-        final Dio dio = Dio(BaseOptions(baseUrl: _baseUrl))
-          ..interceptors.add(
+        final Dio dio = Dio(BaseOptions(baseUrl: _baseUrl));
+        // Bodies carry tokens: log them in debug builds only.
+        if (kDebugMode) {
+          dio.interceptors.add(
             LogInterceptor(requestBody: true, responseBody: true),
           );
+        }
         try {
           if (HiveService.token == null) {
             return RefreshTokenResult(

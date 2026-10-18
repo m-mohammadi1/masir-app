@@ -190,13 +190,18 @@ extension LearningEndpoints on MasirApi {
     'units/$id/complete',
     (d) => ProgressUpdate.fromJson(asMap(d)['progress']),
   );
+
+  /// [attemptId] stays the same when a failed submit is retried, so the
+  /// server doesn't store the attempt twice.
   Future<Res<QuizResult>> submitQuiz(
     String id,
-    List<({String questionId, Object answer})> answers,
-  ) => post(
+    List<({String questionId, Object answer})> answers, {
+    String? attemptId,
+  }) => post(
     'units/$id/quiz-submit',
     (d) => QuizResult.fromJson(asMap(d)),
     body: {
+      'attempt_id': ?attemptId,
       'answers': [
         for (final a in answers)
           {'question_id': a.questionId, 'answer': a.answer},

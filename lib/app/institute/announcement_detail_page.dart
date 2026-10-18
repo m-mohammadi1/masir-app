@@ -104,7 +104,7 @@ class _Body extends StatelessWidget {
                             if (a.authorName.isNotEmpty) a.authorName,
                             if (a.publishedAt != null)
                               jDay(a.publishedAt!, year: true),
-                          ].join(' · '),
+                          ].join(' • '),
                           style: T.of(12, FontWeight.w500, C.muted),
                         ),
                       ],
@@ -151,7 +151,7 @@ class _Body extends StatelessWidget {
                               ),
                               Text(
                                 a.moduleTitle != null && a.moduleNumber > 0
-                                    ? '${a.courseTitle} · فصل ${fa(a.moduleNumber)} ${a.moduleTitle}'
+                                    ? '${a.courseTitle} • فصل ${fa(a.moduleNumber)} ${a.moduleTitle}'
                                     : announcementScope(a),
                                 style: T.of(15, FontWeight.w800),
                               ),
