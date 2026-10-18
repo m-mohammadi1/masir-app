@@ -370,7 +370,7 @@ class _PlanPageState extends State<PlanPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
-                          'قیمت رو ${c.instituteBrand.name} تعیین کرده. اشتراک ${_until == null ? '' : 'تا $_until'} خودش تموم می‌شه و لازم نیست لغوش کنی؛ بعدش هم پیشرفتت پاک نمی‌شه.',
+                          'قیمت رو ${c.instituteBrand.name} تعیین کرده. اشتراک ${_until == null ? '' : 'تا $_until'} خودش تموم می‌شه و کاری لازم نیست بکنی؛ بعدش هم پیشرفتت پاک نمی‌شه.',
                           style: T.of(13, FontWeight.w500, C.muted, 1.9),
                         ),
                       ),
