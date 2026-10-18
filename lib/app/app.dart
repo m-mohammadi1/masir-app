@@ -89,18 +89,9 @@ class _MasirAppState extends State<MasirApp> {
     if (_expiring) return;
     _expiring = true;
     await Session.signOut();
+    Session.expired = true;
     appRouter.go(Routes.login);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _expiring = false;
-      final ctx = appRouter.routerDelegate.navigatorKey.currentContext;
-      if (ctx == null) return;
-      Toast.show(
-        ctx,
-        title: 'نشستت تموم شده',
-        body: 'برای ادامه دوباره وارد شو.',
-        tone: ToastTone.info,
-      );
-    });
+    _expiring = false;
   }
 
   @override

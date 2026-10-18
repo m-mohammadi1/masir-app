@@ -19,7 +19,12 @@ class Session {
   /// Institute the student is in (null in the Masir space).
   static final instituteId = ValueNotifier<String?>(null);
 
+  /// Set when the server ended the session (401); the login page says so
+  /// until the student signs in again.
+  static bool expired = false;
+
   static Future<void> signIn(String token, Student s) async {
+    expired = false;
     HiveService.token = token;
     updateHeader();
     student.value = s;

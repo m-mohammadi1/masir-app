@@ -104,6 +104,24 @@ class _LoginPageState extends State<LoginPage> {
                       textAlign: TextAlign.center,
                       style: T.of(15, FontWeight.w500, C.body),
                     ),
+                    if (Session.expired) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: C.sunSoft,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          'نشستت تموم شده؛ برای ادامه دوباره وارد شو.',
+                          textAlign: TextAlign.center,
+                          style: T.of(14, FontWeight.w700, C.sunText, 1.8),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     Field(
                       label: 'نام کاربری',
