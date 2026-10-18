@@ -573,6 +573,9 @@ class _NextStep extends StatelessWidget {
       padding: _hPad,
       child: Semantics(
         label: 'قدم بعدی',
+        // The card has a name, but its button and text stay their own nodes.
+        container: true,
+        explicitChildNodes: true,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -733,6 +736,9 @@ class _CurrentInstitute extends StatelessWidget {
       padding: _hPad,
       child: Semantics(
         label: 'مؤسسه‌ی فعلی',
+        // The card has a name, but its button and text stay their own nodes.
+        container: true,
+        explicitChildNodes: true,
         child: Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(

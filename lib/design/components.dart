@@ -83,15 +83,6 @@ class _LipState extends State<Lip> {
       button: true,
       selected: widget.selected,
       label: widget.semanticLabel,
-      // Its own node (a parent card's label must not swallow the button),
-      // and with a label the visible text inside isn't read a second time.
-      container: true,
-      excludeSemantics: widget.semanticLabel != null,
-      // Excluding the child also drops its tap action; give it back.
-      onTap: () {
-        HapticFeedback.selectionClick();
-        widget.onTap!();
-      },
       child: Padding(
         padding: EdgeInsets.only(bottom: h),
         child: GestureDetector(
@@ -222,11 +213,14 @@ class Btn extends StatelessWidget {
                 const SizedBox(width: 8),
               ],
               Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: T.of(fontSize, FontWeight.w800, fg, 1.2),
+                // The button's semantic label already says this.
+                child: ExcludeSemantics(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: T.of(fontSize, FontWeight.w800, fg, 1.2),
+                  ),
                 ),
               ),
             ],

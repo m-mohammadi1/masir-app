@@ -464,12 +464,6 @@ class _MasirPressableState extends State<MasirPressable> {
       button: true,
       selected: widget.selected,
       label: widget.semanticLabel,
-      // Its own node (a parent card's label must not swallow the button),
-      // and with a label the visible text inside isn't read a second time.
-      container: true,
-      excludeSemantics: widget.semanticLabel != null,
-      // Excluding the child also drops its tap action; give it back.
-      onTap: widget.onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: (_) => _set(true),
