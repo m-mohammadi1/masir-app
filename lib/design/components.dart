@@ -83,7 +83,9 @@ class _LipState extends State<Lip> {
       button: true,
       selected: widget.selected,
       label: widget.semanticLabel,
-      // With a label, the visible text inside would be read a second time.
+      // Its own node (a parent card's label must not swallow the button),
+      // and with a label the visible text inside isn't read a second time.
+      container: true,
       excludeSemantics: widget.semanticLabel != null,
       child: Padding(
         padding: EdgeInsets.only(bottom: h),
