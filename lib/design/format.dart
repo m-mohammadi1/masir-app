@@ -111,12 +111,11 @@ String ago(DateTime? d) {
   return jDay(d);
 }
 
+/// «صبح/ظهر/شب بخیر» by the time of day (APP-5.1).
 String greeting(DateTime now) {
   final h = now.hour;
-  if (h < 5) return 'شب بخیر';
-  if (h < 12) return 'صبح بخیر';
-  if (h < 17) return 'روز بخیر';
-  if (h < 20) return 'عصر بخیر';
+  if (h >= 5 && h < 12) return 'صبح بخیر';
+  if (h >= 12 && h < 17) return 'ظهر بخیر';
   return 'شب بخیر';
 }
 

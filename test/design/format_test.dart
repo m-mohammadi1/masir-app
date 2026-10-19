@@ -40,4 +40,11 @@ void main() {
     expect(ordinal(10), 'دهم');
     expect(ordinal(11), '۱۱');
   });
+
+  test('greeting by time of day', () {
+    expect(greeting(DateTime(2026, 1, 1, 9)), 'صبح بخیر');
+    expect(greeting(DateTime(2026, 1, 1, 14)), 'ظهر بخیر');
+    expect(greeting(DateTime(2026, 1, 1, 19)), 'شب بخیر');
+    expect(greeting(DateTime(2026, 1, 1, 2)), 'شب بخیر');
+  });
 }
