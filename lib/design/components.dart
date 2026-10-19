@@ -74,10 +74,16 @@ class _LipState extends State<Lip> {
       child: widget.child,
     );
     if (widget.onTap == null) {
-      return Padding(
-        padding: EdgeInsets.only(bottom: h),
-        child: box,
-      );
+      final idle = Padding(padding: EdgeInsets.only(bottom: h), child: box);
+      // A disabled button is still announced, as disabled.
+      return widget.semanticLabel == null
+          ? idle
+          : Semantics(
+              button: true,
+              enabled: false,
+              label: widget.semanticLabel,
+              child: idle,
+            );
     }
     return Semantics(
       button: true,
