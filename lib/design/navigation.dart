@@ -145,13 +145,16 @@ class SpaceTabBar extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        items[i].label,
-                        style: T.of(
-                          12,
-                          i == index ? FontWeight.w800 : FontWeight.w700,
-                          i == index ? active : C.muted,
-                          1.3,
+                      // The tab's semantic label already says this.
+                      ExcludeSemantics(
+                        child: Text(
+                          items[i].label,
+                          style: T.of(
+                            12,
+                            i == index ? FontWeight.w800 : FontWeight.w700,
+                            i == index ? active : C.muted,
+                            1.3,
+                          ),
                         ),
                       ),
                     ],

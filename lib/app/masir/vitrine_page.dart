@@ -293,8 +293,13 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
+          // One node for the screen reader: the label carries the count, and
+          // the inner button and badge stay out of the way.
           Semantics(
             button: true,
+            container: true,
+            excludeSemantics: true,
+            onTap: () => context.push(Routes.inbox),
             label: unread > 0
                 ? 'صندوق پیام، ${fa(unread)} پیام نخونده'
                 : 'صندوق پیام',
