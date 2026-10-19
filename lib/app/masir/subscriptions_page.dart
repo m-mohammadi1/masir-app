@@ -46,6 +46,15 @@ class _SubscriptionsPageState extends State<SubscriptionsPage> {
       api.reminderPrefs().then(
         (r) => r.fold((_) {}, (p) => setState(() => _prefs = p)),
       ),
+      // The SMS row shows the number; the profile may not be cached yet
+      // when this page is opened directly.
+      if (Session.student.value == null)
+        api.me().then(
+          (r) => r.fold(
+            (_) {},
+            (st) => setState(() => Session.student.value = st),
+          ),
+        ),
     ]);
   }
 
