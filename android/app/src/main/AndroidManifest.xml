@@ -2,7 +2,7 @@
     <!-- Release builds need this too: the app talks to the API over the network. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="mohammad"
+        android:label="مسیر"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

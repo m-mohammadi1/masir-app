@@ -28,6 +28,8 @@ flutter run -d chrome --web-port 5174 --web-hostname 127.0.0.1
 dart run build_runner build --delete-conflicting-outputs
 ```
 
+**Release (Android):** `scripts/build-release.sh` (APK) or `scripts/build-release.sh aab` (Play bundle) builds a signed, obfuscated build against `https://api.getmasir.com/v1/app/` into `build/release/`. It needs `android/key.properties` (git-ignored; template in `android/key.properties.example`); without it Gradle signs release builds with the debug key and the script refuses to run. Bump `version:` in `pubspec.yaml` before every upload. Launcher icons come from `assets/launcher/` (rendered from `masir-design/logo/`): `dart run flutter_launcher_icons`.
+
 **Firebase:** `lib/firebase_options.dart`, `android/app/google-services.json` and the iOS config must exist for push. The background handler is registered in `lib/main.dart`; `lib/fcm.dart` opens the institute from a tapped notification.
 
 ## Directory layout
