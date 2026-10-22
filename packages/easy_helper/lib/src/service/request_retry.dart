@@ -1,11 +1,14 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:talker_dio_logger/talker_dio_logger.dart';
 
 class RequestRetry {
   Future<Response> call(
       {required RequestOptions options,required String baseUrl, Map<String, dynamic>? header}) async {
-    final Dio dio = Dio(BaseOptions(baseUrl:baseUrl ))
-      ..interceptors.add(
+    final Dio dio = Dio(BaseOptions(baseUrl:baseUrl ));
+    // Headers and bodies carry tokens: log in debug builds only.
+    if (kDebugMode) {
+      dio.interceptors.add(
         TalkerDioLogger(
           settings: const TalkerDioLoggerSettings(
             printRequestHeaders: true,
@@ -15,6 +18,7 @@ class RequestRetry {
           ),
         ),
       );
+    }
     return await dio.request(
       options.path,
       data: options.data,

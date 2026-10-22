@@ -30,9 +30,6 @@ extension GetItInjectableX on _i174.GetIt {
       preResolve: true,
     );
     gh.lazySingleton<_i453.MasirApi>(() => _i453.MasirApi());
-    gh.singleton<_i669.IRestfulApi>(
-      () => appModule.restfulApi(gh<_i669.WebService>()),
-    );
     return this;
   }
 }

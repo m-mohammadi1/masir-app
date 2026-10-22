@@ -31,15 +31,18 @@ class WebService {
       ..options.sendTimeout = Endpoints.sendTimeout
       ..options.headers = header
       ..interceptors.addAll([
-        TalkerDioLogger(
-          settings: const TalkerDioLoggerSettings(
-            printRequestHeaders: true,
-            printResponseMessage: true,
-            printRequestData: true,
-            printResponseData: true,
+        // Headers and bodies carry tokens, and pretty-printing every response
+        // costs frame time: log in debug builds only.
+        if (kDebugMode)
+          TalkerDioLogger(
+            settings: const TalkerDioLoggerSettings(
+              printRequestHeaders: true,
+              printResponseMessage: true,
+              printRequestData: true,
+              printResponseData: true,
+            ),
           ),
-        ),
-        MiddlewareInspector(
+        _inspector = MiddlewareInspector(
           baseUrl: _baseUrl,
           refreshToken: _refreshToken,
           header: _header,
@@ -47,11 +50,21 @@ class WebService {
         ErrorInterceptor(),
       ]);
   }
+
+  late MiddlewareInspector _inspector;
+
+  /// Swaps the request headers (sign-in, sign-out) on the same client, so
+  /// open connections are kept.
+  void setHeader(Map<String, dynamic> header) {
+    _header = header;
+    _dio.options.headers = header;
+    _inspector.header = header;
+  }
 }
 
 class MiddlewareInspector extends QueuedInterceptorsWrapper {
   final Future<RefreshTokenResult> Function()? refreshToken;
-  final Map<String, dynamic> header;
+  Map<String, dynamic> header;
   final String baseUrl;
 
   MiddlewareInspector({

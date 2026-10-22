@@ -39,19 +39,11 @@ Map<String, dynamic> _header(bool haveFormData) => {
   if (HiveService.token != null) 'Authorization': 'Bearer ${HiveService.token}',
 };
 
-void updateHeader() {
-  inject<WebService>().initial(
-    baseUrl: _baseUrl,
-    header: _header(_haveFormData),
-  );
-}
+void updateHeader() => inject<WebService>().setHeader(_header(_haveFormData));
 
 void updateFormDataHeader(bool isHave) {
   _haveFormData = isHave;
-  inject<WebService>().initial(
-    baseUrl: _baseUrl,
-    header: _header(_haveFormData),
-  );
+  updateHeader();
 }
 
 @module
@@ -122,8 +114,4 @@ abstract class AppModule {
     );
     return service;
   }
-
-  @Singleton(order: 1)
-  IRestfulApi restfulApi(WebService webService) =>
-      DioRestfulApi(webService: webService);
 }
