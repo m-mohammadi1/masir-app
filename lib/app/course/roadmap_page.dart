@@ -11,6 +11,7 @@ import '/app/routes.dart';
 import '/app/state/progress_events.dart';
 import '/app/state/nav.dart';
 import '/app/state/offline_queue.dart';
+import '/app/state/route_settle.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
 import '/core/api/models.dart';
@@ -121,29 +122,71 @@ class _RoadmapPageState extends State<RoadmapPage>
         );
   }
 
-  void _onProgress() {
+  Future<void> _onProgress() async {
     if (!mounted) return;
-    // Land on the new current unit when the student comes back.
-    _scrolled = false;
-    _load();
+    // The map stays where the student left it; once it shows again it
+    // scrolls to the new current unit (§10.1). The reload waits for the next
+    // unit to slide in, so it doesn't rebuild the map during that slide.
+    await afterTransitions(context);
+    if (mounted) _load();
   }
+
+  /// The map waits for the page to finish sliding in before it replaces the
+  /// skeleton (§13), so it's never built and laid out mid-slide.
+  bool _settled = false;
+  bool _settleAsked = false;
+
+  /// After progress: scroll the current pin into view when the map shows.
+  bool _bringIntoView = false;
+
+  /// Where the current pin sits on the map (set while laying it out).
+  double? _curY;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_settleAsked) {
+      _settleAsked = true;
+      routeSettled(context).then((_) {
+        if (mounted) setState(() => _settled = true);
+      });
+    }
     // Covered by the unit page, the map's tickers are off; play the step
     // once it shows again, after the page has slid away.
     final visible = TickerMode.valuesOf(context).enabled;
     if (visible && !_visible) {
-      final step = _stepPending;
-      _stepPending = false;
-      Future.delayed(MasirMotion.back, () {
+      Future.delayed(MasirMotion.back, () async {
         if (!mounted) return;
+        await _scrollToCurrent();
+        if (!mounted) return;
+        final step = _stepPending;
+        _stepPending = false;
         if (step) _step.forward(from: 0);
         if (_celebrate != null) setState(() => _celebrateReady = true);
       });
     }
     _visible = visible;
+  }
+
+  /// §10.1: if the current pin is off screen, scroll it into view (300ms,
+  /// standard) before the pin pops. Reduced motion: jumps.
+  Future<void> _scrollToCurrent() async {
+    final y = _curY;
+    if (!_bringIntoView || y == null || !_scroll.hasClients) return;
+    _bringIntoView = false;
+    final pos = _scroll.position;
+    final top = pos.pixels, bottom = pos.pixels + pos.viewportDimension;
+    if (y - 60 >= top && y + 120 <= bottom) return;
+    final to = (y - 260).clamp(0.0, pos.maxScrollExtent);
+    if (MasirMotion.reduced(context)) {
+      _scroll.jumpTo(to);
+      return;
+    }
+    await _scroll.animateTo(
+      to,
+      duration: MasirMotion.medium,
+      curve: MasirMotion.standard,
+    );
   }
 
   @override
@@ -168,25 +211,38 @@ class _RoadmapPageState extends State<RoadmapPage>
       }),
     );
     final ev = RoadmapEvents.pathDone;
+    final moved = before != null && _o != null && _o!.currentUnitId != before;
     if (ev != null && ev.courseId == widget.courseId) {
       RoadmapEvents.pathDone = null;
-      setState(() {
-        _celebrate = ev.update;
-        _celebrateReady = _visible;
-      });
-    } else if (before != null &&
-        _o != null &&
-        _o!.currentUnitId != before &&
-        !MasirMotion.reduced(context)) {
+      _bringIntoView = true;
+      setState(() => _celebrate = ev.update);
+      // Shown once the map is on screen (and scrolled), so the confetti
+      // isn't spent behind the unit page.
+      if (_visible) _afterLayout(() => setState(() => _celebrateReady = true));
+    } else if (moved && !MasirMotion.reduced(context)) {
       _poppedDone = before;
       _poppedNext = _o!.currentUnitId;
+      _bringIntoView = true;
       _step.value = 0;
       if (_visible) {
-        _step.forward(from: 0);
+        _afterLayout(() => _step.forward(from: 0));
       } else {
         _stepPending = true;
       }
+    } else if (moved) {
+      _bringIntoView = true;
+      if (_visible) _afterLayout(() {});
     }
+  }
+
+  /// Once the new map is laid out (the current pin's place is known), scroll
+  /// it into view, then [then].
+  void _afterLayout(VoidCallback then) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _scrollToCurrent();
+      if (mounted) then();
+    });
   }
 
   bool get _guest => !(_o?.access.enrolled ?? false);
@@ -213,6 +269,9 @@ class _RoadmapPageState extends State<RoadmapPage>
       Routes.unit(u.id),
       extra: {'course_id': widget.courseId, 'from_roadmap': true},
     );
+    // Refresh once the unit has slid away, not during it.
+    if (!mounted) return;
+    await afterTransitions(context);
     if (mounted) _load();
   }
 
@@ -358,287 +417,411 @@ class _RoadmapPageState extends State<RoadmapPage>
   @override
   Widget build(BuildContext context) {
     final o = _o;
+    // The map, the header's progress and the bar show together, once the
+    // outline is here and the page has finished sliding in.
+    final ready = o != null && _settled;
+    final reduced = MasirMotion.reduced(context);
     final brand = _course?.instituteBrand ?? context.brand;
     return BrandScope(
       brand: brand,
       child: Builder(
         builder: (context) {
+          final Widget body;
+          if (ready) {
+            body = Stack(
+              key: const ValueKey('map'),
+              children: [
+                Positioned.fill(child: _map(context, o)),
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 16,
+                  // The path-complete card rises in like a sheet and drops
+                  // away when closed.
+                  child: AnimatedSwitcher(
+                    duration: reduced ? MasirMotion.quick : MasirMotion.medium,
+                    reverseDuration: reduced
+                        ? MasirMotion.quick
+                        : MasirMotion.short,
+                    switchInCurve: MasirMotion.standard,
+                    switchOutCurve: MasirMotion.exit,
+                    transitionBuilder: (child, a) => FadeTransition(
+                      opacity: a,
+                      child: reduced
+                          ? child
+                          : SlideTransition(
+                              position: Tween(
+                                begin: const Offset(0, .25),
+                                end: Offset.zero,
+                              ).animate(a),
+                              child: child,
+                            ),
+                    ),
+                    child: _celebrate != null && _celebrateReady
+                        ? KeyedSubtree(
+                            key: ObjectKey(_celebrate),
+                            child: _Celebration(
+                              update: _celebrate!,
+                              outline: o,
+                              onGo: (u) {
+                                setState(() => _celebrate = null);
+                                _openUnit(u);
+                              },
+                              onClose: () => setState(() => _celebrate = null),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              ],
+            );
+          } else if (o == null && _error != null) {
+            body = Padding(
+              key: const ValueKey('error'),
+              padding: const EdgeInsets.all(16),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: InlineError(body: _error!.friendly, onRetry: _load),
+              ),
+            );
+          } else {
+            body = const _MapSkeleton(key: ValueKey('skeleton'));
+          }
           return Scaffold(
             backgroundColor: C.paper,
             body: Column(
               children: [
                 _Header(
                   title: o?.title ?? _course?.card.title ?? '',
-                  outline: o,
+                  outline: ready ? o : null,
+                  loading: !ready && _error == null,
                   guest: _guest,
                   bump: _celebrate != null,
-                  onChapters: o == null ? null : () => _chapters(context, o),
+                  onChapters: !ready ? null : () => _chapters(context, o),
                 ),
                 Expanded(
-                  child: o == null
-                      ? (_error != null
-                            ? Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: InlineError(
-                                  body: _error!.friendly,
-                                  onRetry: _load,
-                                ),
-                              )
-                            : const Center(
-                                child: SizedBox(
-                                  width: 32,
-                                  height: 32,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 3,
-                                  ),
-                                ),
-                              ))
-                      : Stack(
-                          children: [
-                            Positioned.fill(child: _map(context, o)),
-                            if (_celebrate != null && _celebrateReady)
-                              Positioned(
-                                left: 12,
-                                right: 12,
-                                bottom: 16,
-                                child: _Celebration(
-                                  update: _celebrate!,
-                                  outline: o,
-                                  onGo: (u) {
-                                    setState(() => _celebrate = null);
-                                    _openUnit(u);
-                                  },
-                                  onClose: () =>
-                                      setState(() => _celebrate = null),
-                                ),
-                              ),
-                          ],
-                        ),
+                  // §13: skeleton → map cross-fades in 200ms.
+                  child: AnimatedSwitcher(
+                    duration: reduced
+                        ? Duration.zero
+                        : const Duration(milliseconds: 200),
+                    layoutBuilder: (current, previous) => Stack(
+                      fit: StackFit.expand,
+                      children: [...previous, ?current],
+                    ),
+                    child: body,
+                  ),
                 ),
               ],
             ),
-            bottomNavigationBar: o == null || _celebrate != null
-                ? null
-                : _bar(context, o),
+            // The bar slides in with the map and away for the celebration,
+            // so the map grows instead of jumping.
+            bottomNavigationBar: AnimatedSwitcher(
+              duration: reduced ? Duration.zero : MasirMotion.short,
+              switchInCurve: MasirMotion.standard,
+              switchOutCurve: MasirMotion.exit,
+              transitionBuilder: (child, a) => SizeTransition(
+                sizeFactor: a,
+                alignment: Alignment.topCenter,
+                child: child,
+              ),
+              child: ready && _celebrate == null
+                  ? KeyedSubtree(
+                      key: const ValueKey('bar'),
+                      child: _bar(context, o),
+                    )
+                  : const SizedBox(
+                      key: ValueKey('no-bar'),
+                      width: double.infinity,
+                    ),
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _map(BuildContext context, Outline o) => LayoutBuilder(
-    builder: (context, box) {
-      final w = box.maxWidth;
-      final pal = context.pal;
-      final seq = _sequence(o);
-      final plates = <Widget>[];
-      final markers = <Widget>[];
-      final pins = <Widget>[];
-      final pts = <Offset>[];
-      double y = 16;
-      double? prevCy;
-      var side = 0;
-      var curIdx = -1;
-      var fromIdx = -1;
-      double curY = 0;
-      _Item? pending;
-      const base = 140.0;
-      final cxR = w - 92;
-      const cxL = 92.0;
-      final lw = math.min(170.0, w - 220);
-      _plateTops.clear();
+  Widget _layoutMap(BuildContext context, Outline o, double w) {
+    final pal = context.pal;
+    final seq = _sequence(o);
+    final plates = <Widget>[];
+    final markers = <Widget>[];
+    final pins = <Widget>[];
+    final pts = <Offset>[];
+    double y = 16;
+    double? prevCy;
+    var side = 0;
+    var curIdx = -1;
+    var fromIdx = -1;
+    double curY = 0;
+    _Item? pending;
+    const base = 140.0;
+    final cxR = w - 92;
+    const cxL = 92.0;
+    final lw = math.min(170.0, w - 220);
+    _plateTops.clear();
 
-      void attach(_Item att, double mid) {
-        if (att.marker != null) {
-          markers.add(
-            Positioned(
-              top: mid - 16,
-              left: 0,
-              right: 0,
-              child: Center(child: _MarkerChip(m: att.marker!)),
-            ),
-          );
-        }
-        final p = att.plate;
-        if (p != null) {
-          final top = att.marker != null ? mid - 16 - 20 - 76 : mid - 38;
-          _plateTops[p.num - 1] = top;
-          plates.add(
-            Positioned(
-              top: top,
-              left: 16,
-              right: 16,
-              height: 76,
-              child: _PlateCard(p: p),
-            ),
-          );
-        }
-      }
-
-      for (final it in seq) {
-        final s = it.stop;
-        if (s == null) {
-          pending = it;
-          continue;
-        }
-        double cy;
-        if (prevCy == null) {
-          if (pending != null) {
-            if (pending.plate != null) {
-              attach(_Item(plate: pending.plate), y + 38);
-              y += 76 + 20;
-            }
-            if (pending.marker != null) {
-              attach(_Item(marker: pending.marker), y + 16);
-              y += 32 + 28;
-            }
-          }
-          cy = y + 42;
-        } else {
-          var dy = base;
-          if (pending?.plate != null) dy += 160;
-          if (pending?.marker != null) dy += 36;
-          cy = prevCy + dy;
-          if (pending != null) attach(pending, prevCy + dy / 2);
-        }
-        pending = null;
-        final isR = side.isEven;
-        final cx = isR ? cxR : cxL;
-        side++;
-        final current = s.st == _St.current;
-        final size = current ? 80.0 : (s.special ? 72.0 : 68.0);
-        if (current) {
-          curIdx = pts.length;
-          curY = cy;
-        }
-        pts.add(Offset(cx, cy));
-        final labelLeft = isR ? cx - size / 2 - 14 - lw : cx + size / 2 + 14;
-        if (s.id == _poppedDone) fromIdx = pts.length - 1;
-        if (current) {
-          pins.add(
-            Positioned(
-              left: cx - size / 2,
-              top: cy - size / 2,
-              width: size,
-              height: size,
-              child: _AfterStep(
-                step: _step,
-                child: _Pulse(color: pal.p),
-              ),
-            ),
-          );
-        }
-        final pin = _Pin(
-          stop: s,
-          size: size,
-          guest: _guest,
-          onTap: () => _pick(context, o, s),
+    void attach(_Item att, double mid) {
+      if (att.marker != null) {
+        markers.add(
+          Positioned(
+            top: mid - 16,
+            left: 0,
+            right: 0,
+            child: Center(child: _MarkerChip(m: att.marker!)),
+          ),
         );
+      }
+      final p = att.plate;
+      if (p != null) {
+        final top = att.marker != null ? mid - 16 - 20 - 76 : mid - 38;
+        _plateTops[p.num - 1] = top;
+        plates.add(
+          Positioned(
+            top: top,
+            left: 16,
+            right: 16,
+            height: 76,
+            child: _PlateCard(p: p),
+          ),
+        );
+      }
+    }
+
+    for (final it in seq) {
+      final s = it.stop;
+      if (s == null) {
+        pending = it;
+        continue;
+      }
+      double cy;
+      if (prevCy == null) {
+        if (pending != null) {
+          if (pending.plate != null) {
+            attach(_Item(plate: pending.plate), y + 38);
+            y += 76 + 20;
+          }
+          if (pending.marker != null) {
+            attach(_Item(marker: pending.marker), y + 16);
+            y += 32 + 28;
+          }
+        }
+        cy = y + 42;
+      } else {
+        var dy = base;
+        if (pending?.plate != null) dy += 160;
+        if (pending?.marker != null) dy += 36;
+        cy = prevCy + dy;
+        if (pending != null) attach(pending, prevCy + dy / 2);
+      }
+      pending = null;
+      final isR = side.isEven;
+      final cx = isR ? cxR : cxL;
+      side++;
+      final current = s.st == _St.current;
+      final size = current ? 80.0 : (s.special ? 72.0 : 68.0);
+      if (current) {
+        curIdx = pts.length;
+        curY = cy;
+      }
+      pts.add(Offset(cx, cy));
+      final labelLeft = isR ? cx - size / 2 - 14 - lw : cx + size / 2 + 14;
+      if (s.id == _poppedDone) fromIdx = pts.length - 1;
+      if (current) {
         pins.add(
           Positioned(
             left: cx - size / 2,
             top: cy - size / 2,
             width: size,
             height: size,
-            child: s.id == _poppedDone
-                ? _Pop(step: _step, from: 0, to: 420 / 1440, child: pin)
-                : s.id == _poppedNext && current
-                ? _Pop(step: _step, from: 1020 / 1440, to: 1, child: pin)
-                : pin,
+            child: _AfterStep(
+              step: _step,
+              child: _Pulse(color: pal.p),
+            ),
           ),
         );
-        if (s.st == _St.free) {
-          pins.add(
-            Positioned(
-              top: cy - size / 2 - 12,
-              left: cx - 28,
-              width: 56,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                decoration: BoxDecoration(
-                  color: C.sun,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  'رایگان',
-                  textAlign: TextAlign.center,
-                  style: T.of(11, FontWeight.w800, C.sunInk),
-                ),
-              ),
-            ),
-          );
-        }
+      }
+      final pin = _Pin(
+        stop: s,
+        size: size,
+        guest: _guest,
+        onTap: () => _pick(context, o, s),
+      );
+      pins.add(
+        Positioned(
+          left: cx - size / 2,
+          top: cy - size / 2,
+          width: size,
+          height: size,
+          // Popping pins get their own layer, so the step doesn't
+          // repaint the whole map for 1.4s.
+          child: s.id == _poppedDone
+              ? RepaintBoundary(
+                  child: _Pop(step: _step, from: 0, to: 420 / 1440, child: pin),
+                )
+              : s.id == _poppedNext && current
+              ? RepaintBoundary(
+                  child: _Pop(
+                    step: _step,
+                    from: 1020 / 1440,
+                    to: 1,
+                    child: pin,
+                  ),
+                )
+              : pin,
+        ),
+      );
+      if (s.st == _St.free) {
         pins.add(
           Positioned(
-            top: cy - (current ? 44 : 26),
-            left: labelLeft,
-            width: lw,
-            child: IgnorePointer(
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Column(
-                  crossAxisAlignment: isR
-                      ? CrossAxisAlignment.start
-                      : CrossAxisAlignment.end,
-                  children: [
-                    if (current) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: pal.p,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          'شروع',
-                          style: T.of(13, FontWeight.w800, pal.on),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                    Text(
-                      s.special
-                          ? s.meta
-                          : [
-                              unitTypeNames[s.type] ?? '',
-                              if (s.meta.isNotEmpty) s.meta,
-                            ].join(' • '),
-                      textAlign: isR ? TextAlign.right : TextAlign.left,
-                      style: T.of(12, FontWeight.w600, C.muted),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      s.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: isR ? TextAlign.right : TextAlign.left,
-                      style: T.of(
-                        14,
-                        FontWeight.w800,
-                        s.st == _St.locked ? C.muted : C.ink,
-                        1.5,
-                      ),
-                    ),
-                  ],
-                ),
+            top: cy - size / 2 - 12,
+            left: cx - 28,
+            width: 56,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              decoration: BoxDecoration(
+                color: C.sun,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'رایگان',
+                textAlign: TextAlign.center,
+                style: T.of(11, FontWeight.w800, C.sunInk),
               ),
             ),
           ),
         );
-        prevCy = cy;
       }
-      final mapH = (prevCy ?? 0) + 140;
-      final walked = curIdx > 0 ? pts.sublist(0, curIdx + 1) : <Offset>[];
-      final ahead = _guest ? pts : pts.sublist(math.max(curIdx, 0));
+      pins.add(
+        Positioned(
+          top: cy - (current ? 44 : 26),
+          left: labelLeft,
+          width: lw,
+          child: IgnorePointer(
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Column(
+                crossAxisAlignment: isR
+                    ? CrossAxisAlignment.start
+                    : CrossAxisAlignment.end,
+                children: [
+                  if (current) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: pal.p,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'شروع',
+                        style: T.of(13, FontWeight.w800, pal.on),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  Text(
+                    s.special
+                        ? s.meta
+                        : [
+                            unitTypeNames[s.type] ?? '',
+                            if (s.meta.isNotEmpty) s.meta,
+                          ].join(' • '),
+                    textAlign: isR ? TextAlign.right : TextAlign.left,
+                    style: T.of(12, FontWeight.w600, C.muted),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    s.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: isR ? TextAlign.right : TextAlign.left,
+                    style: T.of(
+                      14,
+                      FontWeight.w800,
+                      s.st == _St.locked ? C.muted : C.ink,
+                      1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      prevCy = cy;
+    }
+    final mapH = (prevCy ?? 0) + 140;
+    final walked = curIdx > 0 ? pts.sublist(0, curIdx + 1) : <Offset>[];
+    final ahead = _guest ? pts : pts.sublist(math.max(curIdx, 0));
 
-      if (!_scrolled && curIdx >= 0) {
+    _curY = curIdx >= 0 ? curY : null;
+
+    // Its own layer: scrolling moves the recorded map instead of
+    // repainting every pin and label each frame.
+    return RepaintBoundary(
+      child: SizedBox(
+        width: w,
+        height: mapH,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              // The trail repaints only for its own grow animation.
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  painter: _TrailPainter(
+                    walked: walked,
+                    ahead: ahead,
+                    growFrom: fromIdx >= 0 && fromIdx < walked.length
+                        ? fromIdx
+                        : null,
+                    grow: CurvedAnimation(
+                      parent: _step,
+                      curve: const Interval(
+                        420 / 1440,
+                        1020 / 1440,
+                        curve: MasirMotion.standard,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            ...plates,
+            ...markers,
+            ...pins,
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The laid-out map, kept while what it's built from is the same, so
+  /// rebuilds of the page (the celebration, the course arriving) reuse it.
+  Object? _mapKey;
+  Widget? _mapContent;
+
+  Widget _map(BuildContext context, Outline o) => LayoutBuilder(
+    builder: (context, box) {
+      final w = box.maxWidth;
+      final key = (o, w, _guest, _poppedDone, _poppedNext, context.brand);
+      if (_mapContent == null || key != _mapKey) {
+        _mapKey = key;
+        _mapContent = _layoutMap(context, o, w);
+      }
+
+      final y = _curY;
+      if (!_scrolled && y != null) {
         _scrolled = true;
+        // Lands on the current unit in the first frame the map is shown,
+        // while it's still fading in.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scroll.hasClients) {
             _scroll.jumpTo(
-              (curY - 260).clamp(0, _scroll.position.maxScrollExtent),
+              (y - 260).clamp(0, _scroll.position.maxScrollExtent),
             );
           }
         });
@@ -650,40 +833,7 @@ class _RoadmapPageState extends State<RoadmapPage>
           controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.only(bottom: _celebrate != null ? 320 : 0),
-          child: SizedBox(
-            width: w,
-            height: mapH,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  // The trail repaints only for its own grow animation.
-                  child: RepaintBoundary(
-                    child: CustomPaint(
-                      painter: _TrailPainter(
-                        walked: walked,
-                        ahead: ahead,
-                        growFrom: fromIdx >= 0 && fromIdx < walked.length
-                            ? fromIdx
-                            : null,
-                        grow: CurvedAnimation(
-                          parent: _step,
-                          curve: const Interval(
-                            420 / 1440,
-                            1020 / 1440,
-                            curve: MasirMotion.standard,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                ...plates,
-                ...markers,
-                ...pins,
-              ],
-            ),
-          ),
+          child: _mapContent,
         ),
       );
     },
@@ -1278,15 +1428,74 @@ class _RoadmapPageState extends State<RoadmapPage>
   );
 }
 
+/// The map while it loads (§13): the first chapter plate, its path marker
+/// and a few pins on alternating sides, where the map draws them.
+class _MapSkeleton extends StatelessWidget {
+  const _MapSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final w = box.maxWidth;
+      final lw = math.min(170.0, w - 220);
+      return ClipRect(
+        child: Stack(
+          children: [
+            const Positioned(
+              top: 16,
+              left: 16,
+              right: 16,
+              child: Bone(height: 76, radius: 20),
+            ),
+            const Positioned(
+              top: 112,
+              left: 0,
+              right: 0,
+              child: Center(child: Bone(width: 170, height: 32, radius: 999)),
+            ),
+            for (var i = 0; i < 5; i++) ...[
+              Positioned(
+                top: 200 + 140.0 * i - 34,
+                left: (i.isEven ? w - 92 : 92) - 34,
+                child: const Bone(width: 68, height: 68, radius: 34),
+              ),
+              Positioned(
+                top: 200 + 140.0 * i - 20,
+                left: i.isEven ? w - 92 - 34 - 14 - lw : 92 + 34 + 14,
+                width: lw,
+                child: Column(
+                  crossAxisAlignment: i.isEven
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.end,
+                  children: const [
+                    Bone(width: 70, height: 11),
+                    SizedBox(height: 8),
+                    Bone(width: 120, height: 13),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    },
+  );
+}
+
 class _Header extends StatelessWidget {
   final String title;
   final Outline? outline;
+
+  /// Bones where the progress row will be, so the header doesn't grow when
+  /// the map shows.
+  final bool loading;
   final bool guest;
   final bool bump;
   final VoidCallback? onChapters;
   const _Header({
     required this.title,
     required this.outline,
+    this.loading = false,
     required this.guest,
     required this.bump,
     this.onChapters,
@@ -1338,6 +1547,21 @@ class _Header extends StatelessWidget {
                 ),
             ],
           ),
+          if (o == null && loading) ...[
+            const SizedBox(height: 12),
+            const SizedBox(
+              height: 19.5,
+              child: Row(
+                children: [
+                  Bone(width: 110, height: 13),
+                  Spacer(),
+                  Bone(width: 34, height: 13),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Bone(height: 10, radius: 999),
+          ],
           if (o != null) ...[
             const SizedBox(height: 12),
             if (guest)
@@ -1382,27 +1606,35 @@ class _Header extends StatelessWidget {
             else ...[
               Row(
                 children: [
+                  // §12: the numbers count up from where they were when a
+                  // unit is done (never on first paint).
                   Expanded(
-                    child: Text(
-                      '${fa(o.completedUnits)} از ${fa(o.totalUnits)} واحد',
+                    child: MasirCountUp(
+                      value: o.completedUnits,
+                      from: o.completedUnits,
+                      format: (d) => '$d از ${fa(o.totalUnits)} واحد',
                       style: T.of(13, FontWeight.w700),
                     ),
                   ),
-                  Text(
-                    pct(o.progressPercent),
+                  MasirCountUp(
+                    value: o.progressPercent,
+                    from: o.progressPercent,
+                    format: MasirCountUp.percent,
                     style: T.of(13, FontWeight.w700, C.greenText),
                   ),
                   if (bump) ...[
                     const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      decoration: BoxDecoration(
-                        color: C.greenSoft,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '+۱',
-                        style: T.of(13, FontWeight.w700, C.greenText),
+                    MasirPopIn(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: C.greenSoft,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '+۱',
+                          style: T.of(13, FontWeight.w700, C.greenText),
+                        ),
                       ),
                     ),
                   ],
