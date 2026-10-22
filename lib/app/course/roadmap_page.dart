@@ -657,19 +657,22 @@ class _RoadmapPageState extends State<RoadmapPage>
               clipBehavior: Clip.none,
               children: [
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: _TrailPainter(
-                      walked: walked,
-                      ahead: ahead,
-                      growFrom: fromIdx >= 0 && fromIdx < walked.length
-                          ? fromIdx
-                          : null,
-                      grow: CurvedAnimation(
-                        parent: _step,
-                        curve: const Interval(
-                          420 / 1440,
-                          1020 / 1440,
-                          curve: MasirMotion.standard,
+                  // The trail repaints only for its own grow animation.
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _TrailPainter(
+                        walked: walked,
+                        ahead: ahead,
+                        growFrom: fromIdx >= 0 && fromIdx < walked.length
+                            ? fromIdx
+                            : null,
+                        grow: CurvedAnimation(
+                          parent: _step,
+                          curve: const Interval(
+                            420 / 1440,
+                            1020 / 1440,
+                            curve: MasirMotion.standard,
+                          ),
                         ),
                       ),
                     ),
@@ -1699,25 +1702,25 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  late final _scale = Tween<double>(begin: 1, end: 1.9).animate(_c);
+  late final _fade = Tween<double>(begin: .55, end: 0).animate(_c);
+
+  // Its own layer: the looping ring repaints alone, not the whole map.
   @override
   Widget build(BuildContext context) => IgnorePointer(
-    child: AnimatedBuilder(
-      animation: _c,
-      builder: (_, _) {
-        final t = _c.value;
-        return Transform.scale(
-          scale: 1 + .9 * t,
-          child: Opacity(
-            opacity: .55 * (1 - t),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: widget.color,
-                shape: BoxShape.circle,
-              ),
+    child: RepaintBoundary(
+      child: ScaleTransition(
+        scale: _scale,
+        child: FadeTransition(
+          opacity: _fade,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: widget.color,
+              shape: BoxShape.circle,
             ),
           ),
-        );
-      },
+        ),
+      ),
     ),
   );
 }
@@ -1799,6 +1802,25 @@ class _TrailPainter extends CustomPainter {
     return p;
   }
 
+  // Built once per painter, not on every frame of the grow animation.
+
+  /// The dotted way ahead as one path (one dot every 22px).
+  late final Path _dots = () {
+    final p = Path();
+    for (final PathMetric m in _curve(ahead).computeMetrics()) {
+      for (double d = 0; d < m.length; d += 22) {
+        p.addPath(m.extractPath(d, math.min(d + 2, m.length)), Offset.zero);
+      }
+    }
+    return p;
+  }();
+
+  late final Path _walked = _curve(walked);
+  late final PathMetric _walkedMetric = _walked.computeMetrics().first;
+  late final double _grownFrom = growFrom! < 1
+      ? 0.0
+      : _curve(walked.sublist(0, growFrom! + 1)).computeMetrics().first.length;
+
   @override
   void paint(Canvas canvas, Size size) {
     if (ahead.length > 1) {
@@ -1807,22 +1829,14 @@ class _TrailPainter extends CustomPainter {
         ..strokeWidth = 10
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
-      for (final PathMetric m in _curve(ahead).computeMetrics()) {
-        for (double d = 0; d < m.length; d += 22) {
-          canvas.drawPath(m.extractPath(d, math.min(d + 2, m.length)), dots);
-        }
-      }
+      canvas.drawPath(_dots, dots);
     }
     if (walked.length > 1) {
-      var path = _curve(walked);
+      var path = _walked;
       final g = grow?.value ?? 1;
       if (growFrom != null && g < 1) {
-        final full = path.computeMetrics().first;
-        final old = growFrom! < 1
-            ? 0.0
-            : _curve(
-                walked.sublist(0, growFrom! + 1),
-              ).computeMetrics().first.length;
+        final full = _walkedMetric;
+        final old = _grownFrom;
         path = full.extractPath(0, old + (full.length - old) * g);
       }
       final stroke = Paint()
