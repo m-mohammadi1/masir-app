@@ -40,6 +40,7 @@ dependencies:
   animations: ^3.0.0
   flutter_secure_storage: ^10.3.4
   package_info_plus: ^9.0.1
+  cached_network_image: ^3.4.1
 
 
 
@@ -60,34 +61,15 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
+  # Only what the app loads is bundled (assets/png, assets/svg and the Pinar
+  # fonts are not used).
   assets:
-    - assets/png/
-    - assets/svg/
-    - assets/fonts/
     - assets/design/patterns/
     - assets/design/logo/
   #   - images/a_dot_ham.jpeg
 
 
   fonts:
-    - family: Pinar
-      fonts:
-        - asset: assets/fonts/Pinar/Pinar-FD-Regular.ttf
-          style: italic
-    - family: Pinar-Bold
-      fonts:
-        - asset: assets/fonts/Pinar/Pinar-FD-Bold.ttf
-        - asset: assets/fonts/Pinar/Pinar-FD-ExtraBold.ttf
-        - asset: assets/fonts/Pinar/Pinar-FD-SemiBold.ttf
-          weight: 700
-    - family: Pinar-Medium
-      fonts:
-        - asset: assets/fonts/Pinar/Pinar-FD-Medium.ttf
-          weight: 500
-    - family: Pinar-Regular
-      fonts:
-        - asset: assets/fonts/Pinar/Pinar-FD-Regular.ttf
-          weight: 400
     - family: Masir
       fonts:
         - asset: assets/fonts/IRANSansX/IRANSansXFaNum-RegularD4.ttf
@@ -100,10 +82,6 @@ flutter:
           weight: 700
         - asset: assets/fonts/IRANSansX/IRANSansXFaNum-ExtraBoldD4.ttf
           weight: 800
-    - family: IRANSans
-      fonts:
-        - asset: assets/fonts/IRANSansX/IRANSansXFaNum-MediumD4.ttf
-          weight: 400
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

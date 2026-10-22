@@ -460,34 +460,36 @@ class _LessonImage extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: AspectRatio(
         aspectRatio: (w / h).clamp(.6, 2.4),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ColoredBox(color: _hex(image['dominant'])),
-            if (preview.isNotEmpty)
-              ImageFiltered(
-                imageFilter: ColorFilterBlur.blur,
-                child: Image.network(
-                  preview,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox(),
+        child: LayoutBuilder(
+          builder: (context, box) => Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(color: _hex(image['dominant'])),
+              if (preview.isNotEmpty)
+                ImageFiltered(
+                  imageFilter: ColorFilterBlur.blur,
+                  child: Image(
+                    image: netImage(context, preview, box.biggest),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const SizedBox(),
+                  ),
                 ),
+              Image(
+                image: netImage(context, '${image['url']}', box.biggest),
+                fit: BoxFit.cover,
+                semanticLabel: alt.isEmpty ? null : alt,
+                excludeFromSemantics: alt.isEmpty,
+                frameBuilder: (_, child, frame, sync) => sync
+                    ? child
+                    : AnimatedOpacity(
+                        opacity: frame == null ? 0 : 1,
+                        duration: MasirMotion.short,
+                        child: child,
+                      ),
+                errorBuilder: (_, _, _) => const SizedBox(),
               ),
-            Image.network(
-              '${image['url']}',
-              fit: BoxFit.cover,
-              semanticLabel: alt.isEmpty ? null : alt,
-              excludeFromSemantics: alt.isEmpty,
-              frameBuilder: (_, child, frame, sync) => sync
-                  ? child
-                  : AnimatedOpacity(
-                      opacity: frame == null ? 0 : 1,
-                      duration: MasirMotion.short,
-                      child: child,
-                    ),
-              errorBuilder: (_, _, _) => const SizedBox(),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

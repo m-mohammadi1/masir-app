@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'media.dart';
 import 'palettes.dart';
 import 'tokens.dart';
 
@@ -478,8 +479,8 @@ class InstituteLogo extends StatelessWidget {
     Widget inner;
     final image = brand.frameImageUrl;
     if (image.isNotEmpty) {
-      inner = Image.network(
-        image,
+      inner = Image(
+        image: netImage(context, image, Size.square(size)),
         fit: BoxFit.cover,
         width: size,
         height: size,
