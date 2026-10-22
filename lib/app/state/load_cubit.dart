@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '/app/state/route_settle.dart';
 import '/core/api/masir_api.dart';
 import '/design/design.dart';
 
@@ -41,7 +42,7 @@ class LoadCubit<D> extends Cubit<Load<D>> {
 }
 
 /// Renders a [LoadCubit]: skeleton first, inline error with retry, then data.
-class LoadView<D> extends StatelessWidget {
+class LoadView<D> extends StatefulWidget {
   final Widget Function(BuildContext context, D data) builder;
   final Widget? skeleton;
   final String errorTitle;
@@ -54,37 +55,64 @@ class LoadView<D> extends StatelessWidget {
   });
 
   @override
+  State<LoadView<D>> createState() => _LoadViewState<D>();
+}
+
+class _LoadViewState<D> extends State<LoadView<D>> {
+  /// Data that arrives while the page is still sliding in waits for the
+  /// slide to end (at most the 300ms push), so the page isn't rebuilt and
+  /// laid out mid-transition. Once shown, reloads swap in straight away.
+  bool _settled = false;
+  bool _waiting = false;
+  bool _shown = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_settled || _waiting) return;
+    _waiting = true;
+    routeSettled(context).then((_) {
+      if (mounted) setState(() => _settled = true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) => BlocBuilder<LoadCubit<D>, Load<D>>(
     // §13: skeleton → content cross-fades in 200ms; reloads with data on
     // screen keep the same child, so nothing flashes.
-    builder: (context, s) => AnimatedSwitcher(
-      duration: MasirMotion.reduced(context)
-          ? Duration.zero
-          : const Duration(milliseconds: 200),
-      layoutBuilder: (current, previous) => Stack(
-        alignment: Alignment.topCenter,
-        children: [...previous, ?current],
-      ),
-      child: KeyedSubtree(
-        key: ValueKey(
-          s.data != null
-              ? 'data'
-              : s.error != null
-              ? 'error'
-              : 'loading',
+    builder: (context, s) {
+      final data = s.data != null && (_settled || _shown);
+      if (data) _shown = true;
+      return AnimatedSwitcher(
+        duration: MasirMotion.reduced(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 200),
+        layoutBuilder: (current, previous) => Stack(
+          alignment: Alignment.topCenter,
+          children: [...previous, ?current],
         ),
-        child: _body(context, s),
-      ),
-    ),
+        child: KeyedSubtree(
+          key: ValueKey(
+            data
+                ? 'data'
+                : s.error != null && s.data == null
+                ? 'error'
+                : 'loading',
+          ),
+          child: _body(context, s, data),
+        ),
+      );
+    },
   );
 
-  Widget _body(BuildContext context, Load<D> s) {
-    if (s.data != null) return builder(context, s.data as D);
+  Widget _body(BuildContext context, Load<D> s, bool data) {
+    if (data) return widget.builder(context, s.data as D);
+    if (s.data != null) return widget.skeleton ?? const ListSkeleton();
     if (s.error != null) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: InlineError(
-          title: s.error!.offline ? 'به سرور وصل نشدیم' : errorTitle,
+          title: s.error!.offline ? 'به سرور وصل نشدیم' : widget.errorTitle,
           body: s.error!.offline
               ? 'اینترنتت رو یه نگاه بنداز.'
               : s.error!.friendly,
@@ -92,7 +120,7 @@ class LoadView<D> extends StatelessWidget {
         ),
       );
     }
-    return skeleton ?? const ListSkeleton();
+    return widget.skeleton ?? const ListSkeleton();
   }
 }
 

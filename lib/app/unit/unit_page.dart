@@ -15,6 +15,7 @@ import '/app/routes.dart';
 import '/app/state/progress_events.dart';
 import '/app/state/nav.dart';
 import '/app/state/offline_queue.dart';
+import '/app/state/route_settle.dart';
 import '/app/unit/quiz_view.dart';
 import '/app/unit/unit_media.dart';
 import '/core/api/endpoints.dart';
@@ -108,6 +109,10 @@ class _UnitPageState extends State<UnitPage> {
         }
       },
       (u) async {
+        // A unit pushed in (or replacing the last one) shows its content
+        // once the slide is over, not halfway through it.
+        await routeSettled(context);
+        if (!mounted) return;
         setState(() {
           _u = u;
           _mode = u.type == 'quiz' ? _Mode.quiz : _Mode.content;

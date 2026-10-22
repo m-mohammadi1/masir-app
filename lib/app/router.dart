@@ -12,6 +12,7 @@ import '/app/onboarding/welcome_page.dart';
 import '/app/routes.dart';
 import '/app/screens.dart';
 import '/app/state/nav.dart';
+import '/app/state/route_settle.dart';
 import '/core/services/hive_service.dart';
 import '/design/design.dart';
 
@@ -25,6 +26,7 @@ Page<void> _tab(GoRouterState s, Widget child) =>
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootKey,
+  observers: [RouteMotion.instance],
   initialLocation: Routes.splash,
   debugLogDiagnostics: kDebugMode,
   redirect: (context, state) {

@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '/app/state/route_settle.dart';
+
 /// Fired when a unit counts (completed, quiz sent, offline completions sent).
 /// Pages that stay alive underneath the unit (roadmap, course, Vitrine,
 /// institute home) reload on it, so they're current when the student comes
@@ -39,7 +41,11 @@ class _ReloadOnProgressState extends State<ReloadOnProgress> {
     super.dispose();
   }
 
-  void _changed() {
+  /// The event fires as the next unit slides in; reload once it has, so
+  /// the requests and rebuilds stay out of the slide.
+  Future<void> _changed() async {
+    if (!mounted) return;
+    await afterTransitions(context);
     if (mounted) widget.onChange();
   }
 

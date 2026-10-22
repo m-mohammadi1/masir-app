@@ -8,6 +8,7 @@ import '/app/common/widgets.dart';
 import '/app/institute/institute_shell.dart';
 import '/app/routes.dart';
 import '/app/state/progress_events.dart';
+import '/app/state/route_settle.dart';
 import '/app/state/session.dart';
 import '/core/api/endpoints.dart';
 import '/core/api/masir_api.dart';
@@ -44,7 +45,10 @@ class _InstituteHomePageState extends State<InstituteHomePage> {
     super.dispose();
   }
 
-  void _onProgress() {
+  // Reload once the next unit has slid in, not during it.
+  Future<void> _onProgress() async {
+    if (!mounted) return;
+    await afterTransitions(context);
     if (mounted) _load();
   }
 
