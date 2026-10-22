@@ -293,12 +293,12 @@ class _MasirTabStackState extends State<MasirTabStack>
                       opacity: i == _shown
                           ? inT
                           : (i == _leaving ? outO.toDouble() : 0),
-                      child: i == _shown && !reduced
-                          ? Transform.scale(
-                              scale: 0.96 + 0.04 * inT,
-                              child: widget.children[i],
-                            )
-                          : widget.children[i],
+                      // Always wrapped, so switching tabs never moves a
+                      // tab's navigator to a new parent.
+                      child: Transform.scale(
+                        scale: i == _shown && !reduced ? 0.96 + 0.04 * inT : 1,
+                        child: widget.children[i],
+                      ),
                     ),
                   ),
                 ),

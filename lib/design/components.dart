@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import 'brand.dart';
@@ -74,7 +75,10 @@ class _LipState extends State<Lip> {
       child: widget.child,
     );
     if (widget.onTap == null) {
-      final idle = Padding(padding: EdgeInsets.only(bottom: h), child: box);
+      final idle = Padding(
+        padding: EdgeInsets.only(bottom: h),
+        child: box,
+      );
       // A disabled button is still announced, as disabled.
       return widget.semanticLabel == null
           ? idle
@@ -753,50 +757,100 @@ class Bone extends StatefulWidget {
   State<Bone> createState() => _BoneState();
 }
 
-class _BoneState extends State<Bone> with SingleTickerProviderStateMixin {
-  // §13: a gentle shimmer sweeping right to left, 1.2s, linear, looping.
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  )..repeat();
+class _BoneState extends State<Bone> {
+  bool _shimmering = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only bones on screen (tickers on) keep the shared clock running.
+    final on =
+        TickerMode.valuesOf(context).enabled && !MasirMotion.reduced(context);
+    if (on != _shimmering) {
+      on ? _Shimmer.attach() : _Shimmer.detach();
+      _shimmering = on;
+    }
+  }
 
   @override
   void dispose() {
-    _c.dispose();
+    if (_shimmering) _Shimmer.detach();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final box = BorderRadius.circular(widget.radius);
     if (MasirMotion.reduced(context)) {
       return Container(
         width: widget.width,
         height: widget.height,
-        decoration: BoxDecoration(color: C.sand, borderRadius: box),
+        decoration: BoxDecoration(
+          color: C.sand,
+          borderRadius: BorderRadius.circular(widget.radius),
+        ),
       );
     }
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (_, _) {
-        // The light band travels from the right edge to the left.
-        final x = 1.6 - 3.2 * _c.value;
-        return Container(
-          width: widget.width,
+    // Repaints with the shared clock; the widget itself never rebuilds.
+    return CustomPaint(
+      painter: _BonePainter(widget.radius),
+      // Sized like a childless Container: no width = as wide as allowed.
+      child: LimitedBox(
+        maxWidth: 0,
+        maxHeight: 0,
+        child: SizedBox(
+          width: widget.width ?? double.infinity,
           height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: box,
-            gradient: LinearGradient(
-              begin: Alignment(x - 1, 0),
-              end: Alignment(x + 1, 0),
-              colors: const [C.sand, C.sandLight, C.sand],
-              stops: const [0.3, 0.5, 0.7],
-            ),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
+}
+
+/// §13: a gentle shimmer sweeping right to left, 1.2s, linear, looping. One
+/// clock for every bone on screen instead of a controller per bone.
+abstract final class _Shimmer {
+  static final value = ValueNotifier<double>(0);
+  static Ticker? _ticker;
+  static int _users = 0;
+
+  static void attach() {
+    if (_users++ > 0) return;
+    _ticker = Ticker((elapsed) {
+      value.value = (elapsed.inMicroseconds % 1200000) / 1200000;
+    })..start();
+  }
+
+  static void detach() {
+    if (--_users > 0) return;
+    _ticker?.dispose();
+    _ticker = null;
+  }
+}
+
+class _BonePainter extends CustomPainter {
+  final double radius;
+  _BonePainter(this.radius) : super(repaint: _Shimmer.value);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // The light band travels from the right edge to the left.
+    final x = 1.6 - 3.2 * _Shimmer.value.value;
+    final rect = Offset.zero & size;
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment(x - 1, 0),
+        end: Alignment(x + 1, 0),
+        colors: const [C.sand, C.sandLight, C.sand],
+        stops: const [0.3, 0.5, 0.7],
+      ).createShader(rect);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(radius)),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_BonePainter old) => old.radius != radius;
 }
 
 /// An empty spacer that respects the RTL page gutter.

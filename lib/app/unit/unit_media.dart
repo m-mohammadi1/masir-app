@@ -83,10 +83,23 @@ class _VideoUnitPlayerState extends State<VideoUnitPlayer> {
     if (mounted) setState(() {});
   }
 
+  Object? _shown;
+
   void _tick() {
     final v = _c!.value;
     final d = v.duration.inMilliseconds;
     if (d > 0) widget.onProgress((v.position.inMilliseconds / d).clamp(0, 1));
+    // The controller reports many times a second; rebuild only when what the
+    // card shows changes (the clock and scrubber move in whole seconds).
+    final shown = (
+      v.position.inSeconds,
+      v.duration.inSeconds,
+      v.isPlaying,
+      v.isInitialized,
+      v.aspectRatio,
+    );
+    if (shown == _shown) return;
+    _shown = shown;
     if (mounted) setState(() {});
   }
 
@@ -575,7 +588,11 @@ class _AudioUnitPlayerState extends State<AudioUnitPlayer> {
     _subs.addAll([
       _player.onPositionChanged.listen((p) {
         if (!mounted) return;
-        setState(() => _pos = p);
+        // Positions arrive several times a second; rebuild only when the
+        // clock, the filled bars or the read-out percentage change.
+        final before = _shown;
+        _pos = p;
+        if (_shown != before) setState(() {});
         if (_dur.inMilliseconds > 0) {
           widget.onProgress(
             (p.inMilliseconds / _dur.inMilliseconds).clamp(0, 1),
@@ -636,12 +653,18 @@ class _AudioUnitPlayerState extends State<AudioUnitPlayer> {
     );
   }
 
+  double get _f => _dur.inMilliseconds == 0
+      ? 0.0
+      : (_pos.inMilliseconds / _dur.inMilliseconds).clamp(0.0, 1.0);
+
+  /// What the player shows of the position.
+  Object get _shown =>
+      (_pos.inSeconds, (_f * _bars.length).floor(), (_f * 100).round());
+
   @override
   Widget build(BuildContext context) {
     final pal = context.pal;
-    final f = _dur.inMilliseconds == 0
-        ? 0.0
-        : (_pos.inMilliseconds / _dur.inMilliseconds).clamp(0.0, 1.0);
+    final f = _f;
     final filled = (f * _bars.length).floor();
     Widget round(String label, String semantic, VoidCallback onTap) =>
         Semantics(

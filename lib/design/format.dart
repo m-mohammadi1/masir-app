@@ -171,9 +171,9 @@ String unitMeta(String type, int duration, int questions) {
 
 /// Strips HTML for previews.
 String plain(String html, {int max = 160}) {
-  final t = html
-      .replaceAll(RegExp(r'<[^>]*>'), ' ')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
+  final t = html.replaceAll(_tag, ' ').replaceAll(_space, ' ').trim();
   return t.length <= max ? t : '${t.substring(0, max)}…';
 }
+
+final _tag = RegExp(r'<[^>]*>');
+final _space = RegExp(r'\s+');

@@ -70,8 +70,15 @@ class _MasirVideoState extends State<MasirVideo> {
       _ended = true;
       widget.onEnded?.call();
     }
+    // VideoBar follows the controller itself; this frame only changes once
+    // the video is ready.
+    final shown = (v.isInitialized, v.aspectRatio);
+    if (shown == _shown) return;
+    _shown = shown;
     if (mounted) setState(() {});
   }
+
+  Object? _shown;
 
   @override
   void dispose() {

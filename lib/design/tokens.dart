@@ -140,8 +140,7 @@ BoxDecoration cardDecoration({
 /// shapes digits, but text from the API or `toString` may carry Latin ones).
 String fa(Object? v) {
   const d = '۰۱۲۳۴۵۶۷۸۹';
-  return v.toString().replaceAllMapped(
-    RegExp(r'[0-9]'),
-    (m) => d[int.parse(m[0]!)],
-  );
+  return v.toString().replaceAllMapped(_latinDigit, (m) => d[int.parse(m[0]!)]);
 }
+
+final _latinDigit = RegExp(r'[0-9]');

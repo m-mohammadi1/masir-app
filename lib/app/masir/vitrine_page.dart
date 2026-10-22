@@ -139,21 +139,26 @@ class _Vitrine extends StatelessWidget {
         final cubit = context.read<VitrineCubit>();
         final current = s.current;
         final others = (s.wallet ?? []).where((w) => w != current).toList();
-        final recs = [...?s.feed?.recommended, ...?s.feed?.featuredInstitutes]
-            .where(
-              (i) =>
-                  !(s.wallet ?? []).any((w) => w.institute.id == i.id) &&
-                  !s.dismissed.contains(i.id),
-            )
-            .fold<List<InstituteSummary>>(
-              [],
-              (l, i) => l.any((x) => x.id == i.id) ? l : [...l, i],
-            );
-        final courses = [...?s.feed?.newCourses, ...?s.feed?.featuredCourses]
-            .fold<List<FeedCourse>>(
-              [],
-              (l, c) => l.any((x) => x.id == c.id) ? l : [...l, c],
-            );
+        // First of each id, in feed order.
+        final joined = {
+          for (final w in s.wallet ?? <WalletCard>[]) w.institute.id,
+        };
+        final seenInst = <String>{};
+        final recs = [
+          for (final i in [
+            ...?s.feed?.recommended,
+            ...?s.feed?.featuredInstitutes,
+          ])
+            if (!joined.contains(i.id) &&
+                !s.dismissed.contains(i.id) &&
+                seenInst.add(i.id))
+              i,
+        ];
+        final seenCourse = <String>{};
+        final courses = [
+          for (final c in [...?s.feed?.newCourses, ...?s.feed?.featuredCourses])
+            if (seenCourse.add(c.id)) c,
+        ];
 
         return RefreshIndicator(
           color: C.violet,
