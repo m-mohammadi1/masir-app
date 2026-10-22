@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart' show Right;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,15 +15,37 @@ class InstituteCache {
   InstituteCache._();
   static final Map<String, InstituteDetail> _items = {};
 
+  static final Map<String, DateTime> _loadedAt = {};
+  static final Map<String, Future<Res<InstituteDetail>>> _inflight = {};
+
+  /// Entering an institute loads it from the threshold, the shell and the
+  /// home tab within a second; they share one request.
+  static const _fresh = Duration(seconds: 3);
+
   static InstituteDetail? peek(String id) => _items[id];
 
-  static Future<Res<InstituteDetail>> load(String id) async {
-    final res = await inject<MasirApi>().institute(id);
-    res.fold((_) {}, (d) => _items[id] = d);
-    return res;
+  static Future<Res<InstituteDetail>> load(String id) {
+    final at = _loadedAt[id];
+    final item = _items[id];
+    if (item != null && at != null && DateTime.now().difference(at) < _fresh) {
+      return Future.value(Right(item));
+    }
+    return _inflight[id] ??= inject<MasirApi>()
+        .institute(id)
+        .then((res) {
+          res.fold((_) {}, (d) {
+            _items[id] = d;
+            _loadedAt[id] = DateTime.now();
+          });
+          return res;
+        })
+        .whenComplete(() => _inflight.remove(id));
   }
 
-  static void forget(String id) => _items.remove(id);
+  static void forget(String id) {
+    _items.remove(id);
+    _loadedAt.remove(id);
+  }
 }
 
 /// The institute space: takes the institute's colours, coloured top bar with

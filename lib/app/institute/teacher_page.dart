@@ -28,11 +28,13 @@ class TeacherPageView extends StatelessWidget {
   Future<Res<_Data>> _fetch() async {
     final api = inject<MasirApi>();
     final inst = Session.instituteId.value;
+    // Both requests go out together; the other teachers are optional.
+    final teachers = inst == null ? null : api.instituteTeachers(inst);
     final res = await api.teacher(userId);
     return res.fold((e) async => Left<ApiError, _Data>(e), (p) async {
       var others = <Teacher>[];
-      if (inst != null) {
-        (await api.instituteTeachers(inst)).fold(
+      if (teachers != null) {
+        (await teachers).fold(
           (_) {},
           (t) => others = t.where((x) => x.userId != userId).toList(),
         );
