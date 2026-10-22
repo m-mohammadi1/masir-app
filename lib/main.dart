@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_helper/easy_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -34,6 +36,19 @@ void main() async {
     updateHeader();
   }
 
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  runApp(const MasirApp());
+
+  // Push setup talks to Firebase (topic subscription is a network call), so
+  // the first frame doesn't wait for it.
+  unawaited(_initPush());
+}
+
+Future<void> _initPush() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -42,11 +57,4 @@ void main() async {
   } catch (_) {}
 
   FirebaseMessaging.onBackgroundMessage(background);
-
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  runApp(const MasirApp());
 }
