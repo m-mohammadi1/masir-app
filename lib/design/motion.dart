@@ -81,31 +81,58 @@ Widget masirPush(
     curve: MasirMotion.standard,
     reverseCurve: MasirMotion.standard.flipped,
   );
+  // The edge that leads into the screen (right in RTL, left in LTR).
+  final rtl = dir < 0;
   return SlideTransition(
     position: Tween(begin: Offset(dir, 0), end: Offset.zero).animate(inA),
-    child: DecoratedBox(
-      // Soft shadow on the incoming page's trailing edge.
-      decoration: const BoxDecoration(
-        boxShadow: [BoxShadow(color: Color(0x1F2B2633), blurRadius: 16)],
-      ),
-      child: SlideTransition(
-        position: Tween(
-          begin: Offset.zero,
-          end: Offset(-dir * 0.3, 0),
-        ).animate(outA),
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: [
-            child,
-            IgnorePointer(
-              child: FadeTransition(
-                opacity: Tween(begin: 0.0, end: 0.16).animate(outA),
-                child: const ColoredBox(color: Color(0xFF2B2633)),
+    child: Stack(
+      clipBehavior: Clip.none,
+      fit: StackFit.passthrough,
+      children: [
+        SlideTransition(
+          position: Tween(
+            begin: Offset.zero,
+            end: Offset(-dir * 0.3, 0),
+          ).animate(outA),
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              child,
+              IgnorePointer(
+                child: FadeTransition(
+                  opacity: Tween(begin: 0.0, end: 0.16).animate(outA),
+                  child: const ColoredBox(color: Color(0xFF2B2633)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Soft shadow on the incoming page's trailing edge: a gradient strip
+        // just outside it (a blurred page-sized shadow cost a blur pass on
+        // every frame of every push).
+        Positioned(
+          top: 0,
+          bottom: 0,
+          width: 16,
+          left: rtl ? null : -16,
+          right: rtl ? -16 : null,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: rtl ? Alignment.centerLeft : Alignment.centerRight,
+                  end: rtl ? Alignment.centerRight : Alignment.centerLeft,
+                  colors: const [
+                    Color(0x142B2633),
+                    Color(0x062B2633),
+                    Color(0x002B2633),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     ),
   );
 }
