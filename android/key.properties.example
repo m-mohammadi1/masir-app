@@ -1,0 +1,7 @@
+# Copy to android/key.properties (git-ignored) for signed release builds.
+# Keep the keystore and these passwords backed up outside the repo: losing them
+# means the app can't be updated in the store.
+storeFile=/absolute/path/to/masir-upload.jks
+storePassword=
+keyAlias=upload
+keyPassword=
