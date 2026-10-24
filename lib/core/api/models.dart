@@ -352,6 +352,56 @@ class CourseDetail {
 
 // ---------------------------------------------------------------- outline
 
+/// «X از Y» for a course, chapter or path, for this student. Units added
+/// behind the student (optional) count only once completed; in a path or
+/// chapter that was added whole (every unit optional) all its units count.
+class UnitCounts {
+  final int done;
+  final int total;
+
+  /// Optional units not done yet: the «+N اختیاری» chip, never in «X از Y».
+  final int optionalLeft;
+
+  /// Every unit is optional: the whole path or chapter was added behind the
+  /// student.
+  final bool added;
+  const UnitCounts({
+    required this.done,
+    required this.total,
+    required this.optionalLeft,
+    required this.added,
+  });
+
+  factory UnitCounts.of(Iterable<OutlineUnit> units, {bool whole = true}) {
+    var n = 0, done = 0, optional = 0, optionalDone = 0;
+    for (final u in units) {
+      n++;
+      if (u.completed) done++;
+      if (u.optional) {
+        optional++;
+        if (u.completed) optionalDone++;
+      }
+    }
+    final added = whole && n > 0 && optional == n;
+    return UnitCounts(
+      done: done,
+      total: added ? n : n - optional + optionalDone,
+      optionalLeft: optional - optionalDone,
+      added: added,
+    );
+  }
+
+  /// «کامل»: every required unit done (every unit, in an added group).
+  bool get complete => done >= total;
+
+  /// Rounded; an empty group is 100 and an unfinished one never shows 100.
+  int get percent {
+    if (total <= 0) return 100;
+    final p = (done * 200 + total) ~/ (2 * total);
+    return p >= 100 && done < total ? 99 : p;
+  }
+}
+
 class OutlineUnit {
   final String id;
   final String title;
@@ -362,6 +412,17 @@ class OutlineUnit {
   final bool isPreview;
   final int durationMinutes;
   final int questionCount;
+
+  /// Added behind this student's pin: optional for them. Stays true once
+  /// completed (it then counts like any unit).
+  final bool optional;
+
+  /// Optional, not opened yet and added under two weeks ago: «جدید».
+  final bool isNew;
+
+  /// Completed, then edited by the teacher, not opened since:
+  /// «به‌روزرسانی شد».
+  final bool updated;
   const OutlineUnit({
     required this.id,
     required this.title,
@@ -372,6 +433,9 @@ class OutlineUnit {
     required this.isPreview,
     required this.durationMinutes,
     required this.questionCount,
+    this.optional = false,
+    this.isNew = false,
+    this.updated = false,
   });
   factory OutlineUnit.fromJson(J j) => OutlineUnit(
     id: str(j['id']),
@@ -383,6 +447,24 @@ class OutlineUnit {
     isPreview: toBool(j['is_preview']),
     durationMinutes: toInt(j['duration_minutes']),
     questionCount: toInt(j['question_count']),
+    optional: toBool(j['optional']),
+    isNew: toBool(j['new']),
+    updated: toBool(j['updated']),
+  );
+
+  /// This unit finished (offline, before the server knows): open, no longer
+  /// new, and its update seen.
+  OutlineUnit asCompleted() => OutlineUnit(
+    id: id,
+    title: title,
+    type: type,
+    completed: true,
+    quizScore: quizScore,
+    locked: false,
+    isPreview: isPreview,
+    durationMinutes: durationMinutes,
+    questionCount: questionCount,
+    optional: optional,
   );
 }
 
@@ -393,6 +475,10 @@ class OutlinePath {
   final bool complete;
   final int progressPercent;
   final List<OutlineUnit> units;
+
+  /// An added path that is still new (nothing in it opened, under two
+  /// weeks): «جدید» on its marker.
+  final bool isNew;
   const OutlinePath({
     required this.id,
     required this.title,
@@ -400,6 +486,7 @@ class OutlinePath {
     required this.complete,
     required this.progressPercent,
     required this.units,
+    this.isNew = false,
   });
   factory OutlinePath.fromJson(J j) => OutlinePath(
     id: str(j['id']),
@@ -408,7 +495,10 @@ class OutlinePath {
     complete: toBool(j['complete']),
     progressPercent: toInt(j['path_progress_percent']),
     units: asList(j['units']).map(OutlineUnit.fromJson).toList(),
+    isNew: toBool(j['new']),
   );
+
+  UnitCounts get counts => UnitCounts.of(units);
 }
 
 class OutlineModule {
@@ -417,12 +507,16 @@ class OutlineModule {
   final bool locked;
   final bool complete;
   final List<OutlinePath> paths;
+
+  /// An added chapter that is still new: «جدید» on its plate.
+  final bool isNew;
   const OutlineModule({
     required this.id,
     required this.title,
     required this.locked,
     required this.complete,
     required this.paths,
+    this.isNew = false,
   });
   factory OutlineModule.fromJson(J j) => OutlineModule(
     id: str(j['id']),
@@ -430,7 +524,10 @@ class OutlineModule {
     locked: toBool(j['locked']),
     complete: toBool(j['complete']),
     paths: asList(j['paths']).map(OutlinePath.fromJson).toList(),
+    isNew: toBool(j['new']),
   );
+
+  UnitCounts get counts => UnitCounts.of([for (final p in paths) ...p.units]);
 
   int get unitCount => paths.fold(0, (s, p) => s + p.units.length);
   int get completedCount =>
@@ -491,24 +588,16 @@ class Outline {
       : units.where((u) => u.id == currentUnitId).firstOrNull;
 
   /// The outline with units finished offline (still queued) shown as done,
-  /// and the current unit moved past them.
+  /// and the current unit moved past them. Optional units (added behind the
+  /// student) are skipped as the current unit and count once completed.
   Outline withCompleted(Set<String> ids) {
     if (ids.isEmpty || !units.any((u) => ids.contains(u.id) && !u.completed)) {
       return this;
     }
-    OutlineUnit mark(OutlineUnit u) => !ids.contains(u.id) || u.completed
-        ? u
-        : OutlineUnit(
-            id: u.id,
-            title: u.title,
-            type: u.type,
-            completed: true,
-            quizScore: u.quizScore,
-            locked: false,
-            isPreview: u.isPreview,
-            durationMinutes: u.durationMinutes,
-            questionCount: u.questionCount,
-          );
+    OutlineUnit mark(OutlineUnit u) =>
+        !ids.contains(u.id) || u.completed ? u : u.asCompleted();
+    // Finishing a unit opened it: an added path or chapter is no longer new.
+    bool touched(Iterable<OutlineUnit> us) => us.any((u) => ids.contains(u.id));
     final mods = [
       for (final m in modules)
         OutlineModule(
@@ -516,6 +605,7 @@ class Outline {
           title: m.title,
           locked: m.locked,
           complete: m.complete,
+          isNew: m.isNew && !touched([for (final p in m.paths) ...p.units]),
           paths: [
             for (final p in m.paths)
               OutlinePath(
@@ -524,6 +614,7 @@ class Outline {
                 locked: p.locked,
                 complete: p.complete,
                 progressPercent: p.progressPercent,
+                isNew: p.isNew && !touched(p.units),
                 units: p.units.map(mark).toList(),
               ),
           ],
@@ -533,19 +624,23 @@ class Outline {
       for (final m in mods)
         for (final p in m.paths) ...p.units,
     ];
-    final done = all.where((u) => u.completed).length;
+    final counts = UnitCounts.of(all, whole: false);
     var current = currentUnitId;
     if (current != null && ids.contains(current)) {
       final i = all.indexWhere((u) => u.id == current);
-      current = all.skip(i + 1).where((u) => !u.completed).firstOrNull?.id;
+      current = all
+          .skip(i + 1)
+          .where((u) => !u.completed && !u.optional)
+          .firstOrNull
+          ?.id;
     }
     return Outline(
       id: id,
       title: title,
-      progressPercent: totalUnits == 0 ? 0 : done * 100 ~/ totalUnits,
+      progressPercent: counts.total == 0 ? 0 : counts.percent,
       previewUnitCount: previewUnitCount,
-      completedUnits: done,
-      totalUnits: totalUnits,
+      completedUnits: counts.done,
+      totalUnits: counts.total,
       currentUnitId: current,
       access: access,
       plans: plans,

@@ -146,6 +146,11 @@ class MI {
     '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   );
   static const retry = MI('<path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/>');
+
+  /// «به‌روزرسانی شد»: two arrows chasing each other.
+  static const refresh = MI(
+    '<path d="M20 11a8 8 0 0 0-14.6-4.5L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16"/><path d="M20 20.5V16h-4.5"/>',
+  );
   static const bulb = MI(
     '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
   );

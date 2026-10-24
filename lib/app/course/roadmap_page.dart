@@ -26,7 +26,9 @@ class RoadmapEvents {
   static ({String courseId, ProgressUpdate update})? pathDone;
 }
 
-enum _St { done, current, open, free, locked }
+/// optional: added behind the student after they passed this point; open,
+/// never blocking, counted only once done.
+enum _St { done, current, open, free, optional, locked }
 
 /// One thing on the trail: a unit, a chapter trophy or the finish flag.
 class _Stop {
@@ -37,6 +39,13 @@ class _Stop {
   final _St st;
   final OutlineUnit? unit;
   final int module;
+
+  /// «جدید» above the pin: a single added unit (an added path or chapter
+  /// shows it once, on its marker or plate).
+  final bool isNew;
+
+  /// A done unit edited after the student finished it.
+  final bool updated;
   const _Stop({
     required this.id,
     required this.type,
@@ -45,6 +54,8 @@ class _Stop {
     required this.st,
     this.unit,
     required this.module,
+    this.isNew = false,
+    this.updated = false,
   });
   bool get special => type == 'trophy' || type == 'flag';
 }
@@ -54,13 +65,19 @@ class _Plate {
   final String title;
   final _St st;
   final String tag;
-  const _Plate(this.num, this.title, this.st, this.tag);
+
+  /// An added chapter that is still new: its tag is «جدید».
+  final bool isNew;
+  const _Plate(this.num, this.title, this.st, this.tag, {this.isNew = false});
 }
 
 class _Marker {
   final String text;
   final _St st;
-  const _Marker(this.text, this.st);
+
+  /// An added path that is still new: «جدید» first inside the marker.
+  final bool isNew;
+  const _Marker(this.text, this.st, {this.isNew = false});
 }
 
 class _Item {
@@ -293,7 +310,10 @@ class _RoadmapPageState extends State<RoadmapPage>
     for (var mi = 0; mi < o.modules.length; mi++) {
       final m = o.modules[mi];
       final units = [for (final p in m.paths) ...p.units];
-      final done = units.where((u) => u.completed).length;
+      // «X از Y»: units added behind the student count once done; an added
+      // chapter counts all of its units.
+      final mc = m.counts;
+      final chapterAdded = !guest && mc.added;
       final hasCurrent = units.any((u) => u.id == o.currentUnitId);
       final hasFree = units.any((u) => u.isPreview);
       final _Plate plate;
@@ -304,45 +324,62 @@ class _RoadmapPageState extends State<RoadmapPage>
           hasFree ? _St.open : _St.locked,
           hasFree ? 'رایگان' : 'قفل',
         );
-      } else if (units.isNotEmpty && done == units.length) {
+      } else if (units.isNotEmpty && mc.complete) {
         plate = _Plate(mi + 1, m.title, _St.done, 'کامل');
+      } else if (chapterAdded) {
+        plate = _Plate(
+          mi + 1,
+          m.title,
+          _St.optional,
+          m.isNew ? 'جدید' : 'اختیاری',
+          isNew: m.isNew,
+        );
       } else if (hasCurrent) {
         plate = _Plate(
           mi + 1,
           m.title,
           _St.current,
-          '${fa(done)} از ${fa(units.length)}',
+          '${fa(mc.done)} از ${fa(mc.total)}',
         );
       } else {
         plate = _Plate(mi + 1, m.title, _St.locked, 'قفل');
       }
       for (var pi = 0; pi < m.paths.length; pi++) {
         final p = m.paths[pi];
-        final pDone = p.units.isNotEmpty && p.units.every((u) => u.completed);
+        final pc = p.counts;
+        final pDone = p.units.isNotEmpty && pc.complete;
         final pCurrent = p.units.any((u) => u.id == o.currentUnitId);
         final pFree = p.units.any((u) => u.isPreview);
+        final pathAdded = !guest && pc.added;
         final _St st = guest
             ? (pFree ? _St.open : _St.locked)
             : pDone
             ? _St.done
+            : pathAdded
+            ? _St.optional
             : pCurrent
             ? _St.current
             : _St.locked;
         String text;
-        if (guest || st == _St.locked) {
+        if (st == _St.optional) {
+          text = 'مسیر ${fa(pi + 1)} • ${p.title} • اختیاری';
+        } else if (guest || st == _St.locked) {
           text = !guest && st == _St.locked && hasCurrent && pi > 0
               ? 'مسیر ${fa(pi + 1)} • بعد از مسیر ${fa(pi)} باز می‌شه'
               : 'مسیر ${fa(pi + 1)} • ${p.title}';
         } else {
-          final pct0 = p.units.isEmpty
-              ? 0
-              : p.units.where((u) => u.completed).length *
-                    100 ~/
-                    p.units.length;
-          text = 'مسیر ${fa(pi + 1)} • ${p.title} • ${pct(pct0)}';
+          text = 'مسیر ${fa(pi + 1)} • ${p.title} • ${pct(pc.percent)}';
         }
         items.add(
-          _Item(plate: pi == 0 ? plate : null, marker: _Marker(text, st)),
+          _Item(
+            plate: pi == 0 ? plate : null,
+            // In an added chapter «جدید» shows once, on the plate.
+            marker: _Marker(
+              text,
+              st,
+              isNew: st == _St.optional && p.isNew && !chapterAdded,
+            ),
+          ),
         );
         for (final u in p.units) {
           _St s;
@@ -352,6 +389,8 @@ class _RoadmapPageState extends State<RoadmapPage>
             s = _St.current;
           } else if (guest) {
             s = u.isPreview ? _St.free : _St.locked;
+          } else if (u.optional) {
+            s = _St.optional;
           } else if (!u.locked) {
             s = _St.open;
           } else {
@@ -367,15 +406,21 @@ class _RoadmapPageState extends State<RoadmapPage>
                 st: s,
                 unit: u,
                 module: mi,
+                isNew:
+                    s == _St.optional && u.isNew && !pathAdded && !chapterAdded,
+                updated: s == _St.done && u.updated,
               ),
             ),
           );
         }
       }
       if (m.paths.isEmpty) items.add(_Item(plate: plate));
-      final left = units.length - done;
+      final left = mc.total - mc.done;
       final last = mi == o.modules.length - 1;
-      final tDone = !guest && units.isNotEmpty && left == 0;
+      final tDone = !guest && units.isNotEmpty && mc.complete;
+      // An added chapter's trophy is neither earned nor locked until all
+      // of its units are done.
+      final tOptional = !tDone && chapterAdded;
       items.add(
         _Item(
           stop: _Stop(
@@ -386,10 +431,16 @@ class _RoadmapPageState extends State<RoadmapPage>
                 ? ''
                 : tDone
                 ? 'گرفتیش!'
+                : tOptional
+                ? 'اختیاری'
                 : last
                 ? 'آخرین جام'
                 : 'بعد از ${fa(left)} واحد',
-            st: tDone ? _St.done : _St.locked,
+            st: tDone
+                ? _St.done
+                : tOptional
+                ? _St.optional
+                : _St.locked,
             module: mi,
           ),
         ),
@@ -671,6 +722,59 @@ class _RoadmapPageState extends State<RoadmapPage>
               : pin,
         ),
       );
+      if (s.isNew) {
+        pins.add(
+          Positioned(
+            top: cy - size / 2 - 12,
+            left: cx - 28,
+            width: 56,
+            child: ExcludeSemantics(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                decoration: BoxDecoration(
+                  color: pal.p,
+                  borderRadius: BorderRadius.circular(999),
+                  // Separates the pill from the dashed ring.
+                  boxShadow: const [BoxShadow(color: C.paper, spreadRadius: 3)],
+                ),
+                child: Text(
+                  'جدید',
+                  textAlign: TextAlign.center,
+                  style: T.of(11, FontWeight.w800, pal.on),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+      if (s.updated) {
+        // On the pin's top corner, away from the label.
+        pins.add(
+          Positioned(
+            top: cy - size / 2 - 6,
+            left: isR ? cx + size / 2 - 22 : cx - size / 2 - 6,
+            width: 28,
+            height: 28,
+            child: ExcludeSemantics(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: C.border, width: 2),
+                  boxShadow: [lip(C.lip, 3)],
+                ),
+                alignment: Alignment.center,
+                child: MIcon(
+                  MI.refresh,
+                  size: 15,
+                  color: pal.ink,
+                  strokeWidth: 2.8,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
       if (s.st == _St.free) {
         pins.add(
           Positioned(
@@ -723,14 +827,24 @@ class _RoadmapPageState extends State<RoadmapPage>
                     const SizedBox(height: 4),
                   ],
                   Text(
-                    s.special
+                    s.updated
+                        ? 'به‌روزرسانی شد'
+                        : s.st == _St.optional && !s.special
+                        ? [
+                            'اختیاری',
+                            unitTypeNames[s.type] ?? '',
+                            if (s.meta.isNotEmpty) s.meta,
+                          ].join(' • ')
+                        : s.special
                         ? s.meta
                         : [
                             unitTypeNames[s.type] ?? '',
                             if (s.meta.isNotEmpty) s.meta,
                           ].join(' • '),
                     textAlign: isR ? TextAlign.right : TextAlign.left,
-                    style: T.of(12, FontWeight.w600, C.muted),
+                    style: s.updated || s.st == _St.optional
+                        ? T.of(12, FontWeight.w700, pal.ink)
+                        : T.of(12, FontWeight.w600, C.muted),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -973,7 +1087,25 @@ class _RoadmapPageState extends State<RoadmapPage>
     VoidCallback? action;
     var kind = BtnKind.primary;
     final cur = o.currentUnit;
+    // Chips next to the kicker: «جدید», «اختیاری», «به‌روزرسانی شد».
+    final chips = <Widget>[];
     switch (s.st) {
+      case _St.done when s.updated:
+        chips.add(_SheetChip.updated(pal));
+        note = 'بعد از اینکه تمومش کردی، به‌روزرسانی شده.';
+        cta = unitRedoLabels[s.type] ?? 'دوباره ببین';
+        kind = BtnKind.secondary;
+        action = () => _openUnit(u!);
+      case _St.optional when s.special:
+        chips.add(_SheetChip.optional(pal));
+        note =
+            'این فصل بعد از اینکه ازش رد شدی اضافه شده؛ اختیاریه. همه‌ی واحدهاش رو تموم کنی، این جام هم مال تو می‌شه.';
+      case _St.optional:
+        if (u?.isNew ?? false) chips.add(_SheetChip.isNew(pal));
+        chips.add(_SheetChip.optional(pal));
+        note = 'بعد از اینکه از این‌جا رد شدی اضافه شده؛ اختیاریه.';
+        cta = 'شروع';
+        action = () => _openUnit(u!);
       case _St.done:
         if (s.special) {
           note = s.type == 'flag'
@@ -1067,6 +1199,7 @@ class _RoadmapPageState extends State<RoadmapPage>
                     ),
                   ),
                 ),
+                for (final c in chips) ...[const SizedBox(width: 8), c],
                 const Spacer(),
                 RoundIcon(
                   MI.close,
@@ -1118,11 +1251,14 @@ class _RoadmapPageState extends State<RoadmapPage>
       builder: (sheet) {
         final rows = <Widget>[];
         var seenCurrent = false;
+        final hasOptional = !_guest && o.units.any((u) => u.optional);
         for (var mi = 0; mi < o.modules.length; mi++) {
           final m = o.modules[mi];
           final units = [for (final p in m.paths) ...p.units];
-          final done = units.where((u) => u.completed).length;
-          final complete = units.isNotEmpty && done == units.length;
+          final mc = m.counts;
+          final done = mc.done;
+          final complete = units.isNotEmpty && mc.complete;
+          final added = !_guest && mc.added;
           final current =
               !complete && units.any((u) => u.id == o.currentUnitId);
           void go() {
@@ -1138,37 +1274,154 @@ class _RoadmapPageState extends State<RoadmapPage>
           }
 
           if (complete) {
-            rows.add(
-              GestureDetector(
-                onTap: go,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: cardDecoration(radius: 20),
-                  child: Row(
+            // «کامل» counts required units only; optional ones left add a
+            // chip, and the chapter opens to show its paths.
+            final left = _guest ? 0 : mc.optionalLeft;
+            final head = Row(
+              children: [
+                _square(
+                  const MIcon(MI.cup, size: 24, color: C.sunInk),
+                  C.sun,
+                  C.sunDark,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _square(
-                        const MIcon(MI.cup, size: 24, color: C.sunInk),
-                        C.sun,
-                        C.sunDark,
+                      Text(
+                        'فصل ${fa(mi + 1)}',
+                        style: T.of(12, FontWeight.w500, C.muted),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'فصل ${fa(mi + 1)}',
-                              style: T.of(12, FontWeight.w500, C.muted),
-                            ),
-                            Text(m.title, style: T.of(16, FontWeight.w800)),
-                          ],
-                        ),
-                      ),
-                      _pill('کامل', C.greenSoft, C.greenText),
+                      Text(m.title, style: T.of(16, FontWeight.w800)),
                     ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _pill('کامل', C.greenSoft, C.greenText),
+                    if (left > 0) ...[
+                      const SizedBox(height: 6),
+                      _pill('+${fa(left)} اختیاری', pal.soft, pal.ink),
+                    ],
+                  ],
+                ),
+              ],
+            );
+            rows.add(
+              Semantics(
+                button: true,
+                label: left > 0
+                    ? 'فصل ${fa(mi + 1)}، ${m.title}، کامل؛ ${fa(left)} واحد اختیاری مونده'
+                    : 'فصل ${fa(mi + 1)}، ${m.title}، کامل',
+                excludeSemantics: true,
+                child: GestureDetector(
+                  onTap: go,
+                  child: Container(
+                    decoration: cardDecoration(radius: 20),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          child: head,
+                        ),
+                        if (left > 0)
+                          Container(
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                top: BorderSide(color: C.sand, width: 2),
+                              ),
+                            ),
+                            padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
+                            child: Column(
+                              children: [
+                                for (var pi = 0; pi < m.paths.length; pi++)
+                                  _pathRow(
+                                    m.paths[pi],
+                                    pi,
+                                    o,
+                                    last: pi == m.paths.length - 1,
+                                    onTap: go,
+                                    pal: pal,
+                                  ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          } else if (added) {
+            // A chapter added behind the student: its own count, dashed.
+            rows.add(
+              Semantics(
+                button: true,
+                label:
+                    'فصل ${fa(mi + 1)}، ${m.title}، ${m.isNew ? 'جدید و اختیاری' : 'اختیاری'}، ${fa(mc.done)} از ${fa(mc.total)}',
+                excludeSemantics: true,
+                child: GestureDetector(
+                  onTap: go,
+                  child: CustomPaint(
+                    foregroundPainter: DashedRRectPainter(
+                      color: pal.p,
+                      radius: 20,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [lip(C.lip)],
+                      ),
+                      child: Row(
+                        children: [
+                          _square(
+                            Text(
+                              fa(mi + 1),
+                              style: T.of(20, FontWeight.w900, pal.ink),
+                            ),
+                            pal.soft,
+                            null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'فصل ${fa(mi + 1)} • اختیاری',
+                                      style: T.of(12, FontWeight.w700, pal.ink),
+                                    ),
+                                    if (m.isNew) ...[
+                                      const SizedBox(width: 8),
+                                      _NewPill(pal: pal),
+                                    ],
+                                  ],
+                                ),
+                                Text(m.title, style: T.of(16, FontWeight.w800)),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '${fa(mc.done)} از ${fa(mc.total)}',
+                            style: T.of(13, FontWeight.w800, pal.ink),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1224,9 +1477,22 @@ class _RoadmapPageState extends State<RoadmapPage>
                                 ],
                               ),
                             ),
-                            Text(
-                              '${fa(done)} از ${fa(units.length)}',
-                              style: T.of(13, FontWeight.w800, pal.on),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${fa(done)} از ${fa(mc.total)}',
+                                  style: T.of(13, FontWeight.w800, pal.on),
+                                ),
+                                if (mc.optionalLeft > 0) ...[
+                                  const SizedBox(height: 6),
+                                  _pill(
+                                    '+${fa(mc.optionalLeft)} اختیاری',
+                                    Colors.white.withValues(alpha: .22),
+                                    pal.on,
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         ),
@@ -1244,6 +1510,7 @@ class _RoadmapPageState extends State<RoadmapPage>
                               o,
                               last: pi == m.paths.length - 1,
                               onTap: go,
+                              pal: pal,
                             ),
                         ],
                       ),
@@ -1334,16 +1601,30 @@ class _RoadmapPageState extends State<RoadmapPage>
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const MIcon(MI.info, size: 18, color: C.muted),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'هر واحد وقتی باز می‌شه که همه‌ی واحدهای قبلش تموم شده باشن.',
-                        style: T.of(13, FontWeight.w500, C.muted, 1.8),
-                      ),
-                    ),
-                  ],
+                  children: hasOptional
+                      ? [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: _DashedDot(color: pal.p, size: 18),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'واحدهای اختیاری بعداً اضافه شدن؛ تا انجامشون ندی، توی شمارش و «کامل» شدن فصل حساب نمی‌شن.',
+                              style: T.of(13, FontWeight.w500, C.muted, 1.8),
+                            ),
+                          ),
+                        ]
+                      : [
+                          const MIcon(MI.info, size: 18, color: C.muted),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'هر واحد وقتی باز می‌شه که همه‌ی واحدهای قبلش تموم شده باشن.',
+                              style: T.of(13, FontWeight.w500, C.muted, 1.8),
+                            ),
+                          ),
+                        ],
                 ),
               ),
             ],
@@ -1359,48 +1640,85 @@ class _RoadmapPageState extends State<RoadmapPage>
     Outline o, {
     required bool last,
     required VoidCallback onTap,
+    // The sheet's palette: this State's own context sits above the
+    // institute's BrandScope.
+    required InstitutePalette pal,
   }) {
-    final done = p.units.where((u) => u.completed).length;
-    final open = p.units.any((u) => u.completed || u.id == o.currentUnitId);
-    final pct0 = p.units.isEmpty ? 0 : done * 100 ~/ p.units.length;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 44),
-        decoration: BoxDecoration(
-          border: last
-              ? null
-              : const Border(bottom: BorderSide(color: C.sand, width: 2)),
-        ),
-        child: Row(
-          children: [
-            open
-                ? Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: done == p.units.length ? C.green : C.sun,
-                      shape: BoxShape.circle,
+    final pc = p.counts;
+    final added = !_guest && pc.added && !pc.complete;
+    final open =
+        added || p.units.any((u) => u.completed || u.id == o.currentUnitId);
+    final fresh = _guest
+        ? 0
+        : p.units.where((u) => u.isNew && !u.completed).length;
+    final trailing = added
+        ? 'اختیاری • ${fa(pc.done)} از ${fa(pc.total)}'
+        : open
+        ? pct(pc.percent)
+        : (pi > 0 ? 'بعد از مسیر ${fa(pi)}' : '');
+    return Semantics(
+      button: true,
+      label:
+          'مسیر ${fa(pi + 1)}، ${p.title}، $trailing${fresh > 0 ? '، ${fa(fresh)} جدید' : ''}',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          decoration: BoxDecoration(
+            border: last
+                ? null
+                : const Border(bottom: BorderSide(color: C.sand, width: 2)),
+          ),
+          child: Row(
+            children: [
+              added
+                  ? _DashedDot(color: pal.p, size: 14)
+                  : open && pc.complete
+                  ? Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: C.green,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: const MIcon(
+                        MI.check,
+                        size: 11,
+                        color: Colors.white,
+                        strokeWidth: 3.6,
+                      ),
+                    )
+                  : open
+                  ? Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: C.sun,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : const MIcon(
+                      MI.lock,
+                      size: 12,
+                      color: C.muted,
+                      strokeWidth: 3,
                     ),
-                  )
-                : const MIcon(
-                    MI.lock,
-                    size: 12,
-                    color: C.muted,
-                    strokeWidth: 3,
-                  ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'مسیر ${fa(pi + 1)} • ${p.title}',
-                style: T.of(15, FontWeight.w700, open ? C.ink : C.muted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'مسیر ${fa(pi + 1)} • ${p.title}',
+                  style: T.of(15, FontWeight.w700, open ? C.ink : C.muted),
+                ),
               ),
-            ),
-            Text(
-              open ? pct(pct0) : (pi > 0 ? 'بعد از مسیر ${fa(pi)}' : ''),
-              style: T.of(13, FontWeight.w500, C.muted),
-            ),
-          ],
+              if (fresh > 0) ...[
+                _pill('${fa(fresh)} جدید', pal.soft, pal.ink),
+                const SizedBox(width: 8),
+              ],
+              Text(trailing, style: T.of(13, FontWeight.w500, C.muted)),
+            ],
+          ),
         ),
       ),
     );
@@ -1660,6 +1978,19 @@ class _PlateCard extends StatelessWidget {
     late Color bg, border, lipC, fg, badgeBg, badgeFg, tagBg, tagFg;
     var dashed = false;
     switch (p.st) {
+      case _St.optional:
+        // A chapter added behind the student: white, dashed in the
+        // institute colour, «جدید» while new.
+        (bg, border, lipC, fg, badgeBg, badgeFg, tagBg, tagFg) = (
+          Colors.white,
+          pal.p,
+          C.lip,
+          C.ink,
+          pal.soft,
+          pal.ink,
+          p.isNew ? pal.p : pal.soft,
+          p.isNew ? pal.on : pal.ink,
+        );
       case _St.done:
         (bg, border, lipC, fg, badgeBg, badgeFg, tagBg, tagFg) = (
           C.surface,
@@ -1728,7 +2059,9 @@ class _PlateCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'فصل ${fa(p.num)}',
+                  p.st == _St.optional
+                      ? 'فصل ${fa(p.num)} • اختیاری'
+                      : 'فصل ${fa(p.num)}',
                   style: T.of(12, FontWeight.w700, fg.withValues(alpha: .85)),
                 ),
                 Text(
@@ -1752,6 +2085,19 @@ class _PlateCard extends StatelessWidget {
         ],
       ),
     );
+    if (p.st == _St.optional) {
+      return CustomPaint(
+        foregroundPainter: DashedRRectPainter(color: border, radius: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [lip(lipC)],
+          ),
+          child: content,
+        ),
+      );
+    }
     if (dashed) {
       return CustomPaint(
         painter: _DashedRRect(color: border, radius: 20),
@@ -1782,6 +2128,32 @@ class _MarkerChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pal = context.pal;
+    if (m.st == _St.optional) {
+      // A path added behind the student: white, dashed, «جدید» first.
+      return CustomPaint(
+        foregroundPainter: DashedRRectPainter(color: pal.p, radius: 16),
+        child: Container(
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (m.isNew) ...[_NewPill(pal: pal), const SizedBox(width: 6)],
+              Text(
+                m.text,
+                maxLines: 1,
+                style: T.of(13, FontWeight.w800, pal.ink),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final (bg, border, fg) = switch (m.st) {
       _St.locked => (C.sand, C.lip, C.muted),
       _St.done => (C.greenSoft, C.green, C.greenText),
@@ -1821,7 +2193,8 @@ class _Pin extends StatelessWidget {
     final s = stop;
     final done = s.st == _St.done,
         current = s.st == _St.current,
-        locked = s.st == _St.locked;
+        locked = s.st == _St.locked,
+        optional = s.st == _St.optional;
     final free = s.st == _St.free || s.st == _St.open;
     Color bg = C.locked, fg = C.muted;
     List<BoxShadow> shadow = [lip(C.lockedLip, 6)];
@@ -1842,6 +2215,13 @@ class _Pin extends StatelessWidget {
       border = Border.all(color: C.sun, width: 3);
       shadow = [lip(C.sunLip, 6)];
     }
+    if (optional) {
+      // Added behind the student: white face, dashed ring (painted below),
+      // the unit's own icon. Neither done, current nor locked.
+      bg = Colors.white;
+      fg = pal.ink;
+      shadow = [lip(C.lip, 6)];
+    }
     if (s.type == 'trophy' && done) {
       bg = C.sun;
       fg = C.sunInk;
@@ -1852,7 +2232,7 @@ class _Pin extends StatelessWidget {
       fg = Colors.white;
       shadow = [lip(const Color(0xFF1A1720), 6)];
     }
-    final showType = current || free || (locked && guest);
+    final showType = current || free || optional || (locked && guest);
     final MI icon;
     double iconSize = 30;
     if (s.special) {
@@ -1870,34 +2250,52 @@ class _Pin extends StatelessWidget {
     final round = s.type == 'quiz' || s.special;
     final aria =
         s.title +
-        (done
+        (done && s.updated
+            ? '، تموم شده؛ بعدش به‌روزرسانی شده'
+            : done
             ? '، تموم شده'
             : current
             ? '، الان نوبت اینه'
+            : optional && s.type == 'trophy'
+            ? '، اختیاری؛ با تموم کردن واحدهای این فصل می‌گیریش'
+            : optional && s.unit != null && s.unit!.isNew
+            ? '، تازه اضافه شده و اختیاریه؛ هنوز انجامش ندادی'
+            : optional
+            ? '، اختیاری؛ هنوز انجامش ندادی'
             : free
             ? '، رایگان'
             : '، قفل');
+    final face = Container(
+      decoration: BoxDecoration(
+        color: bg,
+        shape: round ? BoxShape.rectangle : BoxShape.circle,
+        borderRadius: round ? BorderRadius.circular(24) : null,
+        border: border,
+        boxShadow: shadow,
+      ),
+      alignment: Alignment.center,
+      child: MIcon(
+        icon,
+        size: iconSize,
+        color: fg,
+        strokeWidth: done ? 3.2 : (icon == MI.lock ? 2.4 : 2.2),
+      ),
+    );
     return Semantics(
       button: true,
       label: aria,
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: bg,
-            shape: round ? BoxShape.rectangle : BoxShape.circle,
-            borderRadius: round ? BorderRadius.circular(24) : null,
-            border: border,
-            boxShadow: shadow,
-          ),
-          alignment: Alignment.center,
-          child: MIcon(
-            icon,
-            size: iconSize,
-            color: fg,
-            strokeWidth: done ? 3.2 : (icon == MI.lock ? 2.4 : 2.2),
-          ),
-        ),
+        child: optional
+            ? CustomPaint(
+                foregroundPainter: DashedRRectPainter(
+                  color: pal.p,
+                  radius: round ? 24 : size / 2,
+                  width: 3,
+                ),
+                child: face,
+              )
+            : face,
       ),
     );
   }
@@ -2315,5 +2713,110 @@ class _Celebration extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// «جدید»: a small pill in the institute colour (inside a marker, beside a
+/// chapter row's kicker).
+class _NewPill extends StatelessWidget {
+  final InstitutePalette pal;
+  const _NewPill({required this.pal});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+    decoration: BoxDecoration(
+      color: pal.p,
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Text('جدید', style: T.of(11, FontWeight.w800, pal.on)),
+  );
+}
+
+/// The optional mark in lists: a white dot with a dashed ring.
+class _DashedDot extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _DashedDot({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+    foregroundPainter: DashedRRectPainter(color: color, radius: size / 2),
+    child: Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+      ),
+    ),
+  );
+}
+
+/// The pin sheet's extra chips, next to the kicker chip (height 30).
+class _SheetChip extends StatelessWidget {
+  final String text;
+  final Color bg;
+  final Color fg;
+  final Color? border;
+  final bool dashed;
+  final MI? icon;
+  const _SheetChip({
+    required this.text,
+    required this.bg,
+    required this.fg,
+    this.border,
+    this.dashed = false,
+    this.icon,
+  });
+
+  factory _SheetChip.isNew(InstitutePalette pal) =>
+      _SheetChip(text: 'جدید', bg: pal.p, fg: pal.on);
+
+  factory _SheetChip.optional(InstitutePalette pal) => _SheetChip(
+    text: 'اختیاری',
+    bg: Colors.white,
+    fg: pal.ink,
+    border: pal.p,
+    dashed: true,
+  );
+
+  factory _SheetChip.updated(InstitutePalette pal) => _SheetChip(
+    text: 'به‌روزرسانی شد',
+    bg: Colors.white,
+    fg: pal.ink,
+    border: C.border,
+    icon: MI.refresh,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: border != null && !dashed
+            ? Border.all(color: border!, width: 2)
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            MIcon(icon!, size: 14, color: fg, strokeWidth: 2.8),
+            const SizedBox(width: 6),
+          ],
+          Text(text, style: T.of(13, FontWeight.w800, fg)),
+        ],
+      ),
+    );
+    return dashed
+        ? CustomPaint(
+            foregroundPainter: DashedRRectPainter(color: border!, radius: 15),
+            child: chip,
+          )
+        : chip;
   }
 }
